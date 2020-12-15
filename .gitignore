@@ -1,2 +1,7 @@
+# Project files
+.vscode
+
+# Build artifacts
 *.gch
 websocketpp/build/
+collector
