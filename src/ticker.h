@@ -1,11 +1,10 @@
-#include <atomic>
+#include <cstdint>
 
-// TODO: FIXME: actually we need atomic struct
-struct AtomicTicker {
-  std::atomic<double> m_ask;
-  std::atomic<double> m_ask_vol;
-  std::atomic<double> m_bid;
-  std::atomic<double> m_bid_vol;
-  std::atomic<int64_t> m_source_ts;
-  std::atomic<int64_t> m_arrived_ts;
+struct Ticker {
+  double m_ask;
+  double m_ask_vol;
+  double m_bid;
+  double m_bid_vol;
+  int64_t m_source_ts;
+  int64_t m_arrived_ts;
 };

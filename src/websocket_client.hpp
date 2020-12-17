@@ -4,6 +4,7 @@
 
 #include <websocketpp/client.hpp>
 
+#include <atomic>
 #include <iostream>
 #include <chrono>
 
@@ -20,7 +21,7 @@ typedef client::connection_ptr connection_ptr;
 
 class WebsocketClient {
 public:
-  inline const AtomicTicker& GetTicker() const { return m_ticker; }
+  inline const Ticker GetTicker() const { return m_ticker.load(); }
 
 protected:
     WebsocketClient () {
@@ -98,5 +99,5 @@ protected:
     client m_endpoint;
     client::connection_ptr m_con;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
-    AtomicTicker m_ticker;
+    std::atomic<Ticker> m_ticker;
 };
