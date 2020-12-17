@@ -1,3 +1,6 @@
 [submodule "websocketpp"]
 	path = websocketpp
 	url = git@github.com:zaphoyd/websocketpp.git
+[submodule "mongo-c-driver"]
+	path = mongo-c-driver
+	url = https://github.com/mongodb/mongo-c-driver.git
