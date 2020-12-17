@@ -19,24 +19,24 @@ typedef websocketpp::config::asio_tls_client::message_type::ptr message_ptr;
 typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context> context_ptr;
 typedef client::connection_ptr connection_ptr;
 
-class WebsocketClient {
+class TickerClient {
 public:
-  inline const Ticker GetTicker() const { return m_ticker.load(); }
-
+    inline const Ticker GetTicker() const { return m_ticker.load(); }
+    virtual const std::string GetExchangeName() const = 0;
 protected:
-    WebsocketClient () {
+    TickerClient () {
         m_endpoint.set_access_channels(websocketpp::log::alevel::all);
         m_endpoint.set_error_channels(websocketpp::log::elevel::all);
 
         m_endpoint.init_asio();
         m_endpoint.start_perpetual();
 
-        //m_endpoint.set_socket_init_handler(bind(&WebsocketClient::on_socket_init,this,::_1));
-        m_endpoint.set_tls_init_handler(bind(&WebsocketClient::on_tls_init,this,::_1));
-        m_endpoint.set_message_handler(bind(&WebsocketClient::on_message,this,::_1,::_2));
-        m_endpoint.set_open_handler(bind(&WebsocketClient::on_open,this,::_1));
-        //m_endpoint.set_close_handler(bind(&WebsocketClient::on_close,this,::_1));
-        m_endpoint.set_fail_handler(bind(&WebsocketClient::on_fail,this,::_1));
+        //m_endpoint.set_socket_init_handler(bind(&TickerClient::on_socket_init,this,::_1));
+        m_endpoint.set_tls_init_handler(bind(&TickerClient::on_tls_init,this,::_1));
+        m_endpoint.set_message_handler(bind(&TickerClient::on_message,this,::_1,::_2));
+        m_endpoint.set_open_handler(bind(&TickerClient::on_open,this,::_1));
+        //m_endpoint.set_close_handler(bind(&TickerClient::on_close,this,::_1));
+        m_endpoint.set_fail_handler(bind(&TickerClient::on_fail,this,::_1));
     }
 
     virtual void start(std::string uri) {

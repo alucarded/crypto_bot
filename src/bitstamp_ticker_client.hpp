@@ -1,15 +1,18 @@
-#include "websocket_client.hpp"
+#include "ticker_client.hpp"
 
-class BitstampTickerClient : public WebsocketClient {
+class BitstampTickerClient : public TickerClient {
 public:
   BitstampTickerClient() {
-    WebsocketClient::start("wss://ws.bitstamp.net");
+    TickerClient::start("wss://ws.bitstamp.net");
   }
 
+  virtual inline const std::string GetExchangeName() const override { return "Bitstamp"; }
+
+private:
   virtual void on_open(websocketpp::connection_hdl hdl) override {
       std::cout << "Connection opened" << std::endl;
         const std::string message = "{\"event\": \"bts:subscribe\",\"data\": {\"channel\": \"order_book_btcusd\"}}";
-        WebsocketClient::send(message);
+        TickerClient::send(message);
   }
 
   virtual void on_message(websocketpp::connection_hdl hdl, client::message_ptr msg) override {

@@ -7,4 +7,5 @@ struct Ticker {
   double m_bid_vol;
   int64_t m_source_ts;
   int64_t m_arrived_ts;
+  uint64_t m_id;
 };

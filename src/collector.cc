@@ -3,6 +3,18 @@
 #include <iostream>
 #include <thread>
 
+class MongoTickerCollector {
+public:
+    MongoTickerCollector() {
+
+    }
+
+    void Collect(const TickerClient& ticker_client) {
+        Ticker ticker = ticker_client.GetTicker();
+        // TODO
+    }
+};
+
 int main(int argc, char* argv[]) {
     try {
         BitstampTickerClient bitstamp_client;
