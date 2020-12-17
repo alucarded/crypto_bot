@@ -1,3 +1,5 @@
+#include "ticker.h"
+
 #include <websocketpp/config/asio_client.hpp>
 
 #include <websocketpp/client.hpp>
@@ -18,8 +20,9 @@ typedef client::connection_ptr connection_ptr;
 
 class WebsocketClient {
 public:
-    typedef std::chrono::duration<int,std::micro> dur_type;
+  inline const AtomicTicker& GetTicker() const { return m_ticker; }
 
+protected:
     WebsocketClient () {
         m_endpoint.set_access_channels(websocketpp::log::alevel::all);
         m_endpoint.set_error_channels(websocketpp::log::elevel::all);
@@ -35,7 +38,7 @@ public:
         m_endpoint.set_fail_handler(bind(&WebsocketClient::on_fail,this,::_1));
     }
 
-    void start(std::string uri) {
+    virtual void start(std::string uri) {
         websocketpp::lib::error_code ec;
         m_con = m_endpoint.get_connection(uri, ec);
 
@@ -48,7 +51,7 @@ public:
         m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
     }
 
-    void send(const std::string& message) {
+    virtual void send(const std::string& message) {
         std::cout << "Sending" << std::endl;
         websocketpp::lib::error_code ec;
         m_endpoint.send(m_con->get_handle(), message, websocketpp::frame::opcode::text, ec);
@@ -57,7 +60,7 @@ public:
         }
     }
 
-    context_ptr on_tls_init(websocketpp::connection_hdl) {
+    virtual context_ptr on_tls_init(websocketpp::connection_hdl) {
         context_ptr ctx = websocketpp::lib::make_shared<boost::asio::ssl::context>(boost::asio::ssl::context::tlsv12);
 
         try {
@@ -73,7 +76,7 @@ public:
         return ctx;
     }
 
-    void on_fail(websocketpp::connection_hdl hdl) {
+    virtual void on_fail(websocketpp::connection_hdl hdl) {
         client::connection_ptr con = m_endpoint.get_con_from_hdl(hdl);
         
         std::cout << "Fail handler" << std::endl;
@@ -85,17 +88,15 @@ public:
         std::cout << con->get_ec() << " - " << con->get_ec().message() << std::endl;
     }
 
-    void on_open(websocketpp::connection_hdl hdl) {
+    virtual void on_open(websocketpp::connection_hdl hdl) {
         std::cout << "Connection opened" << std::endl;
     }
 
-    void on_message(websocketpp::connection_hdl hdl, client::message_ptr msg) {
-        std::cout << "Got message:" << std::endl;
-        std::cout << msg->get_payload() << std::endl;
-    }
+    virtual void on_message(websocketpp::connection_hdl hdl, client::message_ptr msg) = 0;
 
-private:
+protected:
     client m_endpoint;
     client::connection_ptr m_con;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
+    AtomicTicker m_ticker;
 };
