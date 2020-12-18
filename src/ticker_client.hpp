@@ -1,3 +1,4 @@
+#pragma once
 #include "ticker.h"
 
 #include <websocketpp/config/asio_client.hpp>

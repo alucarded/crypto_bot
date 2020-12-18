@@ -1,2 +1,6 @@
+SOURCES=src/collector.cc src/mongo_ticker_collector.hpp src/ticker_client.hpp src/ticker.h src/bitstamp_ticker_client.hpp
+CFLAGS=--std=c++14 -g -Wall -Wextra $(shell pkg-config --cflags libmongocxx)
+LDFLAGS=-lpthread -latomic -lboost_system -lcrypto -lssl  $(shell pkg-config --libs libmongocxx)
+
 collector:
-	g++ src/collector.cc src/ticker_client.hpp src/ticker.h src/bitstamp_ticker_client.hpp -o collector --std=c++14 -lpthread -lboost_system -lcrypto -lssl
+	g++ $(SOURCES) -o collector $(CFLAGS) $(LDFLAGS)
