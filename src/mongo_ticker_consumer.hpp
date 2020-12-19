@@ -27,15 +27,26 @@ class MongoTickerConsumer : public TickerConsumer {
 public:
     MongoTickerConsumer(MongoClient* mongo_client, const std::string& db_name, const std::string& coll_name)
             : m_mongo_client(mongo_client), m_db_name(db_name), m_coll_name(coll_name) {
-        // TODO: ensure compound index on exchange name and minute
+        // Create index
+        mongocxx::pool::entry client_entry = m_mongo_client->Get();
+        mongocxx::client& client = *client_entry;
+        auto db = client[m_db_name];
+        auto coll = db[m_coll_name];
+        document index_builder;
+        mongocxx::options::index index_options{};
+        index_options.unique(true);
+        index_builder << "exchange" << 1 
+            << "minute_utc" << 1;
+        coll.create_index(index_builder.view(), index_options);
     }
 
+    // This can be called from multiple threads
     virtual void Consume(const RawTicker& ticker) override {
         mongocxx::pool::entry client_entry = m_mongo_client->Get();
         mongocxx::client& client = *client_entry;
         auto db = client[m_db_name];
         auto coll = db[m_coll_name];
-    
+
         using namespace std::chrono;
         // Make sure system clock is adjusted in controlled manner
         // on the machine where this runs.
