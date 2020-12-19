@@ -1,13 +1,15 @@
 #pragma once
 #include "ticker.h"
+#include "ticker_consumer.h"
 
 #include <websocketpp/config/asio_client.hpp>
 
 #include <websocketpp/client.hpp>
 
 #include <atomic>
-#include <iostream>
 #include <chrono>
+#include <iostream>
+#include <optional>
 
 typedef websocketpp::client<websocketpp::config::asio_tls_client> client;
 //typedef websocketpp::client<websocketpp::config::asio_client> client;
@@ -24,7 +26,7 @@ class TickerClient {
 public:
     virtual const std::string GetExchangeName() const = 0;
 protected:
-    TickerClient () {
+    TickerClient(TickerConsumer* ticker_consumer) : m_ticker_consumer(ticker_consumer) {
         m_endpoint.set_access_channels(websocketpp::log::alevel::all);
         m_endpoint.set_error_channels(websocketpp::log::elevel::all);
 
@@ -89,14 +91,25 @@ protected:
         std::cout << con->get_ec() << " - " << con->get_ec().message() << std::endl;
     }
 
-    virtual void on_open(websocketpp::connection_hdl hdl) {
+    virtual void on_open(websocketpp::connection_hdl) {
         std::cout << "Connection opened" << std::endl;
     }
 
-    virtual void on_message(websocketpp::connection_hdl hdl, client::message_ptr msg) = 0;
+    virtual void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
+        std::optional<RawTicker> ticker_opt = extract_ticker(msg);
+        if (!ticker_opt.has_value()) {
+            return;
+        }
+        if (m_ticker_consumer) {
+            m_ticker_consumer->Consume(ticker_opt.value());
+        }
+    }
+
+    virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) = 0;
 
 protected:
     client m_endpoint;
     client::connection_ptr m_con;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
+    TickerConsumer* m_ticker_consumer;
 };

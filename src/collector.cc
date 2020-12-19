@@ -5,10 +5,7 @@
 #include <iostream>
 #include <thread>
 
-// MongoClient("mongodb://" + config["mongo"]["user"] + ":" \
-//     + mongo_password["Parameter"]["Value"] + "@" + config["mongo"]["host"] \
-//     + ":" + config["mongo"]["port"]  +"/?authSource=" + config["mongo"]["auth_db"])
-int main(int argc, char* argv[]) {
+int main() {
     try {
         // TODO: take credentials from parameter store ?
         MongoClient* mongo_client =

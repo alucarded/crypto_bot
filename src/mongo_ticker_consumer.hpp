@@ -37,6 +37,8 @@ public:
         auto coll = db[m_coll_name];
     
         using namespace std::chrono;
+        // Make sure system clock is adjusted in controlled manner
+        // on the machine where this runs.
         auto now = system_clock::now();
         system_clock::duration tp = now.time_since_epoch();
         minutes mins = duration_cast<minutes>(tp);
