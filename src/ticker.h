@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <string>
 
 struct Ticker {
   double m_ask;
@@ -9,4 +10,13 @@ struct Ticker {
   int64_t m_source_ts;
   int64_t m_arrived_ts;
   uint64_t m_id;
+};
+
+struct RawTicker {
+  std::string m_ask;
+  std::string m_ask_vol;
+  std::string m_bid;
+  std::string m_bid_vol;
+  int64_t m_source_ts;
+  std::string m_exchange;
 };

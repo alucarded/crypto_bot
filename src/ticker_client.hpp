@@ -22,7 +22,6 @@ typedef client::connection_ptr connection_ptr;
 
 class TickerClient {
 public:
-    inline const Ticker GetTicker() const { return m_ticker.load(); }
     virtual const std::string GetExchangeName() const = 0;
 protected:
     TickerClient () {
@@ -100,5 +99,4 @@ protected:
     client m_endpoint;
     client::connection_ptr m_con;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
-    std::atomic<Ticker> m_ticker;
 };
