@@ -1,6 +1,6 @@
 #pragma once
 #include "ticker.h"
-#include "ticker_consumer.h"
+#include "consumer/ticker_consumer.h"
 
 #include <websocketpp/config/asio_client.hpp>
 

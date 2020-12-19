@@ -1,7 +1,7 @@
-#include "mongo_client.hpp"
+#include "db/mongo_client.hpp"
 #include "ticker.h"
-#include "ticker_client.hpp"
-#include "ticker_consumer.h"
+#include "websocket/ticker_client.hpp"
+#include "consumer/ticker_consumer.h"
 
 #include <chrono>
 #include <cstdint>

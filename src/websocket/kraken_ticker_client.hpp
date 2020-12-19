@@ -1,7 +1,7 @@
 #include "serialization_utils.hpp"
-#include "ticker_client.hpp"
+#include "websocket/ticker_client.hpp"
 
-#include "../json/json.hpp"
+#include "json/json.hpp"
 
 #include <string>
 

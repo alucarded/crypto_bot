@@ -1,7 +1,7 @@
-#include "bitstamp_ticker_client.hpp"
-#include "kraken_ticker_client.hpp"
-#include "mongo_ticker_consumer.hpp"
-#include "mongo_client.hpp"
+#include "websocket/bitstamp_ticker_client.hpp"
+#include "websocket/kraken_ticker_client.hpp"
+#include "consumer/mongo_ticker_consumer.hpp"
+#include "db/mongo_client.hpp"
 
 #include <iostream>
 #include <thread>
