@@ -1,3 +1,4 @@
+#include "websocket/bitbay_ticker_client.hpp"
 #include "websocket/bitstamp_ticker_client.hpp"
 #include "websocket/coinbase_ticker_client.hpp"
 #include "websocket/kraken_ticker_client.hpp"
@@ -14,10 +15,11 @@ int main(int argc, char* argv[]) {
         MongoClient* mongo_client =
                 MongoClient::GetInstance()->CreatePool("mongodb://app:DRt99xd4o7PMfygqotE8@3.10.107.166:28888/?authSource=findata");
         MongoTickerConsumer mongo_consumer(mongo_client, "findata", "CollectorTest");
-        BitstampTickerClient bitstamp_client(&mongo_consumer);
-        KrakenTickerClient kraken_client(&mongo_consumer);
-        CoinbaseTickerClient coinbase_client(&mongo_consumer);
-        PoloniexTickerClient poloniex_client(&mongo_consumer);
+        // BitstampTickerClient bitstamp_client(&mongo_consumer);
+        // KrakenTickerClient kraken_client(&mongo_consumer);
+        // CoinbaseTickerClient coinbase_client(&mongo_consumer);
+        // PoloniexTickerClient poloniex_client(&mongo_consumer);
+        BitbayTickerClient bitbay_client(&mongo_consumer);
         // Just wait for now
         std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
     } catch (websocketpp::exception const & e) {
