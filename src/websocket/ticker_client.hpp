@@ -95,6 +95,7 @@ protected:
         std::cout << "Connection opened" << std::endl;
     }
 
+    // TODO: re-establish connection if not closed intentionally by the client
     virtual void on_close(websocketpp::connection_hdl) {
         std::cout << "Connection closed" << std::endl;
     }

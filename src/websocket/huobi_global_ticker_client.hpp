@@ -21,8 +21,8 @@ private:
 
   virtual void on_open(websocketpp::connection_hdl) override {
       std::cout << "Connection opened: " + GetExchangeName() << std::endl;
-        const std::string message = "{\"sub\": \"" + CHANNEL + "\",\"id\": \"123\"}";
-        TickerClient::send(message);
+      const std::string message = "{\"sub\": \"" + CHANNEL + "\",\"id\": \"123\"}";
+      TickerClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {
