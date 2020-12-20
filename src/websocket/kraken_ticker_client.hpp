@@ -24,7 +24,7 @@ private:
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {
       auto msg_json = json::parse(msg->get_payload());
-      if (nlohmann::json::value_t::array != msg_json.type()) {
+      if (!msg_json.is_array()) {
         // std::cout << msg->get_payload() << std::endl;
         return {};
       }
