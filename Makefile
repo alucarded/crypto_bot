@@ -7,6 +7,7 @@ SOURCES=src/collector.cc \
 				src/websocket/binance_ticker_client.hpp \
 				src/websocket/bitbay_ticker_client.hpp \
 				src/websocket/bitstamp_ticker_client.hpp \
+				src/websocket/bybit_ticker_client.hpp \
 				src/websocket/coinbase_ticker_client.hpp \
 				src/websocket/huobi_global_ticker_client.hpp \
 				src/websocket/kraken_ticker_client.hpp \
