@@ -8,11 +8,15 @@ SOURCES=src/collector.cc \
 				src/websocket/bitbay_ticker_client.hpp \
 				src/websocket/bitstamp_ticker_client.hpp \
 				src/websocket/coinbase_ticker_client.hpp \
+				src/websocket/huobi_global_ticker_client.hpp \
 				src/websocket/kraken_ticker_client.hpp \
 				src/websocket/poloniex_ticker_client.hpp \
 				src/websocket/ticker_client.hpp
 CFLAGS=--std=c++17 -g -Wall -Wextra -Isrc/ -I. $(shell pkg-config --cflags libmongocxx)
-LDFLAGS=-lpthread -latomic -lboost_system -lcrypto -lssl -L/usr/local/lib  $(shell pkg-config --libs libmongocxx)
+LDFLAGS=-lpthread -latomic -lboost_system -lboost_iostreams -lcrypto -lssl -L/usr/local/lib  $(shell pkg-config --libs libmongocxx)
 
 collector:
 	g++ $(SOURCES) -o collector $(CFLAGS) $(LDFLAGS)
+
+clean:
+	if [ -f collector ]; then rm collector; fi;

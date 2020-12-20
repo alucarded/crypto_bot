@@ -33,6 +33,7 @@ private:
         return {};
       }
       auto message = msg_json["message"];
+      // TODO: this should be an order book ticker
       RawTicker ticker;
       ticker.m_bid = message["highestBid"];
       ticker.m_bid_vol = "";

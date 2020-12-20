@@ -30,6 +30,7 @@ private:
         std::cout << "Coinbase: Not a ticker" << std::endl;
         return {};
       }
+      // TODO: this should be an order book ticker
       RawTicker ticker;
       ticker.m_bid = msg_json["best_bid"];
       ticker.m_bid_vol = "";

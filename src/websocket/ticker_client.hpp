@@ -37,7 +37,7 @@ protected:
         m_endpoint.set_tls_init_handler(bind(&TickerClient::on_tls_init,this,::_1));
         m_endpoint.set_message_handler(bind(&TickerClient::on_message,this,::_1,::_2));
         m_endpoint.set_open_handler(bind(&TickerClient::on_open,this,::_1));
-        //m_endpoint.set_close_handler(bind(&TickerClient::on_close,this,::_1));
+        m_endpoint.set_close_handler(bind(&TickerClient::on_close,this,::_1));
         m_endpoint.set_fail_handler(bind(&TickerClient::on_fail,this,::_1));
     }
 
@@ -93,6 +93,10 @@ protected:
 
     virtual void on_open(websocketpp::connection_hdl) {
         std::cout << "Connection opened" << std::endl;
+    }
+
+    virtual void on_close(websocketpp::connection_hdl) {
+        std::cout << "Connection closed" << std::endl;
     }
 
     virtual void on_message(websocketpp::connection_hdl, client::message_ptr msg) {

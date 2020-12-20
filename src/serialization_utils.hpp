@@ -4,6 +4,10 @@
 #include <iostream>
 #include <list>
 #include <string>
+#include <sstream>
+#include <boost/iostreams/filtering_streambuf.hpp>
+#include <boost/iostreams/copy.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 using json = nlohmann::json;
 
@@ -25,5 +29,21 @@ bool check_message(json j, const std::list<std::string>& fields) {
     }
     return true;
 }
+
+// TODO: perhaps add more lightweight implementation later
+std::string gzip_decompress(const std::string& data)
+	{
+		namespace bio = boost::iostreams;
+
+		std::stringstream compressed(data);
+		std::stringstream decompressed;
+
+		bio::filtering_streambuf<bio::input> out;
+		out.push(bio::gzip_decompressor());
+		out.push(compressed);
+		bio::copy(out, decompressed);
+
+		return decompressed.str();
+	}
 
 }

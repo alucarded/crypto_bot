@@ -34,6 +34,7 @@ private:
         return {};
       }
       //std::cout << msg->get_payload() << std::endl;
+      // TODO: this should be an order book ticker
       RawTicker ticker;
       ticker.m_bid = data[3];
       ticker.m_bid_vol = "";
