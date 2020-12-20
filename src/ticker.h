@@ -19,4 +19,5 @@ struct RawTicker {
   std::string m_bid_vol;
   int64_t m_source_ts;
   std::string m_exchange;
+  std::string m_symbol;
 };

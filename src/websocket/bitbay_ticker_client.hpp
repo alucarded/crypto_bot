@@ -38,7 +38,7 @@ private:
       ticker.m_bid_vol = "";
       ticker.m_ask = message["lowestAsk"];
       ticker.m_ask_vol = "";
-      ticker.m_source_ts = message["time"];
+      ticker.m_source_ts = std::stoull(message["time"].get<std::string>());
       ticker.m_exchange = GetExchangeName();
       return std::make_optional(ticker);
   }

@@ -4,6 +4,7 @@ SOURCES=src/collector.cc \
 				src/db/mongo_client.hpp \
 				src/serialization_utils.hpp \
 				src/ticker.h \
+				src/websocket/binance_ticker_client.hpp \
 				src/websocket/bitbay_ticker_client.hpp \
 				src/websocket/bitstamp_ticker_client.hpp \
 				src/websocket/coinbase_ticker_client.hpp \
