@@ -9,6 +9,7 @@ SOURCES=src/collector.cc \
 				src/websocket/bitstamp_ticker_client.hpp \
 				src/websocket/bybit_ticker_client.hpp \
 				src/websocket/coinbase_ticker_client.hpp \
+				src/websocket/ftx_ticker_client.hpp \
 				src/websocket/huobi_global_ticker_client.hpp \
 				src/websocket/kraken_ticker_client.hpp \
 				src/websocket/okex_ticker_client.hpp \

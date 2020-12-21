@@ -100,12 +100,22 @@ int zlib_inflate(Byte *compr, Byte *uncompr,
     // } else {
     //     printf("inflate(): %s\n", (char *)uncompr);
     // }
+    return Z_OK;
 }
 
 std::string zlib_inflate(const std::string& compressed) {
     Byte uncomp[2048];
     zlib_inflate((Byte*) compressed.data(), uncomp, compressed.size(), 2048);
     return std::string((char*)uncomp);
+}
+
+template <typename T>
+std::string to_string(const T val, const int n = 6)
+{
+    std::ostringstream out;
+    out.precision(n);
+    out << std::fixed << val;
+    return out.str();
 }
 
 }

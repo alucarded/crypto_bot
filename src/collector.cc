@@ -3,6 +3,7 @@
 #include "websocket/bitstamp_ticker_client.hpp"
 #include "websocket/bybit_ticker_client.hpp"
 #include "websocket/coinbase_ticker_client.hpp"
+#include "websocket/ftx_ticker_client.hpp"
 #include "websocket/huobi_global_ticker_client.hpp"
 #include "websocket/kraken_ticker_client.hpp"
 #include "websocket/okex_ticker_client.hpp"
@@ -27,7 +28,8 @@ int main(int argc, char* argv[]) {
         // BitbayTickerClient bitbay_client(&mongo_consumer);
         // HuobiGlobalTickerClient huobi_global_client(&mongo_consumer);
         // OkexTickerClient huobi_global_client(&mongo_consumer);
-        BybitTickerClient bybit_client(&mongo_consumer);
+        // BybitTickerClient bybit_client(&mongo_consumer);
+        FtxTickerClient ftx_client(&mongo_consumer);
         // Just wait for now
         std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
     } catch (websocketpp::exception const & e) {
