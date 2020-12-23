@@ -30,6 +30,10 @@ struct RawTicker {
     system_clock::duration tp = now.time_since_epoch();
     microseconds us = duration_cast<microseconds>(tp);
     empty_ticker.m_source_ts = us.count();
+    empty_ticker.m_ask = "";
+    empty_ticker.m_ask_vol = "";
+    empty_ticker.m_bid = "";
+    empty_ticker.m_bid_vol = "";
     return empty_ticker;
   }
 };

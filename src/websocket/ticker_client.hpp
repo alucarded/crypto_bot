@@ -31,7 +31,7 @@ public:
         start(GetUrl());
     }
 protected:
-    TickerClient(TickerConsumer* ticker_consumer) : m_ticker_consumer(ticker_consumer), m_do_reconnect(true) {
+    TickerClient(TickerConsumer* ticker_consumer) : m_ticker_consumer(ticker_consumer), m_do_reconnect(3), m_tries(0) {
         m_endpoint.set_access_channels(websocketpp::log::alevel::connect);
         m_endpoint.set_error_channels(websocketpp::log::elevel::warn);
 
@@ -128,5 +128,6 @@ protected:
     client::connection_ptr m_con;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
     TickerConsumer* m_ticker_consumer;
-    bool m_do_reconnect;
+    int m_do_reconnect;
+    int m_tries;
 };
