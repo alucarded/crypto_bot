@@ -11,15 +11,14 @@ class CoinbaseTickerClient : public TickerClient {
 public:
   CoinbaseTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
   }
-  
+
   virtual inline const std::string GetUrl() const override { return "wss://ws-feed.pro.coinbase.com"; }
   virtual inline const std::string GetExchangeName() const override { return "coinbase"; }
 
 private:
-  virtual void on_open(websocketpp::connection_hdl) override {
-      std::cout << "Connection opened" << std::endl;
-        const std::string message = "{\"type\": \"subscribe\",\"product_ids\": [\"BTC-USD\"],\"channels\": [{\"name\": \"ticker\",\"product_ids\": [\"BTC-USD\"]}]}";
-        TickerClient::send(message);
+  virtual void request_ticker() override {
+      const std::string message = "{\"type\": \"subscribe\",\"product_ids\": [\"BTC-USD\"],\"channels\": [{\"name\": \"ticker\",\"product_ids\": [\"BTC-USD\"]}]}";
+      TickerClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {

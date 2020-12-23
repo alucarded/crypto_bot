@@ -16,10 +16,9 @@ public:
   virtual inline const std::string GetExchangeName() const override { return "bybit"; }
 
 private:
-  virtual void on_open(websocketpp::connection_hdl) override {
-      std::cout << "Connection opened" << std::endl;
-        const std::string message = "{\"op\": \"subscribe\", \"args\": [\"orderBookL2_25.BTCUSD\"]}";
-        TickerClient::send(message);
+  virtual void request_ticker() override {
+      const std::string message = "{\"op\": \"subscribe\", \"args\": [\"orderBookL2_25.BTCUSD\"]}";
+      TickerClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {

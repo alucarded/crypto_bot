@@ -17,8 +17,7 @@ virtual inline const std::string GetUrl() const override { return "wss://ws.krak
 virtual inline const std::string GetExchangeName() const override { return "kraken"; }
 
 private:
-  virtual void on_open(websocketpp::connection_hdl) override {
-      std::cout << "Connection opened" << std::endl;
+  virtual void request_ticker() override {
       const std::string message = "{\"event\": \"subscribe\",\"pair\": [\"XBT/USD\"],\"subscription\": {\"name\": \"ticker\"}}";
       TickerClient::send(message);
   }

@@ -17,10 +17,9 @@ virtual inline const std::string GetUrl() const override { return "wss://real.ok
 virtual inline const std::string GetExchangeName() const override { return "okex"; }
 
 private:
-  virtual void on_open(websocketpp::connection_hdl) override {
-      std::cout << "Connection opened" << std::endl;
-        const std::string message = "{\"op\": \"subscribe\", \"args\": [\"spot/ticker:BTC-USDT\"]}";
-        TickerClient::send(message);
+  virtual void request_ticker() override {
+      const std::string message = "{\"op\": \"subscribe\", \"args\": [\"spot/ticker:BTC-USDT\"]}";
+      TickerClient::send(message);
   }
 
   // TODO: maybe try implementing something like https://www.okex.com/docs/en/#spot_ws-limit

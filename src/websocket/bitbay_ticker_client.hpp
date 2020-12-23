@@ -17,8 +17,7 @@ public:
   virtual inline const std::string GetExchangeName() const override { return "bitbay"; }
 
 private:
-  virtual void on_open(websocketpp::connection_hdl) override {
-      std::cout << "Connection opened: " + GetExchangeName() << std::endl;
+  virtual void request_ticker() override {
       const std::string message = "{\"action\": \"subscribe-public\",\"module\": \"trading\",\"path\": \"ticker/BTC-USD\"}";
       TickerClient::send(message);
   }

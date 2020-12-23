@@ -98,6 +98,11 @@ protected:
 
     virtual void on_open(websocketpp::connection_hdl) {
         std::cout << GetExchangeName() + ": Connection opened" << std::endl;
+        // Send empty ticker
+        if (m_ticker_consumer) {
+            m_ticker_consumer->Consume(RawTicker::Empty(GetExchangeName()));
+        }
+        request_ticker();
     }
 
     virtual void on_close(websocketpp::connection_hdl) {
@@ -106,12 +111,14 @@ protected:
         if (m_ticker_consumer) {
             m_ticker_consumer->Consume(RawTicker::Empty(GetExchangeName()));
         }
-        if (m_do_reconnect) {
+        if (m_tries < m_do_reconnect) {
+            ++m_tries;
             start(GetUrl());
         }
     }
 
     virtual void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
+        m_tries = 0;
         std::optional<RawTicker> ticker_opt = extract_ticker(msg);
         if (!ticker_opt.has_value()) {
             return;
@@ -121,6 +128,7 @@ protected:
         }
     }
 
+    virtual void request_ticker() = 0;
     virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) = 0;
 
 protected:

@@ -16,10 +16,9 @@ public:
   virtual inline const std::string GetExchangeName() const override { return "bitstamp"; }
 
 private:
-  virtual void on_open(websocketpp::connection_hdl) override {
-      std::cout << "Connection opened" << std::endl;
-        const std::string message = "{\"event\": \"bts:subscribe\",\"data\": {\"channel\": \"order_book_btcusd\"}}";
-        TickerClient::send(message);
+  virtual void request_ticker() override {
+      const std::string message = "{\"event\": \"bts:subscribe\",\"data\": {\"channel\": \"order_book_btcusd\"}}";
+      TickerClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {

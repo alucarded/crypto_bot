@@ -19,8 +19,7 @@ public:
 private:
   inline static const std::string CHANNEL = "market.BTC-USD.depth.step1";
 
-  virtual void on_open(websocketpp::connection_hdl) override {
-      std::cout << "Connection opened: " + GetExchangeName() << std::endl;
+  virtual void request_ticker() override {
       const std::string message = "{\"sub\": \"" + CHANNEL + "\",\"id\": \"123\"}";
       TickerClient::send(message);
   }

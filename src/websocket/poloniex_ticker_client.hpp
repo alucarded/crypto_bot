@@ -17,10 +17,9 @@ public:
   virtual inline const std::string GetExchangeName() const override { return "poloniex"; }
 
 private:
-  virtual void on_open(websocketpp::connection_hdl) override {
-      std::cout << "Connection opened" << std::endl;
-        const std::string message = "{\"command\": \"subscribe\", \"channel\": 1002}";
-        TickerClient::send(message);
+  virtual void request_ticker() override {
+      const std::string message = "{\"command\": \"subscribe\", \"channel\": 1002}";
+      TickerClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {

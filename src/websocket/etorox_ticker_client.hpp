@@ -18,8 +18,7 @@ public:
   virtual inline const std::string GetExchangeName() const override { return "etorox"; }
 
 private:
-  virtual void on_open(websocketpp::connection_hdl hdl) override {
-      std::cout << "Connection opened" << std::endl;
+  virtual void request_ticker() override {
         // const std::string message = "{\"event\": \"bts:subscribe\",\"data\": {\"channel\": \"order_book_btcusd\"}}";
         // TickerClient::send(message);
   }
