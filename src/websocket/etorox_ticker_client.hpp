@@ -12,10 +12,9 @@ class EtoroxTickerClient : public TickerClient {
 public:
 
   EtoroxTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
-    // TODO
-    TickerClient::start("");
   }
 
+  virtual inline const std::string GetUrl() const override { return ""; }
   virtual inline const std::string GetExchangeName() const override { return "etorox"; }
 
 private:

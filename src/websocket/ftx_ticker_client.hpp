@@ -10,9 +10,9 @@ using json = nlohmann::json;
 class FtxTickerClient : public TickerClient {
 public:
   FtxTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
-    TickerClient::start("wss://ftx.com/ws/");
   }
 
+  virtual inline const std::string GetUrl() const override { return "wss://ftx.com/ws/"; }
   virtual inline const std::string GetExchangeName() const override { return "ftx"; }
 
 private:
@@ -24,11 +24,11 @@ private:
 
   // TODO: maybe try implementing something like https://www.okex.com/docs/en/#spot_ws-limit
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {
-      std::cout << msg->get_payload() << std::endl;
+      //std::cout << msg->get_payload() << std::endl;
       auto msg_json = json::parse(msg->get_payload());
       if (!msg_json.is_object()
           || msg_json["channel"].get<std::string>() != "ticker") {
-        std::cout << "Unexpected message: " + GetExchangeName() << std::endl;
+        std::cout << "Ftx: unexpected message" << std::endl;
         // std::cout << msg->get_payload() << std::endl;
         return {};
       }

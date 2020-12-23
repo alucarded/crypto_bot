@@ -10,9 +10,9 @@ using json = nlohmann::json;
 class BybitTickerClient : public TickerClient {
 public:
   BybitTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
-    TickerClient::start("wss://stream.bybit.com/realtime");
   }
 
+  virtual inline const std::string GetUrl() const override { return "wss://stream.bybit.com/realtime"; }
   virtual inline const std::string GetExchangeName() const override { return "bybit"; }
 
 private:

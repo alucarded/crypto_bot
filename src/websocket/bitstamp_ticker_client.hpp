@@ -10,9 +10,9 @@ using json = nlohmann::json;
 class BitstampTickerClient : public TickerClient {
 public:
   BitstampTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
-    TickerClient::start("wss://ws.bitstamp.net");
   }
 
+  virtual inline const std::string GetUrl() const override { return "wss://ws.bitstamp.net"; }
   virtual inline const std::string GetExchangeName() const override { return "bitstamp"; }
 
 private:

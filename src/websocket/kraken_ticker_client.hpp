@@ -10,16 +10,17 @@ using json = nlohmann::json;
 class KrakenTickerClient : public TickerClient {
 public:
   KrakenTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
-    TickerClient::start("wss://ws.kraken.com");
   }
 
-  virtual inline const std::string GetExchangeName() const override { return "kraken"; }
+virtual inline const std::string GetUrl() const override { return "wss://ws.kraken.com"; }
+
+virtual inline const std::string GetExchangeName() const override { return "kraken"; }
 
 private:
   virtual void on_open(websocketpp::connection_hdl) override {
       std::cout << "Connection opened" << std::endl;
-        const std::string message = "{\"event\": \"subscribe\",\"pair\": [\"XBT/USD\"],\"subscription\": {\"name\": \"ticker\"}}";
-        TickerClient::send(message);
+      const std::string message = "{\"event\": \"subscribe\",\"pair\": [\"XBT/USD\"],\"subscription\": {\"name\": \"ticker\"}}";
+      TickerClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {

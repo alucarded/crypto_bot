@@ -24,11 +24,16 @@ typedef client::connection_ptr connection_ptr;
 
 class TickerClient {
 public:
+    virtual const std::string GetUrl() const = 0;
     virtual const std::string GetExchangeName() const = 0;
+
+    void start() {
+        start(GetUrl());
+    }
 protected:
-    TickerClient(TickerConsumer* ticker_consumer) : m_ticker_consumer(ticker_consumer) {
-        m_endpoint.set_access_channels(websocketpp::log::alevel::all);
-        m_endpoint.set_error_channels(websocketpp::log::elevel::all);
+    TickerClient(TickerConsumer* ticker_consumer) : m_ticker_consumer(ticker_consumer), m_do_reconnect(true) {
+        m_endpoint.set_access_channels(websocketpp::log::alevel::connect);
+        m_endpoint.set_error_channels(websocketpp::log::elevel::warn);
 
         m_endpoint.init_asio();
         m_endpoint.start_perpetual();
@@ -41,7 +46,7 @@ protected:
         m_endpoint.set_fail_handler(bind(&TickerClient::on_fail,this,::_1));
     }
 
-    virtual void start(std::string uri) {
+    void start(std::string uri) {
         websocketpp::lib::error_code ec;
         m_con = m_endpoint.get_connection(uri, ec);
 
@@ -55,7 +60,7 @@ protected:
     }
 
     virtual void send(const std::string& message) {
-        std::cout << "Sending" << std::endl;
+        std::cout << GetExchangeName() + ": Sending" << std::endl;
         websocketpp::lib::error_code ec;
         m_endpoint.send(m_con->get_handle(), message, websocketpp::frame::opcode::text, ec);
         if (ec) {
@@ -82,7 +87,7 @@ protected:
     virtual void on_fail(websocketpp::connection_hdl hdl) {
         client::connection_ptr con = m_endpoint.get_con_from_hdl(hdl);
         
-        std::cout << "Fail handler" << std::endl;
+        std::cout << GetExchangeName() + ": Fail handler" << std::endl;
         std::cout << con->get_state() << std::endl;
         std::cout << con->get_local_close_code() << std::endl;
         std::cout << con->get_local_close_reason() << std::endl;
@@ -92,12 +97,18 @@ protected:
     }
 
     virtual void on_open(websocketpp::connection_hdl) {
-        std::cout << "Connection opened" << std::endl;
+        std::cout << GetExchangeName() + ": Connection opened" << std::endl;
     }
 
-    // TODO: re-establish connection if not closed intentionally by the client
     virtual void on_close(websocketpp::connection_hdl) {
-        std::cout << "Connection closed" << std::endl;
+        std::cout << GetExchangeName() + ": Connection closed" << std::endl;
+        // Send empty ticker
+        if (m_ticker_consumer) {
+            m_ticker_consumer->Consume(RawTicker::Empty(GetExchangeName()));
+        }
+        if (m_do_reconnect) {
+            start(GetUrl());
+        }
     }
 
     virtual void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
@@ -117,4 +128,5 @@ protected:
     client::connection_ptr m_con;
     websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
     TickerConsumer* m_ticker_consumer;
+    bool m_do_reconnect;
 };

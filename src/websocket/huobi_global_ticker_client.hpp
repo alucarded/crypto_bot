@@ -11,9 +11,9 @@ using json = nlohmann::json;
 class HuobiGlobalTickerClient : public TickerClient {
 public:
   HuobiGlobalTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
-    TickerClient::start("wss://api.btcgateway.pro/swap-ws");
   }
 
+  virtual inline const std::string GetUrl() const override { return "wss://api.btcgateway.pro/swap-ws"; }
   virtual inline const std::string GetExchangeName() const override { return "huobiglobal"; }
 
 private:
@@ -35,7 +35,7 @@ private:
         return {};
       }
       if (msg_json.contains("ping")) {
-        std::cout << "Huobi Global: Ping" << std::endl;
+        //std::cout << "Huobi Global: Ping" << std::endl;
         websocketpp::lib::error_code ec;
         //     void pong(connection_hdl hdl, std::string const & payload,
         // lib::error_code & ec);

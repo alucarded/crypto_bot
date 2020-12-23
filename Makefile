@@ -19,7 +19,7 @@ CFLAGS=--std=c++17 -g -Wall -Wextra -Isrc/ -I. $(shell pkg-config --cflags libmo
 LDFLAGS=-lpthread -latomic -lboost_system -lboost_iostreams -lcrypto -lssl -L/usr/local/lib  $(shell pkg-config --libs libmongocxx) $(shell pkg-config --libs zlib)
 
 collector:
-	g++ $(SOURCES) -o collector $(CFLAGS) $(LDFLAGS)
+	g++ -pipe $(SOURCES) -o collector $(CFLAGS) $(LDFLAGS)
 
 clean:
 	if [ -f collector ]; then rm collector; fi;

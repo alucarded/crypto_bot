@@ -11,9 +11,9 @@ using json = nlohmann::json;
 class BinanceTickerClient : public TickerClient {
 public:
   BinanceTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
-    TickerClient::start("wss://stream.binance.com:9443/ws/bookTicker");
   }
 
+  virtual inline const std::string GetUrl() const override { return "wss://stream.binance.com:9443/ws/bookTicker"; }
   virtual inline const std::string GetExchangeName() const override { return "binance"; }
 
 private:
@@ -24,7 +24,7 @@ private:
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {
-      std::cout << msg->get_payload() << std::endl;
+      //std::cout << msg->get_payload() << std::endl;
       auto msg_json = json::parse(msg->get_payload());
       // TODO: Perhaps do not do schema validation for every message in production
       if (!msg_json.is_object()

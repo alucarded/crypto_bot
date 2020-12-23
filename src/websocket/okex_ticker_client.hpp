@@ -10,10 +10,11 @@ using json = nlohmann::json;
 class OkexTickerClient : public TickerClient {
 public:
   OkexTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
-    TickerClient::start("wss://real.okex.com:8443/ws/v3");
   }
 
-  virtual inline const std::string GetExchangeName() const override { return "okex"; }
+virtual inline const std::string GetUrl() const override { return "wss://real.okex.com:8443/ws/v3"; }
+
+virtual inline const std::string GetExchangeName() const override { return "okex"; }
 
 private:
   virtual void on_open(websocketpp::connection_hdl) override {
