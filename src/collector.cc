@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
         // TODO: take credentials from parameter store ?
         MongoClient* mongo_client =
                 MongoClient::GetInstance()->CreatePool("mongodb://app:DRt99xd4o7PMfygqotE8@3.10.107.166:28888/?authSource=findata");
-        MongoTickerConsumer mongo_consumer(mongo_client, "findata", "BtcUsdTicker_v2");
+        MongoTickerConsumer mongo_consumer(mongo_client, "findata", "BtcUsdTicker_v3");
         BinanceTickerClient binance_client(&mongo_consumer);
         BitstampTickerClient bitstamp_client(&mongo_consumer);
         KrakenTickerClient kraken_client(&mongo_consumer);
