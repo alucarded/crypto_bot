@@ -9,6 +9,7 @@
 #include <atomic>
 #include <chrono>
 #include <iostream>
+#include <memory>
 #include <optional>
 
 typedef websocketpp::client<websocketpp::config::asio_tls_client> client;
@@ -46,17 +47,21 @@ protected:
         m_endpoint.set_fail_handler(bind(&TickerClient::on_fail,this,::_1));
     }
 
-    void start(std::string uri) {
+    void start(const std::string& uri) {
+        connect(uri);
+        m_thread = std::make_shared<std::thread>(&client::run, &m_endpoint);
+    }
+
+    void connect(const std::string& uri) {
         websocketpp::lib::error_code ec;
         m_con = m_endpoint.get_connection(uri, ec);
 
         if (ec) {
-            m_endpoint.get_alog().write(websocketpp::log::alevel::app,ec.message());
+            m_endpoint.get_alog().write(websocketpp::log::alevel::app, ec.message());
             return;
         }
 
         m_endpoint.connect(m_con);
-        m_thread = websocketpp::lib::make_shared<websocketpp::lib::thread>(&client::run, &m_endpoint);
     }
 
     virtual void send(const std::string& message) {
@@ -113,7 +118,7 @@ protected:
         }
         if (m_tries < m_do_reconnect) {
             ++m_tries;
-            start(GetUrl());
+            connect(GetUrl());
         }
     }
 
@@ -134,7 +139,7 @@ protected:
 protected:
     client m_endpoint;
     client::connection_ptr m_con;
-    websocketpp::lib::shared_ptr<websocketpp::lib::thread> m_thread;
+    std::shared_ptr<std::thread> m_thread;
     TickerConsumer* m_ticker_consumer;
     int m_do_reconnect;
     int m_tries;
