@@ -2,14 +2,20 @@
 #include <chrono>
 #include <cstdint>
 #include <iostream>
+#include <optional>
 #include <string>
 
 struct Ticker {
+  // Ticker(double ask, double ask_vol, double bid, double bid_vol, int64_t source_ts, int64_t arrived_ts) :
+  //     m_ask(ask), m_ask_vol(ask_vol), m_bid(bid), m_bid_vol(bid_vol), m_source_ts(source_ts), m_arrived_ts(arrived_ts) {
+
+  // }
+
   double m_ask;
-  double m_ask_vol;
+  std::optional<double> m_ask_vol;
   double m_bid;
-  double m_bid_vol;
-  int64_t m_source_ts;
+  std::optional<double> m_bid_vol;
+  std::optional<int64_t> m_source_ts;
   int64_t m_arrived_ts;
   uint64_t m_id;
 };

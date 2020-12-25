@@ -1,9 +1,9 @@
 #pragma once
 #include "ticker.h"
 
-#include <unordered_map>
+#include <map>
 
 class TradingStrategy {
 public:
-  virtual void execute(const std::unordered_map<std::string, Ticker> tickers) = 0;
+  virtual void execute(const std::map<std::string, Ticker> tickers) = 0;
 };
