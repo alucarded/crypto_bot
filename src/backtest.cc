@@ -1,4 +1,4 @@
-#include "consumer/strategy_ticker_consumer.hpp"
+#include "client/backtest_exchange_account.hpp"
 #include "db/mongo_client.hpp"
 #include "producer/mongo_ticker_producer.hpp"
 #include "strategy/basic_strategy.hpp"
@@ -16,8 +16,8 @@ int main(int argc, char* argv[]) {
     BasicStrategyOptions strategy_opts;
     strategy_opts.m_trading_exchange = "binance";
     strategy_opts.m_required_exchanges = 8;
-    BasicStrategy basic_strategy(strategy_opts);
-    StrategyTickerConsumer strategy_ticker_consumer(&basic_strategy);
-    MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v3", &strategy_ticker_consumer);
+    BacktestExchangeAccount exchange_account;
+    BasicStrategy basic_strategy(strategy_opts, &exchange_account);
+    MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v3", &basic_strategy);
     mongo_producer.Produce(1000);
 }

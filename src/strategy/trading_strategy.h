@@ -10,5 +10,5 @@ struct StrategyOptions {
 
 class TradingStrategy {
 public:
-  virtual void execute(const std::map<std::string, Ticker> tickers) = 0;
+  virtual void execute(const std::map<std::string, Ticker>& tickers) = 0;
 };
