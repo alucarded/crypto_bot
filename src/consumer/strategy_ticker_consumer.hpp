@@ -1,13 +1,13 @@
 #include "strategy/trading_strategy.h"
 #include "ticker.h"
-#include "ticker_consumer.h"
+#include "consumer.h"
 
 #include <cassert>
 #include <iostream>
 #include <string>
 #include <map>
 
-class StrategyTickerConsumer : public TickerConsumer {
+class StrategyTickerConsumer : public Consumer<RawTicker> {
 public:
   StrategyTickerConsumer(TradingStrategy* strategy) : m_strategy(strategy) { }
 

@@ -1,5 +1,5 @@
 #include "ticker_client.hpp"
-#include "ticker_consumer.h"
+#include "consumer.h"
 
 #include "../json/json.hpp"
 
@@ -11,7 +11,7 @@ using json = nlohmann::json;
 class EtoroxTickerClient : public TickerClient {
 public:
 
-  EtoroxTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
+  EtoroxTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return ""; }

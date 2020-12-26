@@ -2,14 +2,13 @@
 
 #include <string>
 
-struct StrategyOptions {
-  std::string m_trading_exchange = "binance";
-  size_t m_required_exchanges = 8;
+struct BasicStrategyOptions : StrategyOptions {
+
 };
 
 class BasicStrategy : public TradingStrategy {
 public:
-  BasicStrategy(const StrategyOptions& opts) : m_opts(opts) {
+  BasicStrategy(const BasicStrategyOptions& opts) : m_opts(opts) {
 
   }
 
@@ -22,5 +21,5 @@ public:
   }
 
 private:
-  StrategyOptions m_opts;
+  BasicStrategyOptions m_opts;
 };

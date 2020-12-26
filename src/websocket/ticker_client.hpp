@@ -1,6 +1,6 @@
 #pragma once
 #include "ticker.h"
-#include "consumer/ticker_consumer.h"
+#include "consumer/consumer.h"
 
 #include <websocketpp/config/asio_client.hpp>
 
@@ -32,7 +32,7 @@ public:
         start(GetUrl());
     }
 protected:
-    TickerClient(TickerConsumer* ticker_consumer) : m_ticker_consumer(ticker_consumer), m_do_reconnect(3), m_tries(0) {
+    TickerClient(Consumer<RawTicker>* ticker_consumer) : m_ticker_consumer(ticker_consumer), m_do_reconnect(3), m_tries(0) {
         m_endpoint.set_access_channels(websocketpp::log::alevel::connect);
         m_endpoint.set_error_channels(websocketpp::log::elevel::warn);
 
@@ -140,7 +140,7 @@ protected:
     client m_endpoint;
     client::connection_ptr m_con;
     std::shared_ptr<std::thread> m_thread;
-    TickerConsumer* m_ticker_consumer;
+    Consumer<RawTicker>* m_ticker_consumer;
     int m_do_reconnect;
     int m_tries;
 };

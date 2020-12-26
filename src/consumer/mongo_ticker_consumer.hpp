@@ -1,7 +1,7 @@
 #include "db/mongo_client.hpp"
 #include "ticker.h"
 #include "websocket/ticker_client.hpp"
-#include "consumer/ticker_consumer.h"
+#include "consumer/consumer.h"
 
 #include <chrono>
 #include <cstdint>
@@ -23,7 +23,7 @@ using bsoncxx::builder::stream::finalize;
 using bsoncxx::builder::stream::open_array;
 using bsoncxx::builder::stream::open_document;
 
-class MongoTickerConsumer : public TickerConsumer {
+class MongoTickerConsumer : public Consumer<RawTicker> {
 public:
     MongoTickerConsumer(MongoClient* mongo_client, const std::string& db_name, const std::string& coll_name)
             : m_mongo_client(mongo_client), m_db_name(db_name), m_coll_name(coll_name) {

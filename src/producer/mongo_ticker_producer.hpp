@@ -1,4 +1,4 @@
-#include "consumer/ticker_consumer.h"
+#include "consumer/consumer.h"
 #include "db/mongo_client.hpp"
 #include "ticker.h"
 
@@ -24,7 +24,7 @@ using bsoncxx::builder::stream::open_document;
 class MongoTickerProducer {
 public:
   MongoTickerProducer(MongoClient* mongo_client, const std::string& db_name,
-      const std::string &coll_name, TickerConsumer* ticker_consumer)
+      const std::string &coll_name, Consumer<RawTicker>* ticker_consumer)
       : m_mongo_client(mongo_client), m_db_name(db_name), m_coll_name(coll_name), m_ticker_consumer(ticker_consumer) {
 
   }
@@ -102,5 +102,5 @@ private:
   MongoClient* m_mongo_client;
   const std::string m_db_name;
   const std::string m_coll_name;
-  TickerConsumer* m_ticker_consumer;
+  Consumer<RawTicker>* m_ticker_consumer;
 };
