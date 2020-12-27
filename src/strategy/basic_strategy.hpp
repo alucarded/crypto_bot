@@ -3,7 +3,7 @@
 #include <string>
 
 struct BasicStrategyOptions : StrategyOptions {
-
+  double m_profit_threshold = 50.0;
 };
 
 class BasicStrategy : public TradingStrategy, public Consumer<RawTicker> {
@@ -15,12 +15,33 @@ public:
   }
 
   virtual void execute(const std::map<std::string, Ticker>& tickers) override {
+    if (!tickers.count(m_opts.m_trading_exchange)) {
+      return;
+    }
     //m_exchange_account->OnTicker(tickers[m_opts.m_trading_exchange]);
     if (tickers.size() < m_opts.m_required_exchanges) {
       std::cout << "Not enough exchanges" << std::endl;
       return;
     }
-    std::cout << "Executing strategy" << std::endl;
+    //std::cout << "Executing strategy" << std::endl;
+    double avg_bid = 0;
+    //double bid_vol_sum = 0;
+    double avg_ask = 0;
+    //double ask_vol_sum = 0;
+    for (const std::pair<std::string, Ticker>& p : tickers) {
+      avg_bid += p.second.m_bid;
+      avg_ask += p.second.m_ask;
+    }
+    avg_bid /= tickers.size();
+    avg_ask /= tickers.size();
+    const Ticker& ex_ticker = tickers.at(m_opts.m_trading_exchange);
+    if (ex_ticker.m_bid - m_opts.m_profit_threshold > avg_bid) {
+      // Sell
+      m_exchange_account->MarketOrder("BTCUSD", Side::ASK, 0.0001);
+    } else if (ex_ticker.m_ask + m_opts.m_profit_threshold < avg_ask) {
+      // Buy
+      m_exchange_account->MarketOrder("BTCUSD", Side::BID, 0.0001);
+    }
   }
 
   virtual void Consume(const RawTicker& raw_ticker) override {
