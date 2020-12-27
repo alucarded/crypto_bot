@@ -1,12 +1,14 @@
 #include "consumer/consumer.h"
 #include "exchange_account.hpp"
 
+#include <fstream>
 #include <map>
 #include <unordered_map>
 
 struct BacktestSettings {
   double m_fee;
   double m_slippage;
+  double m_min_qty;
 };
 
 // struct CurrencyPair {
@@ -24,41 +26,49 @@ struct BacktestSettings {
 
 class BacktestExchangeAccount : public ExchangeAccount {
 public:
-  BacktestExchangeAccount(const BacktestSettings& settings) : m_settings(settings) {
+  BacktestExchangeAccount(const BacktestSettings& settings) : m_settings(settings), m_results_file("backtest_results.csv") {
     // TODO: temporarily
     m_balances["BTC"] = 1.0;
-    m_balances["USDT"] = 20000;
+    m_balances["USDT"] = 24000;
+    m_results_file << "BTC,USDT,Direction,Quantity,Rate,Price\n";
+  }
+
+  virtual ~BacktestExchangeAccount() {
+    m_results_file.close();
   }
 
   virtual void MarketOrder(const std::string& symbol, Side side, double qty) override {
     //std::cout << "Market order " << ((side == 1) ? "BUY" : "SELL") << std::endl;
     // TODO: for now BTCUSD (BTCUSDT) assumed
+    double rate, price;
     if (side == Side::ASK) { // Selling BTC
+      rate = m_ticker.m_bid;
       if (m_ticker.m_bid_vol && m_ticker.m_bid_vol.value() < qty) {
         qty = m_ticker.m_bid_vol.value();
         //std::cout << "Not enough qty for current bid price" << std::endl;
       }
       if (m_balances["BTC"] < qty) {
-        //std::cout << "Not enough BTC" << std::endl;
+        std::cout << "Not enough BTC" << std::endl;
         return;
       }
-      double price = qty*(m_ticker.m_bid - m_settings.m_slippage)*(1.0 - m_settings.m_fee);
+      price = qty*(m_ticker.m_bid - m_settings.m_slippage)*(1.0 - m_settings.m_fee);
       m_balances["USDT"] = m_balances["USDT"] + price;
       m_balances["BTC"] = m_balances["BTC"] - qty;
     } else { // BID, buying BTC
+      rate = m_ticker.m_ask;
       if (m_ticker.m_ask_vol && m_ticker.m_ask_vol.value() < qty) {
         qty = m_ticker.m_ask_vol.value();
         //std::cout << "Not enough qty for current ask price" << std::endl;
       }
-      double price = qty*(m_ticker.m_ask + m_settings.m_slippage)*(1.0 + m_settings.m_fee);
+      price = qty*(m_ticker.m_ask + m_settings.m_slippage)*(1.0 + m_settings.m_fee);
       if (m_balances["USDT"] < price) {
-        //std::cout << "Not enough USDT" << std::endl;
+        std::cout << "Not enough USDT" << std::endl;
         return;
       }
       m_balances["USDT"] = m_balances["USDT"] - price;
       m_balances["BTC"] = m_balances["BTC"] + qty;
     }
-    PrintBalances();
+    PrintBalances(side, qty, rate, price);
   }
 
   virtual void LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
@@ -78,14 +88,15 @@ public:
 
   }
 
-  void PrintBalances() {
-    for (const std::pair<std::string, double>& b : m_balances) {
-      std::cout << b.first << ": " << std::to_string(b.second) << std::endl;
-    }
+  void PrintBalances(Side side, double qty, double rate, double price) {
+    m_results_file << std::to_string(m_balances["BTC"]) << "," << std::to_string(m_balances["USDT"])
+        << "," << (side == Side::ASK ? "SELL" : "BUY") << "," << std::to_string(qty)
+        << "," << std::to_string(rate) << "," << std::to_string(price) << "\n";
   }
 
 private:
   BacktestSettings m_settings;
   std::map<std::string, double> m_balances;
   Ticker m_ticker;
+  std::ofstream m_results_file;
 };

@@ -22,6 +22,5 @@ int main(int argc, char* argv[]) {
     BacktestExchangeAccount exchange_account(backtest_settings);
     BasicStrategy basic_strategy(strategy_opts, &exchange_account);
     MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v3", &basic_strategy);
-    mongo_producer.Produce(3000);
-    exchange_account.PrintBalances();
+    mongo_producer.Produce(5000);
 }

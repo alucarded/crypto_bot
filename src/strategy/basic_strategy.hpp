@@ -1,9 +1,24 @@
 #include "trading_strategy.h"
 
 #include <string>
+#include <map>
 
 struct BasicStrategyOptions : StrategyOptions {
-  double m_profit_threshold = 50.0;
+  double m_buy_profit_margin = 100.0;
+  double m_sell_profit_margin = 120.0;
+  double m_min_qty = 0.001;
+};
+
+std::map<std::string, double> ESTIMATED_TRADING_VOLUME =
+{
+  std::pair<std::string, double> ("binance", 12704429036),
+  std::pair<std::string, double> ("coinbase", 2694078691),
+  std::pair<std::string, double> ("kraken", 1316166815),
+  std::pair<std::string, double> ("ftx", 284008679),
+  std::pair<std::string, double> ("bitstamp", 904068482),
+  std::pair<std::string, double> ("bitbay", 85674398),
+  std::pair<std::string, double> ("huobiglobal", 4986875662),
+  std::pair<std::string, double> ("poloniex", 152434675),
 };
 
 class BasicStrategy : public TradingStrategy, public Consumer<RawTicker> {
@@ -11,7 +26,9 @@ public:
   // TODO: move more generic stuff to TradingStrategy class
   BasicStrategy(const BasicStrategyOptions& opts, ExchangeAccount* exchange_account)
       : m_opts(opts), m_exchange_account(exchange_account) {
-
+    m_volume_sum = 0;
+    std::for_each(ESTIMATED_TRADING_VOLUME.begin(), ESTIMATED_TRADING_VOLUME.end(),
+        [&](const auto& p) { m_volume_sum += p.second; });
   }
 
   virtual void execute(const std::map<std::string, Ticker>& tickers) override {
@@ -20,7 +37,7 @@ public:
     }
     //m_exchange_account->OnTicker(tickers[m_opts.m_trading_exchange]);
     if (tickers.size() < m_opts.m_required_exchanges) {
-      std::cout << "Not enough exchanges" << std::endl;
+      //std::cout << "Not enough exchanges" << std::endl;
       return;
     }
     //std::cout << "Executing strategy" << std::endl;
@@ -29,18 +46,26 @@ public:
     double avg_ask = 0;
     //double ask_vol_sum = 0;
     for (const std::pair<std::string, Ticker>& p : tickers) {
-      avg_bid += p.second.m_bid;
-      avg_ask += p.second.m_ask;
+      avg_bid += p.second.m_bid*ESTIMATED_TRADING_VOLUME[p.first];
+      avg_ask += p.second.m_ask*ESTIMATED_TRADING_VOLUME[p.first];
     }
-    avg_bid /= tickers.size();
-    avg_ask /= tickers.size();
+    avg_bid /= m_volume_sum;
+    avg_ask /= m_volume_sum;
     const Ticker& ex_ticker = tickers.at(m_opts.m_trading_exchange);
-    if (ex_ticker.m_bid - m_opts.m_profit_threshold > avg_bid) {
+    double bid_margin = ex_ticker.m_bid - avg_bid;
+    double ask_margin = avg_ask - ex_ticker.m_ask;
+    if (bid_margin > m_opts.m_sell_profit_margin
+        && ex_ticker.m_bid_vol >= m_opts.m_min_qty) {
       // Sell
-      m_exchange_account->MarketOrder("BTCUSD", Side::ASK, 0.0001);
-    } else if (ex_ticker.m_ask + m_opts.m_profit_threshold < avg_ask) {
+      PrintTickers();
+      std::cout << "Bid margin: " << bid_margin << std::endl;
+      m_exchange_account->MarketOrder("BTCUSD", Side::ASK, 0.001);
+    } else if (ask_margin > m_opts.m_buy_profit_margin
+        && ex_ticker.m_ask_vol >= m_opts.m_min_qty) {
       // Buy
-      m_exchange_account->MarketOrder("BTCUSD", Side::BID, 0.0001);
+      PrintTickers();
+      std::cout << "Ask margin: " << ask_margin << std::endl;
+      m_exchange_account->MarketOrder("BTCUSD", Side::BID, 0.001);
     }
   }
 
@@ -74,7 +99,17 @@ public:
   }
 
 private:
+  void PrintTickers() {
+    for (const std::pair<std::string, Ticker>& p : m_tickers) {
+      std::cout << p.first << " bid: " << p.second.m_bid << std::endl;
+      std::cout << p.first << " ask: " << p.second.m_ask << std::endl;
+    }
+  }
+
   BasicStrategyOptions m_opts;
   ExchangeAccount* m_exchange_account;
   std::map<std::string, Ticker> m_tickers;
+
+  double m_volume_sum;
+  double m_max_margin;
 };
