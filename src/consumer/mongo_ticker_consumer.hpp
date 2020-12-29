@@ -60,6 +60,7 @@ public:
         coll.update_one(
             document{}
                 << "exchange" << ticker.m_exchange
+                << "symbol" << ticker.m_symbol
                 << "minute_utc" << mins.count()
                 << finalize,
             document{}

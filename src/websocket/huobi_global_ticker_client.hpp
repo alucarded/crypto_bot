@@ -17,7 +17,7 @@ public:
   virtual inline const std::string GetExchangeName() const override { return "huobiglobal"; }
 
 private:
-  inline static const std::string CHANNEL = "market.BTC-USD.depth.step1";
+  inline static const std::string CHANNEL = "market.btcusdt.depth.step1";
 
   virtual void request_ticker() override {
       const std::string message = "{\"sub\": \"" + CHANNEL + "\",\"id\": \"123\"}";

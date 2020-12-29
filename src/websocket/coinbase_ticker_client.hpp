@@ -17,7 +17,7 @@ public:
 
 private:
   virtual void request_ticker() override {
-      const std::string message = "{\"type\": \"subscribe\",\"product_ids\": [\"BTC-USD\"],\"channels\": [{\"name\": \"ticker\",\"product_ids\": [\"BTC-USD\"]}]}";
+      const std::string message = "{\"type\": \"subscribe\",\"product_ids\": [\"BTC-USD\", \"USDT-USD\"],\"channels\": [{\"name\": \"ticker\",\"product_ids\": [\"BTC-USD\"]}]}";
       TickerClient::send(message);
   }
 
@@ -38,6 +38,7 @@ private:
       // TODO: time provided in datetime format, needs parsing https://en.cppreference.com/w/cpp/io/manip/get_time
       ticker.m_source_ts = 0;
       ticker.m_exchange = GetExchangeName();
+      ticker.m_symbol = msg_json["product_id"];
       return std::make_optional(ticker);
   }
 };

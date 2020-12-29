@@ -18,12 +18,13 @@ virtual inline const std::string GetExchangeName() const override { return "krak
 
 private:
   virtual void request_ticker() override {
-      const std::string message = "{\"event\": \"subscribe\",\"pair\": [\"XBT/USD\"],\"subscription\": {\"name\": \"ticker\"}}";
+      const std::string message = "{\"event\": \"subscribe\",\"pair\": [\"XBT/USDT\"],\"subscription\": {\"name\": \"ticker\"}}";
       TickerClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {
       auto msg_json = json::parse(msg->get_payload());
+      std::cout << msg->get_payload() << std::endl;
       if (!msg_json.is_array()) {
         // std::cout << msg->get_payload() << std::endl;
         return {};

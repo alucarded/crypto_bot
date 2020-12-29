@@ -1,3 +1,4 @@
+#include "ticker_transformer.hpp"
 #include "trading_strategy.h"
 
 #include <string>
@@ -29,6 +30,7 @@ public:
     m_volume_sum = 0;
     std::for_each(ESTIMATED_TRADING_VOLUME.begin(), ESTIMATED_TRADING_VOLUME.end(),
         [&](const auto& p) { m_volume_sum += p.second; });
+    m_transformers["coinbase"] = CoinbaseTickerTransformer{};
   }
 
   virtual void execute(const std::map<std::string, Ticker>& tickers) override {
@@ -72,6 +74,7 @@ public:
   virtual void Consume(const RawTicker& raw_ticker) override {
     // std::cout << "Consumed:" << std::endl;
     // std::cout << raw_ticker << std::endl;
+    // Any empty ticker from an exchange discards validity of its data
     if (raw_ticker.m_bid.empty() || raw_ticker.m_ask.empty()) {
       m_tickers.erase(raw_ticker.m_exchange);
       std::cout << "Empty ticker: " << raw_ticker << std::endl;
@@ -87,8 +90,12 @@ public:
       ticker.m_ask_vol = raw_ticker.m_ask_vol.empty() ? std::nullopt : std::optional<double>(std::stod(raw_ticker.m_ask_vol));
       ticker.m_source_ts = raw_ticker.m_source_ts ? std::optional<int64_t>(raw_ticker.m_source_ts) : std::nullopt;
       ticker.m_arrived_ts = raw_ticker.m_arrived_ts;
+      ticker.m_symbol = raw_ticker.m_symbol;
       if (m_tickers.count(raw_ticker.m_exchange)) {
         assert(ticker.m_arrived_ts > m_tickers[raw_ticker.m_exchange].m_arrived_ts);
+      }
+      if (!ProcessTicker(raw_ticker.m_exchange, ticker)) {
+        return;
       }
       m_tickers[raw_ticker.m_exchange] = ticker;
       if (m_opts.m_trading_exchange == raw_ticker.m_exchange) {
@@ -99,6 +106,13 @@ public:
   }
 
 private:
+  bool ProcessTicker(const std::string& exchange, Ticker& ticker) {
+    bool ticker_accepted = true;
+    if (m_transformers.count(exchange)) {
+      ticker_accepted = m_transformers[exchange].Transform(ticker);
+    }
+    return ticker_accepted;
+  }
   void PrintTickers() {
     for (const std::pair<std::string, Ticker>& p : m_tickers) {
       std::cout << p.first << " bid: " << p.second.m_bid << std::endl;
@@ -109,6 +123,7 @@ private:
   BasicStrategyOptions m_opts;
   ExchangeAccount* m_exchange_account;
   std::map<std::string, Ticker> m_tickers;
+  std::map<std::string, TickerTransformer> m_transformers;
 
   double m_volume_sum;
   double m_max_margin;

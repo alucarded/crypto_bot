@@ -68,6 +68,7 @@ public:
         raw_ticker.m_source_ts = ticker_doc["s_us"].get_int64().value;
         raw_ticker.m_arrived_ts = ticker_doc["a_us"].get_int64().value;
         raw_ticker.m_exchange = exchange_elem.get_value().get_utf8().value.to_string();
+        raw_ticker.m_symbol = doc["symbol"] ? doc["symbol"].get_value().get_utf8().value.to_string() : "";
         tickers_vec.push_back(raw_ticker);
         // std::cout << "Added ticker:" << std::endl;
         // std::cout << raw_ticker;

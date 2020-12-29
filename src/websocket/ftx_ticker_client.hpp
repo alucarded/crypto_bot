@@ -17,7 +17,7 @@ public:
 
 private:
   virtual void request_ticker() override {
-      const std::string message = "{\"op\": \"subscribe\", \"channel\": \"ticker\", \"market\": \"BTC/USD\"}";
+      const std::string message = "{\"op\": \"subscribe\", \"channel\": \"ticker\", \"market\": \"BTC/USDT\"}";
       TickerClient::send(message);
   }
 

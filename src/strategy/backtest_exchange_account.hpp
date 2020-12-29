@@ -82,6 +82,7 @@ public:
   virtual void OnTicker(const Ticker& ticker) override {
     // Currently support only one currency pair, BTCUSD (BTCUSDT)
     m_ticker = ticker;
+    m_is_up_to_date = true;
   }
 
   virtual void OnDisconnected() override {
