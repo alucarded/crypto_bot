@@ -9,7 +9,7 @@ using json = nlohmann::json;
 
 class KrakenTickerClient : public TickerClient {
 public:
-  KrakenTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
+  KrakenTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
   }
 
 virtual inline const std::string GetUrl() const override { return "wss://ws.kraken.com"; }
@@ -24,7 +24,7 @@ private:
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {
       auto msg_json = json::parse(msg->get_payload());
-      std::cout << msg->get_payload() << std::endl;
+      //std::cout << msg->get_payload() << std::endl;
       if (!msg_json.is_array()) {
         // std::cout << msg->get_payload() << std::endl;
         return {};

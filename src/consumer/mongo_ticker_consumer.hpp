@@ -36,7 +36,8 @@ public:
         mongocxx::options::index index_options{};
         index_options.unique(true);
         index_builder << "exchange" << 1 
-            << "minute_utc" << 1;
+            << "minute_utc" << 1
+            << "symbol" << 1;
         coll.create_index(index_builder.view(), index_options);
     }
 

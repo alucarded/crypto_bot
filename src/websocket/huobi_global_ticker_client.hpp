@@ -10,7 +10,7 @@ using json = nlohmann::json;
 // TODO: connection is disconnected after 24 hours - need to re-connect
 class HuobiGlobalTickerClient : public TickerClient {
 public:
-  HuobiGlobalTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
+  HuobiGlobalTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://api.btcgateway.pro/swap-ws"; }

@@ -1,6 +1,6 @@
 SOURCES=src/collector.cc \
 				src/consumer/mongo_ticker_consumer.hpp \
-				src/consumer/ticker_consumer.h \
+				src/consumer/consumer.h \
 				src/db/mongo_client.hpp \
 				src/serialization_utils.hpp \
 				src/ticker.h \

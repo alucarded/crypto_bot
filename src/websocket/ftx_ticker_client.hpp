@@ -9,7 +9,7 @@ using json = nlohmann::json;
 
 class FtxTickerClient : public TickerClient {
 public:
-  FtxTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
+  FtxTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://ftx.com/ws/"; }

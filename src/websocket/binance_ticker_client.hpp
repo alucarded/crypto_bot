@@ -10,7 +10,7 @@ using json = nlohmann::json;
 // TODO: connection is disconnected after 24 hours - need to re-connect
 class BinanceTickerClient : public TickerClient {
 public:
-  BinanceTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
+  BinanceTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://stream.binance.com:9443/ws/bookTicker"; }

@@ -9,7 +9,7 @@ using json = nlohmann::json;
 
 class PoloniexTickerClient : public TickerClient {
 public:
-  PoloniexTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
+  PoloniexTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://api2.poloniex.com"; }

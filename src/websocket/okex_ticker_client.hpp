@@ -9,7 +9,7 @@ using json = nlohmann::json;
 
 class OkexTickerClient : public TickerClient {
 public:
-  OkexTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
+  OkexTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
   }
 
 virtual inline const std::string GetUrl() const override { return "wss://real.okex.com:8443/ws/v3"; }

@@ -10,7 +10,7 @@ using json = nlohmann::json;
 // TODO: try re-opening connection on close, routing policy might change few time per day
 class BitbayTickerClient : public TickerClient {
 public:
-  BitbayTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
+  BitbayTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://api.bitbay.net/websocket/"; }

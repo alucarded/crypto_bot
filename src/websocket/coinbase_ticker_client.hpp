@@ -9,7 +9,7 @@ using json = nlohmann::json;
 
 class CoinbaseTickerClient : public TickerClient {
 public:
-  CoinbaseTickerClient(TickerConsumer* ticker_consumer) : TickerClient(ticker_consumer) {
+  CoinbaseTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://ws-feed.pro.coinbase.com"; }
