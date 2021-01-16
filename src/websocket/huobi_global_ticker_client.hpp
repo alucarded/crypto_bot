@@ -17,16 +17,15 @@ public:
   virtual inline const std::string GetExchangeName() const override { return "huobiglobal"; }
 
 private:
-  inline static const std::string CHANNEL = "market.btcusdt.depth.step1";
+  inline static const std::string CHANNEL = "market.btcusdt.depth.step0";
 
   virtual void request_ticker() override {
-      const std::string message = "{\"sub\": \"" + CHANNEL + "\",\"id\": \"123\"}";
+      const std::string message = "{\"sub\": \"" + CHANNEL + "\",\"id\": \"1234\"}";
       TickerClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {
       std::string decompressed_msg = utils::gzip_decompress(msg->get_payload());
-      //std::cout << decompressed_msg << std::endl;
       auto msg_json = json::parse(decompressed_msg);
       // TODO: Perhaps do not do schema validation for every message in production
       if (!msg_json.is_object()) {
@@ -49,6 +48,7 @@ private:
       if (!utils::check_message(msg_json, {"ch", "ts", "tick"})
           || msg_json["ch"].get<std::string>() != CHANNEL) {
         std::cout << "Huobi Global: Not an expected ticker object" << std::endl;
+        std::cout << decompressed_msg << std::endl;
         return {};
       }
       auto data = msg_json["tick"];
@@ -59,7 +59,7 @@ private:
       ticker.m_ask_vol = std::to_string(data["asks"][0][1].get<int>());
       ticker.m_source_ts = data["ts"].get<uint64_t>() * 1000; // to microseconds
       ticker.m_exchange = GetExchangeName();
-      ticker.m_symbol = "BTC-USD";
+      ticker.m_symbol = "BTC-USDT";
       return std::make_optional(ticker);
   }
 };

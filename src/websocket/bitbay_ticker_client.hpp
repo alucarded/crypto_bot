@@ -27,7 +27,7 @@ private:
       //std::cout << msg->get_payload() << std::endl;
       if (!msg_json.is_object()
           || !msg_json.contains("topic")
-          || msg_json["topic"].get<std::string>() != "trading/ticker/btc-usd") {
+          || msg_json["topic"].get<std::string>() != "trading/ticker/btc-usdt") {
         // std::cout << msg->get_payload() << std::endl;
         return {};
       }

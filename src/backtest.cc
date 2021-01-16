@@ -6,8 +6,12 @@
 #include <iostream>
 
 int main(int argc, char* argv[]) {
-    (void)argc;
-    (void)argv;
+    // (void)argc;
+    // (void)argv;
+    int64_t last_mins_count = 5000;
+    if (argc > 1) {
+        last_mins_count = std::stoi(std::string(argv[1]));
+    }
     std::cout << "Hello" << std::endl;
     // TODO: take credentials from parameter store ?
     MongoClient* mongo_client =
@@ -22,5 +26,5 @@ int main(int argc, char* argv[]) {
     BacktestExchangeAccount exchange_account(backtest_settings);
     BasicStrategy basic_strategy(strategy_opts, &exchange_account);
     MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v3", &basic_strategy);
-    mongo_producer.Produce(5000);
+    mongo_producer.Produce(last_mins_count);
 }

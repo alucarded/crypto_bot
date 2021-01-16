@@ -3,6 +3,7 @@
 
 #include <string>
 #include <map>
+#include <memory>
 
 struct BasicStrategyOptions : StrategyOptions {
   double m_buy_profit_margin = 100.0;
@@ -30,7 +31,7 @@ public:
     m_volume_sum = 0;
     std::for_each(ESTIMATED_TRADING_VOLUME.begin(), ESTIMATED_TRADING_VOLUME.end(),
         [&](const auto& p) { m_volume_sum += p.second; });
-    m_transformers["coinbase"] = CoinbaseTickerTransformer{};
+    m_transformers["coinbase"] = std::make_unique<CoinbaseTickerTransformer>();
   }
 
   virtual void execute(const std::map<std::string, Ticker>& tickers) override {
@@ -109,7 +110,7 @@ private:
   bool ProcessTicker(const std::string& exchange, Ticker& ticker) {
     bool ticker_accepted = true;
     if (m_transformers.count(exchange)) {
-      ticker_accepted = m_transformers[exchange].Transform(ticker);
+      ticker_accepted = m_transformers[exchange]->Transform(ticker);
     }
     return ticker_accepted;
   }
@@ -123,7 +124,7 @@ private:
   BasicStrategyOptions m_opts;
   ExchangeAccount* m_exchange_account;
   std::map<std::string, Ticker> m_tickers;
-  std::map<std::string, TickerTransformer> m_transformers;
+  std::map<std::string, std::unique_ptr<TickerTransformer>> m_transformers;
 
   double m_volume_sum;
   double m_max_margin;
