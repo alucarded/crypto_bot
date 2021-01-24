@@ -28,9 +28,9 @@ public:
   // TODO: move more generic stuff to TradingStrategy class
   BasicStrategy(const BasicStrategyOptions& opts, ExchangeAccount* exchange_account)
       : m_opts(opts), m_exchange_account(exchange_account) {
-    m_volume_sum = 0;
-    std::for_each(ESTIMATED_TRADING_VOLUME.begin(), ESTIMATED_TRADING_VOLUME.end(),
-        [&](const auto& p) { m_volume_sum += p.second; });
+    // m_volume_sum = 0;
+    // std::for_each(ESTIMATED_TRADING_VOLUME.begin(), ESTIMATED_TRADING_VOLUME.end(),
+    //     [&](const auto& p) { m_volume_sum += p.second; });
     m_transformers["coinbase"] = std::make_unique<CoinbaseTickerTransformer>();
   }
 
@@ -40,7 +40,7 @@ public:
     }
     //m_exchange_account->OnTicker(tickers[m_opts.m_trading_exchange]);
     if (tickers.size() < m_opts.m_required_exchanges) {
-      //std::cout << "Not enough exchanges" << std::endl;
+      std::cout << "Not enough exchanges. Got " << std::to_string(tickers.size()) << ", required " << std::to_string(m_opts.m_required_exchanges) << std::endl;
       return;
     }
     //std::cout << "Executing strategy" << std::endl;
@@ -48,15 +48,20 @@ public:
     //double bid_vol_sum = 0;
     double avg_ask = 0;
     //double ask_vol_sum = 0;
+    double volume_sum = 0;
     for (const std::pair<std::string, Ticker>& p : tickers) {
       avg_bid += p.second.m_bid*ESTIMATED_TRADING_VOLUME[p.first];
       avg_ask += p.second.m_ask*ESTIMATED_TRADING_VOLUME[p.first];
+      volume_sum += ESTIMATED_TRADING_VOLUME[p.first];
     }
-    avg_bid /= m_volume_sum;
-    avg_ask /= m_volume_sum;
+    avg_bid /= volume_sum;
+    avg_ask /= volume_sum;
     const Ticker& ex_ticker = tickers.at(m_opts.m_trading_exchange);
     double bid_margin = ex_ticker.m_bid - avg_bid;
     double ask_margin = avg_ask - ex_ticker.m_ask;
+    m_max_margin = std::max(m_max_margin, bid_margin);
+    m_max_margin = std::max(m_max_margin, ask_margin);
+    std::cout << "bid_margin = " << std::to_string(bid_margin) << ", ask_margin = " << std::to_string(ask_margin) << std::endl;
     if (bid_margin > m_opts.m_sell_profit_margin
         && ex_ticker.m_bid_vol >= m_opts.m_min_qty) {
       // Sell
@@ -69,6 +74,8 @@ public:
       PrintTickers();
       std::cout << "Ask margin: " << ask_margin << std::endl;
       m_exchange_account->MarketOrder("BTCUSD", Side::BID, 0.001);
+    } else {
+      std::cout << "No good trade to make" << std::endl;
     }
   }
 
@@ -106,6 +113,10 @@ public:
     execute(m_tickers);
   }
 
+  void PrintStats() {
+    std::cout << "Max margin: " << m_max_margin << std::endl;
+  }
+
 private:
   bool ProcessTicker(const std::string& exchange, Ticker& ticker) {
     bool ticker_accepted = true;
@@ -126,6 +137,6 @@ private:
   std::map<std::string, Ticker> m_tickers;
   std::map<std::string, std::unique_ptr<TickerTransformer>> m_transformers;
 
-  double m_volume_sum;
+  // double m_volume_sum;
   double m_max_margin;
 };

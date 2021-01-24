@@ -19,12 +19,13 @@ int main(int argc, char* argv[]) {
     std::cout << "Created Mongo client pool" << std::endl;
     BasicStrategyOptions strategy_opts;
     strategy_opts.m_trading_exchange = "binance";
-    strategy_opts.m_required_exchanges = 8;
+    strategy_opts.m_required_exchanges = 5;
     BacktestSettings backtest_settings;
     backtest_settings.m_slippage = 5;
     backtest_settings.m_fee = 0.0025;
     BacktestExchangeAccount exchange_account(backtest_settings);
     BasicStrategy basic_strategy(strategy_opts, &exchange_account);
-    MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v3", &basic_strategy);
+    MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v4", &basic_strategy);
     mongo_producer.Produce(last_mins_count);
+    basic_strategy.PrintStats();
 }
