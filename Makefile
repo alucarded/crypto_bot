@@ -21,8 +21,13 @@ LDFLAGS=-lpthread -latomic -lboost_system -lboost_iostreams -lcrypto -lssl -L/us
 collector:
 	g++ -pipe $(SOURCES) -o collector $(CFLAGS) $(LDFLAGS)
 
-backtest:
-	g++ -pipe src/backtest.cc src/db/mongo_client.hpp src/producer/mongo_ticker_producer.hpp -o backtest $(CFLAGS) $(LDFLAGS)
+basic_backtest:
+	g++ -pipe src/basic_strategy_backtest.cc src/db/mongo_client.hpp src/producer/mongo_ticker_producer.hpp -o basic_backtest $(CFLAGS) $(LDFLAGS)
+
+arbitrage_backtest:
+	g++ -pipe src/arbitrage_strategy_backtest.cc src/db/mongo_client.hpp src/producer/mongo_ticker_producer.hpp -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
 
 clean:
-	if [ -f collector ]; then rm collector; fi;
+	if [ -f collector ]; then rm collector; fi; \
+	if [ -f basic_backtest ]; then rm basic_backtest; fi; \
+	if [ -f arbitrage_backtest ]; then rm arbitrage_backtest; fi;

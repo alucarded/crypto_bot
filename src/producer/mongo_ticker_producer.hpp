@@ -12,6 +12,7 @@
 #include <bsoncxx/builder/stream/array.hpp>
 
 #include <cassert>
+#include <limits>
 #include <vector>
 
 using bsoncxx::builder::stream::close_array;
@@ -48,6 +49,22 @@ public:
         << "$gte" << from_min
         << "$lt" << to_min
         << close_document << finalize);
+    Produce(cursor);
+  }
+
+  void Produce() {
+    mongocxx::pool::entry client_entry = m_mongo_client->Get();
+    mongocxx::client& client = *client_entry;
+    auto db = client[m_db_name];
+    auto coll = db[m_coll_name];
+    // Get Mongo cursor
+    mongocxx::cursor cursor = coll.find({});
+    Produce(cursor);
+  }
+
+private:
+
+  void Produce(mongocxx::cursor& cursor) {
     // Put all tickers in a vector
     std::vector<RawTicker> tickers_vec;
     int64_t prev_min_bucket = 0;
@@ -91,15 +108,8 @@ public:
       assert(minute_utc >= prev_min_bucket);
       prev_min_bucket = minute_utc;
     }
-    // Sort tickers
-    // TODO
-    // Consume tickers in sorted order
-    // if (m_ticker_consumer) {
-    //   m_ticker_consumer->Consume(raw_ticker);
-    // }
   }
 
-private:
   MongoClient* m_mongo_client;
   const std::string m_db_name;
   const std::string m_coll_name;

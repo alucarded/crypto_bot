@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
     try {
         // TODO: take credentials from parameter store ?
         MongoClient* mongo_client =
-                MongoClient::GetInstance()->CreatePool("mongodb://app:DRt99xd4o7PMfygqotE8@localhost:28888/?authSource=findata");
+                MongoClient::GetInstance()->CreatePool("mongodb://app:DRt99xd4o7PMfygqotE8@18.132.211.87:28888/?authSource=findata");
         MongoTickerConsumer mongo_consumer(mongo_client, "findata", "BtcUsdtTicker_v1");
         // TODO: add Binance US for USDT-USD rates
         BinanceTickerClient binance_client(&mongo_consumer);
