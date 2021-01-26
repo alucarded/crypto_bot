@@ -52,22 +52,23 @@ public:
     Produce(cursor);
   }
 
-  void Produce() {
+  int64_t Produce() {
     mongocxx::pool::entry client_entry = m_mongo_client->Get();
     mongocxx::client& client = *client_entry;
     auto db = client[m_db_name];
     auto coll = db[m_coll_name];
     // Get Mongo cursor
     mongocxx::cursor cursor = coll.find({});
-    Produce(cursor);
+    return Produce(cursor);
   }
 
 private:
 
-  void Produce(mongocxx::cursor& cursor) {
+  int64_t Produce(mongocxx::cursor& cursor) {
     // Put all tickers in a vector
     std::vector<RawTicker> tickers_vec;
     int64_t prev_min_bucket = 0;
+    int64_t total_tickers = 0;
     for(auto doc : cursor) {
       // std::getchar();
       // std::cout << bsoncxx::to_json(doc) << "\n";
@@ -92,7 +93,8 @@ private:
       }
 
       if (tickers_vec.size() > 10000) {
-        std::cout << "Flushing tickers..." << std::endl;
+        total_tickers += tickers_vec.size();
+        std::cout << "Flushing tickers... " + std::to_string(total_tickers) << std::endl;
         std::sort(tickers_vec.begin(), tickers_vec.end(), [](const RawTicker& a, const RawTicker& b) -> bool {
           // Here we assume ticks always arrive in the right order
           // In strategy part we can verify it and compare source timestamps and arrived timestamps
@@ -108,6 +110,7 @@ private:
       assert(minute_utc >= prev_min_bucket);
       prev_min_bucket = minute_utc;
     }
+    return total_tickers;
   }
 
   MongoClient* m_mongo_client;

@@ -47,7 +47,8 @@ int main(int argc, char* argv[]) {
     BacktestExchangeAccount exchange_account(backtest_settings);
     ArbitrageStrategy arbitrage_strategy(strategy_opts, &exchange_account);
     MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v4", &arbitrage_strategy);
-    mongo_producer.Produce();
+    int64_t count = mongo_producer.Produce();
+    std::cout << "Produced " + std::to_string(count) + " tickers" << std::endl;
     //arbitrage_strategy.PrintStats();
     return 0;
 }
