@@ -1,13 +1,16 @@
+#include "client/exchange_client.h"
 #include "db/mongo_client.hpp"
 #include "producer/mongo_ticker_producer.hpp"
 #include "strategy/backtest_exchange_account.hpp"
 #include "strategy/arbitrage_strategy.hpp"
+#include "strategy/strategy_ticker_consumer.hpp"
 
 #include "json/json.hpp"
 
 #include <cerrno>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <sstream>
 
 using json = nlohmann::json;
@@ -40,13 +43,16 @@ int main(int argc, char* argv[]) {
     std::cout << "Created Mongo client pool" << std::endl;
     pass.clear();
     ArbitrageStrategyOptions strategy_opts;
-    // TODO: set options
-    BacktestSettings backtest_settings;
-    backtest_settings.m_slippage = 5;
-    backtest_settings.m_fee = 0.0025;
-    BacktestExchangeAccount exchange_account(backtest_settings);
-    ArbitrageStrategy arbitrage_strategy(strategy_opts, &exchange_account);
-    MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v4", &arbitrage_strategy);
+    // // TODO: set options
+    // BacktestSettings backtest_settings;
+    // backtest_settings.m_slippage = 5;
+    // backtest_settings.m_fee = 0.0025;
+    // BacktestExchangeAccount exchange_account(backtest_settings);
+    std::map<std::string, ExchangeClient*> exchange_clients;
+    // TODO: add clients
+    ArbitrageStrategy arbitrage_strategy(strategy_opts, exchange_clients);
+    StrategyTickerConsumer ticker_consumer(&arbitrage_strategy);
+    MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v4", &ticker_consumer);
     int64_t count = mongo_producer.Produce();
     std::cout << "Produced " + std::to_string(count) + " tickers" << std::endl;
     //arbitrage_strategy.PrintStats();

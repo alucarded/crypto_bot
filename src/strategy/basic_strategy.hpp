@@ -34,7 +34,7 @@ public:
     m_transformers["coinbase"] = std::make_unique<CoinbaseTickerTransformer>();
   }
 
-  virtual void execute(const std::map<std::string, Ticker>& tickers) override {
+  virtual void execute(const std::string& updated_ticker, const std::map<std::string, Ticker>& tickers) override {
     if (!tickers.count(m_opts.m_trading_exchange)) {
       return;
     }
@@ -115,6 +115,14 @@ public:
 
   void PrintStats() {
     std::cout << "Max margin: " << m_max_margin << std::endl;
+  }
+
+  virtual void OnTicker(const Ticker& ticker) override {
+
+  }
+
+  virtual void OnDisconnected(const std::string& exchange_name) override {
+
   }
 
 private:

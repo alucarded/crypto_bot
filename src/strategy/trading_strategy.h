@@ -10,5 +10,9 @@ struct StrategyOptions {
 
 class TradingStrategy {
 public:
-  virtual void execute(const std::map<std::string, Ticker>& tickers) = 0;
+  [[deprecated]]
+  virtual void execute(const std::string& updated_ticker, const std::map<std::string, Ticker>& tickers) = 0;
+
+  virtual void OnTicker(const Ticker& ticker) = 0;
+  virtual void OnDisconnected(const std::string& exchange_name) = 0;
 };

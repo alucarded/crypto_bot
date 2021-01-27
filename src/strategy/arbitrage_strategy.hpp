@@ -10,20 +10,28 @@ struct ArbitrageStrategyOptions {
 
 };
 
-class ArbitrageStrategy : public TradingStrategy, public Consumer<RawTicker> {
+class ArbitrageStrategy : public TradingStrategy {
 public:
-    ArbitrageStrategy(const ArbitrageStrategyOptions& opts, ExchangeAccount* exchange_account)
-      : m_opts(opts), m_exchange_account(exchange_account) {
+    ArbitrageStrategy(const ArbitrageStrategyOptions& opts, const std::map<std::string, ExchangeClient*>& exchange_clients)
+      : m_opts(opts), m_exchange_clients(exchange_clients) {
 
   }
 
-  virtual void execute(const std::map<std::string, Ticker>& tickers) override {
+  virtual void execute(const std::string& updated_ticker, const std::map<std::string, Ticker>& tickers) override {
+    // unused
   }
 
-  virtual void Consume(const RawTicker& raw_ticker) override {
+  virtual void OnTicker(const Ticker& ticker) override {
+    std::cout << "Ticker." << std::endl << "Bid: " << std::to_string(ticker.m_bid) << std::endl << "Ask: " << std::to_string(ticker.m_ask) << std::endl;
   }
+
+  virtual void OnDisconnected(const std::string& exchange_name) override {
+
+  }
+
 private:
   ArbitrageStrategyOptions m_opts;
-  ExchangeAccount* m_exchange_account;
+  // TODO: perhaps add to TradingStrategy - make it a base abstract class
   std::map<std::string, ExchangeClient*> m_exchange_clients;
+  std::map<std::string, Ticker> m_tickers;
 };
