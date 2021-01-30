@@ -2,7 +2,7 @@
 #include "db/mongo_client.hpp"
 #include "producer/mongo_ticker_producer.hpp"
 #include "strategy/backtest_exchange_account.hpp"
-#include "strategy/arbitrage_strategy.hpp"
+#include "strategy/multi_arbitrage/arbitrage_strategy.hpp"
 #include "strategy/strategy_ticker_consumer.hpp"
 
 #include "json/json.hpp"

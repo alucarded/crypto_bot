@@ -29,7 +29,7 @@ arbitrage_backtest:
 	g++ -pipe src/arbitrage_strategy_backtest.cc src/db/mongo_client.hpp src/producer/mongo_ticker_producer.hpp -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
 
 tests:
-	g++ -pipe src/strategy/arbitrage_strategy_unittest.cc -o arbitrage_strategy_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe src/strategy/multi_arbitrage/arbitrage_strategy_matcher_unittest.cc -o arbitrage_strategy_matcher_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 clean:
 	if [ -f collector ]; then rm collector; fi; \
