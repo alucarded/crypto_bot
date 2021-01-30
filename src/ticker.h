@@ -5,6 +5,12 @@
 #include <optional>
 #include <string>
 
+// TODO: use this
+enum Exchange : int {
+  BINANCE,
+  COINBASE
+};
+
 struct Ticker {
   // Ticker(double ask, double ask_vol, double bid, double bid_vol, int64_t source_ts, int64_t arrived_ts) :
   //     m_ask(ask), m_ask_vol(ask_vol), m_bid(bid), m_bid_vol(bid_vol), m_source_ts(source_ts), m_arrived_ts(arrived_ts) {
@@ -18,6 +24,7 @@ struct Ticker {
   std::optional<int64_t> m_source_ts;
   int64_t m_arrived_ts;
   uint64_t m_id;
+  std::string m_exchange;
   std::string m_symbol;
 };
 

@@ -26,6 +26,7 @@ typedef client::connection_ptr connection_ptr;
 class TickerClient {
 public:
     virtual const std::string GetUrl() const = 0;
+    // Use Exchange enum
     virtual const std::string GetExchangeName() const = 0;
 
     void start() {

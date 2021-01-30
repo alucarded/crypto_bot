@@ -30,6 +30,7 @@ public:
       ticker.m_source_ts = raw_ticker.m_source_ts ? std::optional<int64_t>(raw_ticker.m_source_ts) : std::nullopt;
       ticker.m_arrived_ts = raw_ticker.m_arrived_ts;
       ticker.m_symbol = raw_ticker.m_symbol;
+      ticker.m_exchange = raw_ticker.m_exchange;
       // if (m_tickers.count(raw_ticker.m_exchange)) {
       //   assert(ticker.m_arrived_ts > m_tickers[raw_ticker.m_exchange].m_arrived_ts);
       // }
