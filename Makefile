@@ -17,6 +17,7 @@ SOURCES=src/collector.cc \
 				src/websocket/ticker_client.hpp
 CFLAGS=--std=c++17 -g -Wall -Wextra -Isrc/ -I. $(shell pkg-config --cflags libmongocxx) $(shell pkg-config --cflags zlib)
 LDFLAGS=-lpthread -latomic -lboost_system -lboost_iostreams -lcrypto -lssl -L/usr/local/lib  $(shell pkg-config --libs libmongocxx) $(shell pkg-config --libs zlib)
+TEST_FLAGS=-Ithird_party/googletest/googletest/include/ third_party/googletest/build/lib/libgtest.a third_party/googletest/build/lib/libgtest_main.a -lpthread
 
 collector:
 	g++ -pipe $(SOURCES) -o collector $(CFLAGS) $(LDFLAGS)
@@ -26,6 +27,9 @@ basic_backtest:
 
 arbitrage_backtest:
 	g++ -pipe src/arbitrage_strategy_backtest.cc src/db/mongo_client.hpp src/producer/mongo_ticker_producer.hpp -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
+
+tests:
+	g++ -pipe src/strategy/arbitrage_strategy_unittest.cc -o arbitrage_strategy_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 clean:
 	if [ -f collector ]; then rm collector; fi; \
