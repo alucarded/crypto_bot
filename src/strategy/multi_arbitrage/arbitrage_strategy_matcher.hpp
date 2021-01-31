@@ -20,11 +20,12 @@ static std::map<std::string, ExchangeParams> g_exchange_params = {
 };
 
 struct ArbitrageStrategyMatch {
-  ArbitrageStrategyMatch(const Ticker& best_bid, const Ticker& best_ask)
-    : m_best_bid(best_bid), m_best_ask(best_ask) 
+  ArbitrageStrategyMatch(const Ticker& best_bid, const Ticker& best_ask, double profit)
+    : m_best_bid(best_bid), m_best_ask(best_ask), m_profit(profit)
   {}
   const Ticker& m_best_bid;
   const Ticker& m_best_ask;
+  double m_profit;
 };
 
 class ArbitrageStrategyMatcher {
@@ -39,7 +40,7 @@ public:
 
   std::optional<ArbitrageStrategyMatch> FindMatch(const std::map<std::string, Ticker>& tickers) {
     std::string best_bid_ex, best_ask_ex;
-    double best_bid, best_ask;
+    double best_bid = 0, best_ask = std::numeric_limits<double>::max();
     for (auto it = tickers.begin(); it != tickers.end(); ++it) {
       // TODO: perhaps set some constraints on volume
       if (best_ask > it->second.m_ask) {
@@ -51,18 +52,25 @@ public:
         best_bid_ex = it->second.m_exchange;
       }
     }
-    // TODO: check if it is a good match
-    ArbitrageStrategyMatch match{tickers.at(best_bid_ex), tickers.at(best_ask_ex)};
-    if (IsGoodMatch(match)) {
-      return std::optional<ArbitrageStrategyMatch>{match};
+    if (best_bid_ex.empty() || best_ask_ex.empty()) {
+      return std::nullopt;
+    }
+    const Ticker& best_bid_ticker = tickers.at(best_bid_ex);
+    const Ticker& best_ask_ticker = tickers.at(best_ask_ex);
+    double profit = CalculateProfit(best_bid_ticker, best_ask_ticker);
+    if (profit >= 0) {
+      return std::optional<ArbitrageStrategyMatch>{ArbitrageStrategyMatch(best_bid_ticker, best_ask_ticker, profit)};
     }
     return std::nullopt;
   }
 
 private:
 
-  bool IsGoodMatch(const ArbitrageStrategyMatch& match) {
-    return false;
+  double CalculateProfit(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker) {
+    // TODO: perhaps add some validations and sanity checks eg. this is not the same exchange on both bid and ask side
+    const auto& bid_side_params = m_exchange_params.at(best_bid_ticker.m_exchange);
+    const auto& ask_side_params = m_exchange_params.at(best_ask_ticker.m_exchange);
+    return best_bid_ticker.m_bid - best_ask_ticker.m_ask - bid_side_params.m_slippage - bid_side_params.m_fee - ask_side_params.m_slippage - ask_side_params.m_fee;
   }
 
   std::map<std::string, ExchangeParams> m_exchange_params;

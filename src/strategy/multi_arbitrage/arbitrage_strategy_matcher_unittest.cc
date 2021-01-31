@@ -5,24 +5,25 @@
 class ArbitrageStrategyMatcherFixture : public testing::Test { 
 public:
   ArbitrageStrategyMatcherFixture() {
-    // initialization code here
+    // Initialization code here
+    std::map<std::string, ExchangeParams> exchange_params;
+    exchange_params.emplace("A", ExchangeParams("A", 0.01, 0.01));
+    exchange_params.emplace("B", ExchangeParams("B", 0.01, 0.02));
+    arbitrage_strategy_matcher = ArbitrageStrategyMatcher(exchange_params);
   }
-  
-  void SetUp() {
-    // code here will execute just before the test ensues
+
+  virtual void SetUp() override {
+    // no-op
   }
-  
-  void TearDown() {
-    // code here will be called just after the test completes
-    // ok to through exceptions from here if need be
+
+  virtual void TearDown() override {
+    // no-op
   }
-  
+
   ~ArbitrageStrategyMatcherFixture()  {
-    // cleanup any pending stuff, but no exceptions allowed
   }
 
 protected:
-  // put in any custom data members that you need
   ArbitrageStrategyMatcher arbitrage_strategy_matcher;
 };
 
@@ -30,14 +31,19 @@ TEST_F(ArbitrageStrategyMatcherFixture, OnTickerTest)
 {
   Ticker ticker1;
   ticker1.m_ask = 1.1;
+  ticker1.m_bid = 1.0;
   ticker1.m_exchange = "A";
   Ticker ticker2;
+  ticker2.m_ask = 1.3;
   ticker2.m_bid = 1.2;
   ticker2.m_exchange = "B";
   std::map<std::string, Ticker> ticker_map = {
     { ticker1.m_exchange, ticker1 },
     { ticker2.m_exchange, ticker2 }
   };
-  auto exchange_pair_opt = arbitrage_strategy_matcher.FindMatch(ticker_map);
-  EXPECT_EQ(true, exchange_pair_opt.has_value());	
+  auto exchange_match_opt = arbitrage_strategy_matcher.FindMatch(ticker_map);
+  EXPECT_EQ(true, exchange_match_opt.has_value());
+  auto exchange_match = exchange_match_opt.value();
+  EXPECT_EQ("B", exchange_match.m_best_bid.m_exchange);
+  EXPECT_NEAR(0.05, exchange_match.m_profit, 0.00001);
 }
