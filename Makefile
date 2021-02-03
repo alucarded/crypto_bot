@@ -15,7 +15,7 @@ SOURCES=src/collector.cc \
 				src/websocket/okex_ticker_client.hpp \
 				src/websocket/poloniex_ticker_client.hpp \
 				src/websocket/ticker_client.hpp
-CFLAGS=--std=c++17 -g -Wall -Wextra -Isrc/ -I. $(shell pkg-config --cflags libmongocxx) $(shell pkg-config --cflags zlib)
+CFLAGS=--std=c++17 -g -Wall -Wextra -Isrc/ -I. $(shell pkg-config --cflags libmongocxx) $(shell pkg-config --cflags zlib) -Iboost/boost_1_75_0/
 LDFLAGS=-lpthread -latomic -lboost_system -lboost_iostreams -lcrypto -lssl -L/usr/local/lib  $(shell pkg-config --libs libmongocxx) $(shell pkg-config --libs zlib)
 TEST_FLAGS=-Ithird_party/googletest/googletest/include/ third_party/googletest/build/lib/libgtest.a third_party/googletest/build/lib/libgtest_main.a -lpthread
 
@@ -30,6 +30,9 @@ arbitrage_backtest:
 
 tests:
 	g++ -pipe src/strategy/multi_arbitrage/arbitrage_strategy_matcher_unittest.cc -o arbitrage_strategy_matcher_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+
+binapi_test:
+	g++ -pipe src/client/binapi_test.cc src/client/binapi/* -o binapi_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS) $(shell pkg-config --cflags libboost_asio)
 
 clean:
 	if [ -f collector ]; then rm collector; fi; \
