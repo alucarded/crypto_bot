@@ -15,7 +15,12 @@ struct ExchangeParams {
 };
 
 static std::map<std::string, ExchangeParams> g_exchange_params = {
-  { "binance", ExchangeParams("binance", 10.0, 0.1) }
+  { "binance", ExchangeParams("binance", 10.0, 0.001) },
+  { "kraken", ExchangeParams("kraken", 10.0, 0.002) },
+  { "bitbay", ExchangeParams("bitbay", 10.0, 0.001) },
+  { "poloniex", ExchangeParams("poloniex", 10.0, 0.00125) },
+  { "huobiglobal", ExchangeParams("huobiglobal", 10.0, 0.002) },
+  { "ftx", ExchangeParams("ftx", 10.0, 0.0007) }
   // TODO:
 };
 
@@ -34,6 +39,7 @@ public:
 
   }
 
+  // TODO: load exchange params form JSON
   ArbitrageStrategyMatcher(const std::map<std::string, ExchangeParams>& exchange_params) : m_exchange_params(exchange_params) {
 
   }
@@ -68,9 +74,13 @@ private:
 
   double CalculateProfit(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker) {
     // TODO: perhaps add some validations and sanity checks eg. this is not the same exchange on both bid and ask side
+    if (0 == m_exchange_params.count(best_bid_ticker.m_exchange)
+      || 0 == m_exchange_params.count(best_ask_ticker.m_exchange)) {
+        return std::numeric_limits<double>::lowest();
+    }
     const auto& bid_side_params = m_exchange_params.at(best_bid_ticker.m_exchange);
     const auto& ask_side_params = m_exchange_params.at(best_ask_ticker.m_exchange);
-    return best_bid_ticker.m_bid - best_ask_ticker.m_ask - bid_side_params.m_slippage - bid_side_params.m_fee - ask_side_params.m_slippage - ask_side_params.m_fee;
+    return (1.0 - bid_side_params.m_fee)*best_bid_ticker.m_bid - (1.0 + ask_side_params.m_fee)*best_ask_ticker.m_ask - bid_side_params.m_slippage - ask_side_params.m_slippage;
   }
 
   std::map<std::string, ExchangeParams> m_exchange_params;

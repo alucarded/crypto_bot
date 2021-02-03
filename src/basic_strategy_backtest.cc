@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     BacktestSettings backtest_settings;
     backtest_settings.m_slippage = 5;
     backtest_settings.m_fee = 0.0025;
-    BacktestExchangeAccount exchange_account(backtest_settings);
+    BacktestExchangeAccount exchange_account(backtest_settings, "backtest_results.csv");
     BasicStrategy basic_strategy(strategy_opts, &exchange_account);
     MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v4", &basic_strategy);
     mongo_producer.Produce(last_mins_count);

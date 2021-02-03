@@ -27,7 +27,7 @@ struct BacktestSettings {
 
 class BacktestExchangeAccount : public ExchangeAccount {
 public:
-  BacktestExchangeAccount(const BacktestSettings& settings) : m_settings(settings), m_results_file("backtest_results.csv") {
+  BacktestExchangeAccount(const BacktestSettings& settings, const std::string& results_file) : m_settings(settings), m_results_file(results_file) {
     // TODO: temporarily
     m_balances["BTC"] = 1.0;
     m_balances["USDT"] = 24000;
@@ -40,7 +40,7 @@ public:
 
   virtual void MarketOrder(const std::string& symbol, Side side, double qty) override {
     //std::cout << "Market order " << ((side == 1) ? "BUY" : "SELL") << std::endl;
-    // TODO: for now BTCUSD (BTCUSDT) assumed
+    // TODO: for now BTCUSD (BTCUSDT) assumed, add enum for symbols, data types (tickers, order book etc ?) and exchanges
     double rate, price;
     if (side == Side::ASK) { // Selling BTC
       rate = m_ticker.m_bid;

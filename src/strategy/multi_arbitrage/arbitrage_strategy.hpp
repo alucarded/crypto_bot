@@ -15,8 +15,8 @@ struct ArbitrageStrategyOptions {
 
 class ArbitrageStrategy : public TradingStrategy {
 public:
-    ArbitrageStrategy(const ArbitrageStrategyOptions& opts, const std::map<std::string, ExchangeClient*>& exchange_clients)
-      : m_opts(opts), m_matcher(), m_exchange_clients(exchange_clients) {
+    ArbitrageStrategy(const ArbitrageStrategyOptions& opts)
+      : m_opts(opts), m_matcher() {
 
   }
 
@@ -25,12 +25,19 @@ public:
   }
 
   virtual void OnTicker(const Ticker& ticker) override {
-    std::cout << "Ticker." << std::endl << "Bid: " << std::to_string(ticker.m_bid) << std::endl << "Ask: " << std::to_string(ticker.m_ask) << std::endl;
+    //std::cout << "Ticker." << std::endl << "Bid: " << std::to_string(ticker.m_bid) << std::endl << "Ask: " << std::to_string(ticker.m_ask) << std::endl;
     m_tickers[ticker.m_exchange] = ticker;
-    auto match = m_matcher.FindMatch(m_tickers);
-    if (match.has_value()) {
-      // TODO:
-      std::cout << "Got match" << std::endl;
+    auto match_opt = m_matcher.FindMatch(m_tickers);
+    if (match_opt.has_value()) {
+      auto match = match_opt.value();
+      // TODO: add match writer - write somewhere for analysis
+      std::cout << "Got match between " << match.m_best_bid.m_exchange << " and " << match.m_best_ask.m_exchange
+        << " with profit " << std::to_string(match.m_profit) << std::endl;
+      if (m_exchange_clients.count(match.m_best_bid.m_exchange) > 0
+        && m_exchange_clients.count(match.m_best_ask.m_exchange) > 0) {
+        
+      }
+    
     }
   }
 
@@ -41,7 +48,5 @@ public:
 private:
   ArbitrageStrategyOptions m_opts;
   ArbitrageStrategyMatcher m_matcher;
-  // TODO: perhaps add to TradingStrategy - make it a base abstract class
-  std::map<std::string, ExchangeClient*> m_exchange_clients;
   std::map<std::string, Ticker> m_tickers;
 };

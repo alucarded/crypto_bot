@@ -33,6 +33,7 @@ public:
         start(GetUrl());
     }
 protected:
+    // TODO: add collection of tickers as parameter (perhaps create enum for abstraction - specific clients can then support different sets of tickers)
     TickerClient(Consumer<RawTicker>* ticker_consumer) : m_ticker_consumer(ticker_consumer), m_do_reconnect(3), m_tries(0) {
         m_endpoint.set_access_channels(websocketpp::log::alevel::connect);
         m_endpoint.set_error_channels(websocketpp::log::elevel::warn);

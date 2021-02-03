@@ -19,7 +19,7 @@ public:
     // std::cout << raw_ticker << std::endl;
     // Any empty ticker from an exchange discards validity of its data
     if (raw_ticker.m_bid.empty() || raw_ticker.m_ask.empty()) {
-      std::cout << "Empty ticker: " << raw_ticker << std::endl;
+      //std::cout << "Empty ticker: " << raw_ticker << std::endl;
       m_strategy->OnDisconnected(raw_ticker.m_exchange);
     } else {
       Ticker ticker;
