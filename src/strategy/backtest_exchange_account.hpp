@@ -27,7 +27,8 @@ struct BacktestSettings {
 
 class BacktestExchangeAccount : public ExchangeAccount {
 public:
-  BacktestExchangeAccount(const BacktestSettings& settings, const std::string& results_file) : m_settings(settings), m_results_file(results_file) {
+  BacktestExchangeAccount(const BacktestSettings& settings, const std::string& results_file) : m_settings(settings),
+      m_results_file(results_file, std::ios::out | std::ios::app | std::ios::binary) {
     // TODO: temporarily
     m_balances["BTC"] = 1.0;
     m_balances["USDT"] = 24000;
@@ -94,6 +95,7 @@ public:
     m_results_file << std::to_string(m_balances["BTC"]) << "," << std::to_string(m_balances["USDT"])
         << "," << (side == Side::ASK ? "SELL" : "BUY") << "," << std::to_string(qty)
         << "," << std::to_string(rate) << "," << std::to_string(price) << "\n";
+    m_results_file.flush();
   }
 
 private:

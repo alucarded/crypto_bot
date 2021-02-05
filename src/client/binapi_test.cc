@@ -6,22 +6,39 @@
 
 #include <iostream>
 
+namespace {
+
+// HMAC_SHA256, Good_guy_12
+// Do not worry, these are testnet keys
+const std::string g_api_key = "44pNgqvCmQcPAEjNY4I96TflqFRf4oQaQUbmkbxISdKGGmJojJ1kH8LkOYy6JIUD";
+const std::string g_secret = "giavUBTzRVa91h58H8GhQ0UWqfGFW7Mu93PF5oXPG6AMKWIlbpbpQ6E9YTDycOAJ";
+
+}
+
 TEST(BinanceClientTest, BasicTest)
 {
   boost::asio::io_context ioctx;
   binapi::rest::api api{
       ioctx
-      ,"api.binance.com"
+      ,"testnet.binance.vision"
       ,"443"
-      ,"" // can be empty for non USER_DATA reqs
-      ,"" // can be empty for non USER_DATA reqs
+      ,g_api_key // can be empty for non USER_DATA reqs
+      ,g_secret // can be empty for non USER_DATA reqs
       ,10000 // recvWindow
   };
 
-  auto res = api.price("BTCUSDT");
-  if ( !res ) {
-      std::cerr << "get price error: " << res.errmsg << std::endl;
-  }
+  api.new_order("BTCUSDT", binapi::e_side::buy, binapi::e_type::market, binapi::e_time::IOC,"0.001", std::string(), "1", std::string(), std::string(),
+        [] (const char *fl, int ec, std::string emsg, auto res) {
+            if ( ec ) {
+                std::cerr << "New order error: fl=" << fl << ", ec=" << ec << ", emsg=" << emsg << std::endl;
+                return false;
+            }
+            std::cout << "New order: " << res << std::endl;
+            const auto& res_obj = res.get_response_full();
+            EXPECT_STREQ("BTCUSDT", res_obj.symbol.c_str());
+            return true;
+        }
+    );
 
-  std::cout << "price: " << res.v << std::endl;
+  ioctx.run();
 }

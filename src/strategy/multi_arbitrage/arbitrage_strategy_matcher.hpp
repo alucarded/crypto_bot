@@ -39,7 +39,7 @@ public:
 
   }
 
-  // TODO: load exchange params form JSON
+  // TODO: load exchange params from JSON
   ArbitrageStrategyMatcher(const std::map<std::string, ExchangeParams>& exchange_params) : m_exchange_params(exchange_params) {
 
   }
@@ -80,7 +80,7 @@ private:
     }
     const auto& bid_side_params = m_exchange_params.at(best_bid_ticker.m_exchange);
     const auto& ask_side_params = m_exchange_params.at(best_ask_ticker.m_exchange);
-    return (1.0 - bid_side_params.m_fee)*best_bid_ticker.m_bid - (1.0 + ask_side_params.m_fee)*best_ask_ticker.m_ask - bid_side_params.m_slippage - ask_side_params.m_slippage;
+    return (1.0 - bid_side_params.m_fee)*(best_bid_ticker.m_bid - bid_side_params.m_slippage) - (1.0 + ask_side_params.m_fee)*(best_ask_ticker.m_ask + ask_side_params.m_slippage);
   }
 
   std::map<std::string, ExchangeParams> m_exchange_params;
