@@ -477,7 +477,7 @@ struct new_order_resp_type
         ,test
         ,unknown
     };
-    resp_type get_responce_type() const {
+    resp_type get_response_type() const {
         if ( boost::get<new_order_info_ask_t>(this) ) {
             return resp_type::ask;
         } else if ( boost::get<new_order_info_result_t>(this) ) {
@@ -490,29 +490,29 @@ struct new_order_resp_type
 
         return resp_type::unknown;
     }
-    bool is_valid_responce_type() const { return get_responce_type() != resp_type::unknown; }
-    bool is_ask_responce_type() const { return get_responce_type() == resp_type::ask; }
-    bool is_result_responce_type() const { return get_responce_type() == resp_type::result; }
-    bool is_full_responce_type() const { return get_responce_type() == resp_type::full; }
-    bool is_test_responce_type() const { return get_responce_type() == resp_type::test; }
+    bool is_valid_response_type() const { return get_response_type() != resp_type::unknown; }
+    bool is_ask_response_type() const { return get_response_type() == resp_type::ask; }
+    bool is_result_response_type() const { return get_response_type() == resp_type::result; }
+    bool is_full_response_type() const { return get_response_type() == resp_type::full; }
+    bool is_test_response_type() const { return get_response_type() == resp_type::test; }
 
-    const new_order_info_ask_t& get_responce_ask() const {
-        assert(is_ask_responce_type());
+    const new_order_info_ask_t& get_response_ask() const {
+        assert(is_ask_response_type());
 
         return *(boost::get<new_order_info_ask_t>(this));
     }
-    const new_order_info_result_t& get_responce_result() const {
-        assert(is_result_responce_type());
+    const new_order_info_result_t& get_response_result() const {
+        assert(is_result_response_type());
 
         return *(boost::get<new_order_info_result_t>(this));
     }
-    const new_order_info_full_t& get_responce_full() const {
-        assert(is_full_responce_type());
+    const new_order_info_full_t& get_response_full() const {
+        assert(is_full_response_type());
 
         return *(boost::get<new_order_info_full_t>(this));
     }
-    const new_test_order_info_t& get_responce_test() const {
-        assert(is_test_responce_type());
+    const new_test_order_info_t& get_response_test() const {
+        assert(is_test_response_type());
 
         return *(boost::get<new_test_order_info_t>(this));
     }
