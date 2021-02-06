@@ -14,14 +14,17 @@ const std::string g_secret = "x11P9YF6n3ZMgrU1C1kFjh9TxEiGKYq9EwOm6ebFcodCNTa4Eu
 
 class BinanceClient : public ExchangeClient {
 public:
-  BinanceClient(const std::string& base_url, boost::asio::io_context& ioctx)
-      : m_base_url(base_url), m_last_order_id(0), m_api(
+  BinanceClient(boost::asio::io_context& ioctx)
+      : m_last_order_id(0), m_api(
         ioctx
         ,"api.binance.com"
         ,"443"
         ,g_api_key // can be empty for non USER_DATA reqs
         ,g_secret // can be empty for non USER_DATA reqs
-        ,10000 // recvWindow
+        // From docs: "An additional parameter, recvWindow, may be sent
+        // to specify the number of milliseconds after timestamp the request is valid for."
+        ,200 // recvWindow
+        ,"cryptobot-1.0.0"
     ) {
 
   }
@@ -56,7 +59,6 @@ public:
   }
 
 private:
-  std::string m_base_url;
   uint64_t m_last_order_id;
   binapi::rest::api m_api;
 };
