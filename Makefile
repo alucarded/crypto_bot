@@ -16,7 +16,7 @@ SOURCES=src/collector.cc \
 				src/websocket/poloniex_ticker_client.hpp \
 				src/websocket/ticker_client.hpp
 CFLAGS=--std=c++17 -g -Wall -Wextra -Isrc/ -I. $(shell pkg-config --cflags libmongocxx) $(shell pkg-config --cflags zlib) -Iboost/boost_1_75_0/
-LDFLAGS=-lpthread -latomic -lboost_system -lboost_iostreams -lcrypto -lssl -L/usr/local/lib  $(shell pkg-config --libs libmongocxx) $(shell pkg-config --libs zlib)
+LDFLAGS=-DBOOST_LOG_DYN_LINK -Lboost/boost_1_75_0/build/lib -lboost_filesystem -lboost_thread -lboost_log -lpthread -latomic -lboost_system -lboost_iostreams -lcrypto -lssl -L/usr/local/lib  $(shell pkg-config --libs libmongocxx) $(shell pkg-config --libs zlib)
 TEST_FLAGS=-Ithird_party/googletest/googletest/include/ third_party/googletest/build/lib/libgtest.a third_party/googletest/build/lib/libgtest_main.a -lpthread
 
 collector:
@@ -34,8 +34,12 @@ tests:
 binapi_test:
 	g++ -pipe src/client/binapi_test.cc src/client/binapi/* -o binapi_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
+# DBOOST_LOG_DYN_LINK 
 kraken_test:
-	g++ -pipe src/client/kraken_client_test.cc -o kraken_test -DBOOST_LOG_DYN_LINK -Lboost/boost_1_75_0/build/lib -lboost_filesystem -lboost_thread -lboost_log $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe src/client/kraken_client_test.cc -o kraken_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+
+arbitrage_main:
+	g++ -pipe src/arbitrage_strategy_main.cc src/client/binapi/* -o arbitrage_main $(CFLAGS) $(LDFLAGS)
 
 clean:
 	if [ -f collector ]; then rm collector; fi; \
