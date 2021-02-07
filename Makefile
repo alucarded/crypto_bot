@@ -34,6 +34,9 @@ tests:
 binapi_test:
 	g++ -pipe src/client/binapi_test.cc src/client/binapi/* -o binapi_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
+kraken_test:
+	g++ -pipe src/client/kraken_client_test.cc -o kraken_test -DBOOST_LOG_DYN_LINK -Lboost/boost_1_75_0/build/lib -lboost_filesystem -lboost_thread -lboost_log $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+
 clean:
 	if [ -f collector ]; then rm collector; fi; \
 	if [ -f basic_backtest ]; then rm basic_backtest; fi; \

@@ -19,6 +19,7 @@
 class HttpClient {
 public:
   struct Options {
+    Options(const std::string& user_agent) : m_user_agent(user_agent) {}
     std::string m_user_agent;
     // TODO: add more
   };
@@ -31,13 +32,111 @@ public:
       explicit operator bool() const { return errmsg.empty(); }
   };
 
-  class Request;
+  class Request {
+  public:
+    Request(HttpClient& http_client, const std::string& host, const std::string& port,
+        const std::string& path, boost::beast::http::verb method, const std::string& user_agent)
+        : m_http_client(http_client), m_host(host), m_port(port), m_path(path), m_method(method), m_user_agent(user_agent) {
 
-  HttpClient(boost::asio::io_context &ioctx, const Options& options) :
-    m_ioctx(ioctx),
+    }
+
+    Request& QueryParam(const std::string& key, const std::string& value) {
+      // Update value if exists
+      m_query_params[key] = value;
+      return *this;
+    }
+
+    Request& Header(const std::string& name, const std::string& value) {
+      // Update value if exists
+      m_headers[name] = value;
+      return *this;
+    }
+
+    Request& WithQueryParamSigning(const std::function<void(Request&, std::string&)>& signing_function) {
+      m_signing_function = signing_function;
+      return *this;
+    }
+
+    HttpClient::Result send() {
+      return m_http_client.send(*this);
+    }
+
+  private:
+
+    // TODO: support different body types ?
+    boost::beast::http::request<boost::beast::http::string_body> build() {
+      boost::beast::http::request<boost::beast::http::string_body> req;
+
+      // Add query parameters
+      std::string query_string;
+      for ( const auto &kv: m_query_params ) {
+        if ( !query_string.empty() ) {
+            query_string += "&";
+        }
+        query_string += kv.first;
+        query_string += "=";
+        query_string += kv.second;
+      }
+      if (m_signing_function) {
+        m_signing_function(*this, query_string);
+      }
+
+      if ( m_method != boost::beast::http::verb::get ) {
+        req.target(m_path);
+        req.body() = std::move(query_string);
+        req.set(boost::beast::http::field::content_length, std::to_string(req.body().length()));
+      } else {
+        req.target(m_path + '?' + query_string);
+      }
+      req.version(11);
+
+      req.method(m_method);
+      if (!m_body.empty()) {
+        // TODO: copying here, we could move perhaps
+          req.body() = m_body;
+          req.set(boost::beast::http::field::content_length, std::to_string(req.body().length()));
+      }
+
+      // Default headers
+      req.set(boost::beast::http::field::host, m_host);
+      //req.set(boost::beast::http::field::user_agent, m_user_agent);
+      // TODO: content type should not be hardcoded
+      //req.set(boost::beast::http::field::content_type, "application/x-www-form-urlencoded");
+
+      // Set custom headers
+      for (const auto& kv : m_headers) {
+        req.insert(kv.first, kv.second);
+      }
+
+      std::cout << req << std::endl;
+      return req;
+    }
+
+  private:
+    HttpClient& m_http_client;
+    std::string m_host;
+    std::string m_port;
+    std::string m_path;
+    boost::beast::http::verb m_method;
+    std::string m_user_agent;
+    // TODO: support different body types ?
+    std::string m_body;
+    std::unordered_map<std::string, std::string> m_query_params;
+    std::unordered_map<std::string, std::string> m_headers;
+    // TODO: support all types of requests
+
+    std::function<void(Request&, std::string&)> m_signing_function;
+
+    friend class HttpClient;
+  };
+
+public:
+
+  HttpClient(const Options& options) :
+    m_ioctx(),
     m_options(options),
     m_ssl_ctx{boost::asio::ssl::context::sslv23_client},
-    m_resolver{ioctx} {
+    m_resolver{m_ioctx} {
 
   }
   
@@ -46,12 +145,18 @@ public:
   }
 
   // TODO: For now it is always https
-  Request post(const std::string& host, const std::string& port, const std::string& path) {
+  HttpClient::Request post(const std::string& host, const std::string& port, const std::string& path) {
     return Request(*this, host, port, path, boost::beast::http::verb::post, m_options.m_user_agent);
   }
 
-  Result send(const Request& request) {
+  Result send(Request& request) {
     Result res;
+
+#define __STRINGIZE_I(x) #x
+#define __STRINGIZE(x) __STRINGIZE_I(x)
+
+#define __MAKE_FILELINE \
+    __FILE__ "(" __STRINGIZE(__LINE__) ")"
 
 #define __MAKE_ERRMSG(res, msg) \
     res.errmsg = __MAKE_FILELINE; \
@@ -98,19 +203,6 @@ public:
     std::cout << "Up to handshake milliseconds: " << timer.elapsedMilliseconds() << std::endl;
 
     boost::beast::http::request<boost::beast::http::string_body> req = request.build();
-    // req.target(request.m_path);
-    // req.version(11);
-
-    // req.method(request.m_method);
-    // if ( request.m_method != boost::beast::http::verb::get ) {
-    //     req.body() = std::move(request.m_data);
-    //     req.set(boost::beast::http::field::content_length, std::to_string(req.body().length()));
-    // }
-
-    // req.insert("X-MBX-APIKEY", m_pk);
-    // req.set(boost::beast::http::field::host, request.m_host);
-    // req.set(boost::beast::http::field::user_agent, m_client_api_string);
-    // req.set(boost::beast::http::field::content_type, "application/x-www-form-urlencoded");
 
     boost::beast::http::write(ssl_stream, req, ec);
     if ( ec ) {
@@ -142,92 +234,9 @@ public:
 
     return res;
   }
-private:
-
-  class Request {
-  public:
-    Request(HttpClient& http_client, const std::string& host, const std::string& port,
-        const std::string& path, boost::beast::http::verb method, const std::string& m_user_agent)
-        : m_http_client(http_client), m_host(host), m_port(port), m_path(path), m_method(method) {
-
-    }
-
-    Request& QueryParam(const std::string& key, const std::string& value) {
-      // Update value if exists
-      m_query_params[key] = value;
-      return *this;
-    }
-
-    Request& Header(const std::string& name, const std::string& value) {
-      // Update value if exists
-      m_headers[name] = value;
-      return *this;
-    }
-
-    HttpClient::Result send() {
-      return m_http_client.send(*this);
-    }
-
-  private:
-
-    // TODO: support different body types ?
-    boost::beast::http::request<boost::beast::http::string_body> build() {
-      boost::beast::http::request<boost::beast::http::string_body> req;
-
-      // Add query parameters
-      std::string query_string;
-      for ( const auto &kv: m_query_params ) {
-          if ( is_valid_value(kv.second) ) {
-              if ( !data.empty() ) {
-                  query_string += "&";
-              }
-              query_string += kv.first;
-              query_string += "=";
-              query_string += kv.second;
-          }
-      }
-      req.target(m_path + query_string);
-
-      req.version(11);
-
-      req.method(m_method);
-      if (!m_body.empty()) {
-        // TODO: copying here, we could move perhaps
-          req.body() = m_body;
-          req.set(boost::beast::http::field::content_length, std::to_string(req.body().length()));
-      }
-
-      // Default headers
-      req.set(boost::beast::http::field::host, m_host);
-      req.set(boost::beast::http::field::user_agent, m_client_api_string);
-      // TODO: content type should not be hardcoded
-      req.set(boost::beast::http::field::content_type, "application/x-www-form-urlencoded");
-
-      // Set custom headers
-      for (const auto& kv : m_headers) {
-        req.insert(kv.first, kv.second);
-      }
-
-      return req;
-    }
-
-  private:
-    HttpClient& m_http_client;
-    std::string m_host;
-    std::string m_port;
-    std::string m_path;
-    boost::beast::http::verb m_method;
-    // TODO: support different body types ?
-    std::string m_body;
-    std::unordered_map<std::string, std::string> m_query_params;
-    std::unordered_map<std::string, std::string> m_headers;
-    // TODO: support all types of requests
-
-    friend class HttpClient;
-  };
 
 private:
-  boost::asio::io_context &m_ioctx;
+  boost::asio::io_context m_ioctx;
   Options m_options;
   boost::asio::ssl::context m_ssl_ctx;
   boost::asio::ip::tcp::resolver m_resolver;
