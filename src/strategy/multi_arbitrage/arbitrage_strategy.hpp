@@ -5,6 +5,9 @@
 #include "strategy/trading_strategy.h"
 #include "ticker_subscriber.h"
 
+#include <boost/log/trivial.hpp>
+
+#include <future>
 #include <string>
 #include <map>
 #include <memory>
@@ -12,13 +15,13 @@
 #include <utility>
 
 struct ArbitrageStrategyOptions {
-
+  std::unordered_map<std::string, ExchangeParams> m_exchange_params;
 };
 
 class ArbitrageStrategy : public TradingStrategy, public TickerSubscriber {
 public:
     ArbitrageStrategy(const ArbitrageStrategyOptions& opts)
-      : m_opts(opts), m_matcher() {
+      : m_opts(opts), m_matcher(opts.m_exchange_params) {
 
   }
 
@@ -48,8 +51,12 @@ public:
         // TODO: 3) For safety, add adjustable timer to wait until another order is sent ?
         m_is_fresh[best_bid_exchange] = false;
         m_is_fresh[best_ask_exchange] = false;
-        m_exchange_clients[best_bid_exchange]->MarketOrder("BTCUSDT", Side::ASK, 0.001);
-        m_exchange_clients[best_ask_exchange]->MarketOrder("BTCUSDT", Side::BID, 0.001);
+        auto f1 = std::async(std::launch::async, &ExchangeClient::MarketOrder, m_exchange_clients[best_bid_exchange].get(),
+            "BTCUSDT", Side::ASK, 0.001);
+        auto f2 = std::async(std::launch::async, &ExchangeClient::MarketOrder, m_exchange_clients[best_ask_exchange].get(),
+            "BTCUSDT", Side::BID, 0.001);
+        BOOST_LOG_TRIVIAL(info) << match << std::endl << "Response from " << best_bid_exchange << ": " << std::endl << f1.get() << std::endl
+            << "Response from " << best_ask_exchange << ": " << std::endl << f2.get() << std::endl;
       }
     
     }

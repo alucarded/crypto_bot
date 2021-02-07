@@ -99,7 +99,7 @@ public:
 
   }
 
-  virtual void MarketOrder(const std::string& symbol, Side side, double qty) override {
+  virtual MarketOrderResult MarketOrder(const std::string& symbol, Side side, double qty) override {
     HttpClient::Result res = m_http_client.post("api.kraken.com", "443", "/0/private/AddOrder")
         .QueryParam("pair", symbol)
         .QueryParam("type", (Side::BID == side ? "buy" : "sell"))
@@ -121,14 +121,16 @@ public:
           query_string += "nonce=" + nonce.str();
           auto const  D       =  sha256 (nonce.str ()  +  query_string);
           auto const  digest  =  "/0/private/AddOrder"  +  std::string {std::begin (D), std::end (D)};
+          auto private_key = base64_decode (g_private_key); //std::vector<uint8_t>(std::begin(g_private_key), std::end(g_private_key));
           auto const  hmac
               =  base64_encode  
                  (hmac_sha512  (vector<uint8_t> {std::begin (digest), std::end (digest)},
-                                base64_decode (g_private_key)));
+                                private_key));
           request.Header("API-Sign", hmac);
         })
         .send();
-      BOOST_LOG_TRIVIAL(info) << "Got response:" << std::endl << res.response << std::endl;
+      //BOOST_LOG_TRIVIAL(info) << "Got response:" << std::endl << res.response << std::endl;
+      return res.response;
   }
 
   virtual void LimitOrder(const std::string& symbol, Side side, double qty, double price) override {

@@ -1,7 +1,7 @@
 #include "ticker.h"
 
-#include <map>
 #include <optional>
+#include <unordered_map>
 
 struct ExchangeParams {
   ExchangeParams(const std::string& exchange_name, double slippage, double fee)
@@ -14,7 +14,7 @@ struct ExchangeParams {
   double m_fee;
 };
 
-static std::map<std::string, ExchangeParams> g_exchange_params = {
+static std::unordered_map<std::string, ExchangeParams> g_exchange_params = {
   { "binance", ExchangeParams("binance", 10.0, 0.001) },
   { "kraken", ExchangeParams("kraken", 10.0, 0.002) },
   { "bitbay", ExchangeParams("bitbay", 10.0, 0.001) },
@@ -31,7 +31,16 @@ struct ArbitrageStrategyMatch {
   const Ticker& m_best_bid;
   const Ticker& m_best_ask;
   double m_profit;
+
+  friend std::ostream &operator<<(std::ostream &os, const ArbitrageStrategyMatch &match);
 };
+
+std::ostream &operator<<(std::ostream &os, const ArbitrageStrategyMatch &match) {
+  os << "ARBITRAGE MATCH" << std::endl << "BEST BID" << std::endl << match.m_best_bid
+      << std::endl << "BEST ASK" << std::endl << match.m_best_ask << std::endl
+      << "ESTIMATED PROFIT: " << std::to_string(match.m_profit) << std::endl;
+  return os;
+}
 
 class ArbitrageStrategyMatcher {
 public:
@@ -40,7 +49,7 @@ public:
   }
 
   // TODO: load exchange params from JSON
-  ArbitrageStrategyMatcher(const std::map<std::string, ExchangeParams>& exchange_params) : m_exchange_params(exchange_params) {
+  ArbitrageStrategyMatcher(const std::unordered_map<std::string, ExchangeParams>& exchange_params) : m_exchange_params(exchange_params) {
 
   }
 
@@ -83,5 +92,5 @@ private:
     return (1.0 - bid_side_params.m_fee)*(best_bid_ticker.m_bid - bid_side_params.m_slippage) - (1.0 + ask_side_params.m_fee)*(best_ask_ticker.m_ask + ask_side_params.m_slippage);
   }
 
-  std::map<std::string, ExchangeParams> m_exchange_params;
+  std::unordered_map<std::string, ExchangeParams> m_exchange_params;
 };

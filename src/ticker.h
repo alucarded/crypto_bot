@@ -8,7 +8,8 @@
 // TODO: use this
 enum Exchange : int {
   BINANCE,
-  COINBASE
+  COINBASE,
+  KRAKEN
 };
 
 struct Ticker {
@@ -26,7 +27,22 @@ struct Ticker {
   uint64_t m_id;
   std::string m_exchange;
   std::string m_symbol;
+
+  friend std::ostream &operator<<(std::ostream &os, const Ticker &res);
 };
+
+std::ostream &operator<<(std::ostream &os, const Ticker &res) {
+  os << "m_ask=" << std::to_string(res.m_ask) << ", m_ask_vol="
+      << (res.m_ask_vol ? std::to_string(res.m_ask_vol.value()) : "null")
+      << ", m_bid=" << std::to_string(res.m_bid)
+      << ", m_bid_vol=" << (res.m_bid_vol ? std::to_string(res.m_bid_vol.value()) : "null")
+      << ", m_source_ts=" << (res.m_source_ts ? std::to_string(res.m_source_ts.value()) : "null")
+      << ", m_arrived_ts=" << std::to_string(res.m_arrived_ts)
+      << ", m_id=" << std::to_string(res.m_id)
+      << ", m_exchange=" << res.m_exchange
+      << ", m_symbol=" << res.m_symbol;
+  return os;
+}
 
 struct RawTicker {
   std::string m_ask;

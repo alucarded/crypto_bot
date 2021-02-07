@@ -5,17 +5,35 @@
 #include "websocket/binance_ticker_client.hpp"
 #include "websocket/kraken_ticker_client.hpp"
 
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/utility/setup/file.hpp>
+
 #include <iostream>
 #include <thread>
+
+namespace logging = boost::log;
+
+void InitLogging() {
+  logging::add_file_log("/var/log/cryptobot/cryptobot.log");
+  
+  logging::core::get()->set_filter(
+      logging::trivial::severity >= logging::trivial::info);
+}
 
 int main(int argc, char* argv[]) {
   (void)argc;
   (void)argv;
 
+  InitLogging();
+
   try {
     ArbitrageStrategyOptions strategy_opts;
-  // // TODO: set options
-
+    strategy_opts.m_exchange_params = {
+      { "binance", ExchangeParams("binance", 10.0, 0.00075) },
+      { "kraken", ExchangeParams("kraken", 10.0, 0.002) }
+    };
     ArbitrageStrategy arbitrage_strategy(strategy_opts);
     BinanceClient binance_client;
     KrakenClient kraken_client;
