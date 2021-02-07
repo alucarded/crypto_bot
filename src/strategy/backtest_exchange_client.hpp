@@ -1,12 +1,13 @@
 //#include "client/exchange_client.h"
 #include "consumer/consumer.h"
-#include "exchange_account.hpp"
+#include "ticker_subscriber.h"
 
 #include <fstream>
 #include <map>
 #include <unordered_map>
 
 struct BacktestSettings {
+  std::string m_exchange;
   double m_fee;
   double m_slippage;
   double m_min_qty;
@@ -25,9 +26,9 @@ struct BacktestSettings {
 //         std::pair<std::string, CurrencyPair> ("BTCUSDT", CurrencyPair("BTCUSDT", "BTC", "USDT"))
 //     };
 
-class BacktestExchangeAccount : public ExchangeAccount {
+class BacktestExchangeClient : public ExchangeClient, public TickerSubscriber {
 public:
-  BacktestExchangeAccount(const BacktestSettings& settings, const std::string& results_file) : m_settings(settings),
+  BacktestExchangeClient(const BacktestSettings& settings, const std::string& results_file) : m_settings(settings),
       m_results_file(results_file, std::ios::out | std::ios::app | std::ios::binary) {
     // TODO: temporarily
     m_balances["BTC"] = 1.0;
@@ -35,7 +36,7 @@ public:
     m_results_file << "BTC,USDT,Direction,Quantity,Rate,Price\n";
   }
 
-  virtual ~BacktestExchangeAccount() {
+  virtual ~BacktestExchangeClient() {
     m_results_file.close();
   }
 
@@ -83,11 +84,12 @@ public:
 
   virtual void OnTicker(const Ticker& ticker) override {
     // Currently support only one currency pair, BTCUSD (BTCUSDT)
-    m_ticker = ticker;
-    //m_is_up_to_date = true;
+    if (m_settings.m_exchange == ticker.m_exchange) {
+      m_ticker = ticker;
+    }
   }
 
-  virtual void OnDisconnected() override {
+  virtual void OnDisconnected(const std::string&) override {
 
   }
 

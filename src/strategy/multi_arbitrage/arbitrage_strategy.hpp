@@ -3,6 +3,7 @@
 #include "client/exchange_client.h"
 #include "consumer/consumer.h"
 #include "strategy/trading_strategy.h"
+#include "ticker_subscriber.h"
 
 #include <string>
 #include <map>
@@ -14,7 +15,7 @@ struct ArbitrageStrategyOptions {
 
 };
 
-class ArbitrageStrategy : public TradingStrategy {
+class ArbitrageStrategy : public TradingStrategy, public TickerSubscriber {
 public:
     ArbitrageStrategy(const ArbitrageStrategyOptions& opts)
       : m_opts(opts), m_matcher() {
@@ -29,9 +30,6 @@ public:
     //std::cout << "Ticker." << std::endl << "Bid: " << std::to_string(ticker.m_bid) << std::endl << "Ask: " << std::to_string(ticker.m_ask) << std::endl;
     m_is_fresh[ticker.m_exchange] = true;
     m_tickers[ticker.m_exchange] = ticker;
-    if (m_exchange_clients.count(ticker.m_exchange) > 0) {
-      m_exchange_clients[ticker.m_exchange]->OnTicker(ticker);
-    }
     auto match_opt = m_matcher.FindMatch(m_tickers);
     if (match_opt.has_value()) {
       auto match = match_opt.value();

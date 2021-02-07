@@ -1,16 +1,18 @@
 #include "client/exchange_client.h"
 #include "consumer/consumer.h"
 #include "ticker.h"
+#include "ticker_subscriber.h"
 #include "trading_strategy.h"
 
-#include <string>
+#include <initializer_list>
 #include <map>
 #include <memory>
+#include <string>
+#include <vector>
 
-class StrategyTickerConsumer : public Consumer<RawTicker> {
+class TickerBroker : public Consumer<RawTicker> {
 public:
-    StrategyTickerConsumer(TradingStrategy* strategy)
-      : m_strategy(strategy) {
+  TickerBroker(std::initializer_list<TickerSubscriber*> subscribers) : m_subscribers(subscribers) {
 
   }
 
@@ -20,7 +22,9 @@ public:
     // Any empty ticker from an exchange discards validity of its data
     if (raw_ticker.m_bid.empty() || raw_ticker.m_ask.empty()) {
       //std::cout << "Empty ticker: " << raw_ticker << std::endl;
-      m_strategy->OnDisconnected(raw_ticker.m_exchange);
+      for (auto subscriber : m_subscribers) {
+        subscriber->OnDisconnected(raw_ticker.m_exchange);
+      }
     } else {
       Ticker ticker;
       ticker.m_bid = std::stod(raw_ticker.m_bid);
@@ -37,9 +41,11 @@ public:
       // if (!ProcessTicker(raw_ticker.m_exchange, ticker)) {
       //   return;
       // }
-      m_strategy->OnTicker(ticker);
+      for (auto subscriber : m_subscribers) {
+        subscriber->OnTicker(ticker);
+      }
     }
   }
 private:
-  TradingStrategy* m_strategy;
+  std::vector<TickerSubscriber*> m_subscribers;
 };

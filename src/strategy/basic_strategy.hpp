@@ -26,8 +26,8 @@ std::map<std::string, double> ESTIMATED_TRADING_VOLUME =
 class BasicStrategy : public TradingStrategy, public Consumer<RawTicker> {
 public:
   // TODO: move more generic stuff to TradingStrategy class
-  BasicStrategy(const BasicStrategyOptions& opts, ExchangeAccount* exchange_account)
-      : m_opts(opts), m_exchange_account(exchange_account) {
+  BasicStrategy(const BasicStrategyOptions& opts, ExchangeClient* exchange_client)
+      : m_opts(opts), m_exchange_client(exchange_client) {
     // m_volume_sum = 0;
     // std::for_each(ESTIMATED_TRADING_VOLUME.begin(), ESTIMATED_TRADING_VOLUME.end(),
     //     [&](const auto& p) { m_volume_sum += p.second; });
@@ -38,7 +38,7 @@ public:
     if (!tickers.count(m_opts.m_trading_exchange)) {
       return;
     }
-    //m_exchange_account->OnTicker(tickers[m_opts.m_trading_exchange]);
+    //m_exchange_client->OnTicker(tickers[m_opts.m_trading_exchange]);
     if (tickers.size() < m_opts.m_required_exchanges) {
       std::cout << "Not enough exchanges. Got " << std::to_string(tickers.size()) << ", required " << std::to_string(m_opts.m_required_exchanges) << std::endl;
       return;
@@ -67,13 +67,13 @@ public:
       // Sell
       PrintTickers();
       std::cout << "Bid margin: " << bid_margin << std::endl;
-      m_exchange_account->MarketOrder("BTCUSD", Side::ASK, 0.001);
+      m_exchange_client->MarketOrder("BTCUSD", Side::ASK, 0.001);
     } else if (ask_margin > m_opts.m_buy_profit_margin
         && ex_ticker.m_ask_vol >= m_opts.m_min_qty) {
       // Buy
       PrintTickers();
       std::cout << "Ask margin: " << ask_margin << std::endl;
-      m_exchange_account->MarketOrder("BTCUSD", Side::BID, 0.001);
+      m_exchange_client->MarketOrder("BTCUSD", Side::BID, 0.001);
     } else {
       std::cout << "No good trade to make" << std::endl;
     }
@@ -87,7 +87,7 @@ public:
       m_tickers.erase(raw_ticker.m_exchange);
       std::cout << "Empty ticker: " << raw_ticker << std::endl;
       if (m_opts.m_trading_exchange == raw_ticker.m_exchange) {
-        m_exchange_account->OnDisconnected();
+        m_exchange_client->OnDisconnected();
         return;
       }
     } else {
@@ -107,7 +107,7 @@ public:
       }
       m_tickers[raw_ticker.m_exchange] = ticker;
       if (m_opts.m_trading_exchange == raw_ticker.m_exchange) {
-        m_exchange_account->OnTicker(ticker);
+        m_exchange_client->OnTicker(ticker);
       }
     }
     execute(m_tickers);
@@ -141,7 +141,7 @@ private:
   }
 
   BasicStrategyOptions m_opts;
-  ExchangeAccount* m_exchange_account;
+  ExchangeClient* m_exchange_client;
   std::map<std::string, Ticker> m_tickers;
   std::map<std::string, std::unique_ptr<TickerTransformer>> m_transformers;
 

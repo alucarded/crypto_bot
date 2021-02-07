@@ -14,9 +14,9 @@ const std::string g_secret = "x11P9YF6n3ZMgrU1C1kFjh9TxEiGKYq9EwOm6ebFcodCNTa4Eu
 
 class BinanceClient : public ExchangeClient {
 public:
-  BinanceClient(boost::asio::io_context& ioctx)
-      : m_last_order_id(0), m_api(
-        ioctx
+  BinanceClient()
+      : m_last_order_id(0), m_ioctx(), m_api(
+        m_ioctx
         ,"api.binance.com"
         ,"443"
         ,g_api_key // can be empty for non USER_DATA reqs
@@ -60,5 +60,6 @@ public:
 
 private:
   uint64_t m_last_order_id;
+  boost::asio::io_context m_ioctx;
   binapi::rest::api m_api;
 };

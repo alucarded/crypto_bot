@@ -2,9 +2,9 @@
 #include "client/binance_client.hpp"
 #include "db/mongo_client.hpp"
 #include "producer/mongo_ticker_producer.hpp"
-#include "strategy/backtest_exchange_account.hpp"
+#include "strategy/backtest_exchange_client.hpp"
 #include "strategy/multi_arbitrage/arbitrage_strategy.hpp"
-#include "strategy/strategy_ticker_consumer.hpp"
+#include "strategy/ticker_broker.hpp"
 
 #include "json/json.hpp"
 
@@ -50,15 +50,15 @@ int main(int argc, char* argv[]) {
     BacktestSettings binance_backtest_settings;
     binance_backtest_settings.m_slippage = 5;
     binance_backtest_settings.m_fee = 0.0025;
-    BacktestExchangeAccount* binance_backtest_client = new BacktestExchangeAccount(binance_backtest_settings, "binance_backtest_results.csv");
+    BacktestExchangeClient* binance_backtest_client = new BacktestExchangeClient(binance_backtest_settings, "binance_backtest_results.csv");
     BacktestSettings kraken_backtest_settings;
     kraken_backtest_settings.m_slippage = 5;
     kraken_backtest_settings.m_fee = 0.0025;
-    BacktestExchangeAccount* kraken_backtest_client = new BacktestExchangeAccount(kraken_backtest_settings, "kraken_backtest_results.csv");
+    BacktestExchangeClient* kraken_backtest_client = new BacktestExchangeClient(kraken_backtest_settings, "kraken_backtest_results.csv");
     arbitrage_strategy.RegisterExchangeClient("binance", binance_backtest_client);
     arbitrage_strategy.RegisterExchangeClient("kraken", kraken_backtest_client);
-    StrategyTickerConsumer ticker_consumer(&arbitrage_strategy);
-    MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v4", &ticker_consumer);
+    TickerBroker ticker_broker({&arbitrage_strategy, binance_backtest_client, kraken_backtest_client});
+    MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v4", &ticker_broker);
     int64_t count = mongo_producer.Produce();
     std::cout << "Produced " + std::to_string(count) + " tickers" << std::endl;
     //arbitrage_strategy.PrintStats();

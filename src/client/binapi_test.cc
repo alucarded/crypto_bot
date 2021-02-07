@@ -31,7 +31,7 @@ TEST(BinanceClientTest, BasicTest)
   };
   cryptobot::Timer timer;
   timer.start();
-  api.new_order("BTCUSDT", binapi::e_side::buy, binapi::e_type::market, binapi::e_time::IOC,"0.0001",
+  api.new_order("BTCUSDT", binapi::e_side::buy, binapi::e_type::market, binapi::e_time::IOC,"0.0002",
         std::string(), "1", std::string(), std::string()
         // ,
         // [&] (const char *fl, int ec, std::string emsg, auto res) {
@@ -47,5 +47,5 @@ TEST(BinanceClientTest, BasicTest)
         //     return true;
         // }
     );
-  ioctx.run();
+  //ioctx.run();
 }
