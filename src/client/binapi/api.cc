@@ -8,6 +8,8 @@
 // Copyright (c) 2019-2021 niXman (github dot nixman dog pm.me). All rights reserved.
 // ----------------------------------------------------------------------------
 
+#include "utils/timer.hpp"
+
 #include "api.hpp"
 #include "invoker.hpp"
 
@@ -221,7 +223,8 @@ struct api::impl {
             }
             data += "timestamp=";
             char buf[32];
-            data += to_string(buf, sizeof(buf), get_current_ms_epoch());
+            std::uint64_t timestamp = get_current_ms_epoch();
+            data += to_string(buf, sizeof(buf), timestamp);
 
             data += "&recvWindow=";
             data += to_string(buf, sizeof(buf), m_timeout);
@@ -292,6 +295,9 @@ struct api::impl {
 
         boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssl_stream(m_ioctx, m_ssl_ctx);
 
+
+        cryptobot::Timer timer;
+        timer.start();
         if( !SSL_set_tlsext_host_name(ssl_stream.native_handle(), m_host.c_str()) ) {
             boost::system::error_code ec{static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category()};
             std::cerr << __MESSAGE("msg=" << ec.message()) << std::endl;
@@ -324,6 +330,7 @@ struct api::impl {
             __MAKE_ERRMSG(res, ec.message());
             return res;
         }
+        std::cout << "Up to handshake milliseconds: " << timer.elapsedMilliseconds() << std::endl;
 
         boost::beast::http::request<boost::beast::http::string_body> req;
         req.target(target);
@@ -347,6 +354,7 @@ struct api::impl {
             __MAKE_ERRMSG(res, ec.message());
             return res;
         }
+        std::cout << "HTTP write milliseconds: " << timer.elapsedMilliseconds() << std::endl;
 
         boost::beast::flat_buffer buffer;
         boost::beast::http::response<boost::beast::http::string_body> bres;
@@ -358,9 +366,11 @@ struct api::impl {
             __MAKE_ERRMSG(res, ec.message());
             return res;
         }
+        timer.stop();
+        std::cout << "HTTP response read milliseconds: " << timer.elapsedMilliseconds() << std::endl;
 
         res.v = std::move(bres.body());
-//        std::cout << target << " REPLY:\n" << res.v << std::endl << std::endl;
+        std::cout << target << " REPLY:\n" << res.v << std::endl << std::endl;
 
         ssl_stream.shutdown(ec);
 

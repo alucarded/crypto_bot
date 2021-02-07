@@ -49,7 +49,7 @@ struct api {
         ,std::string pk
         ,std::string sk
         ,std::size_t timeout
-        ,std::string client_api_string = "binapi-0.0.1"
+        ,std::string client_api_string
     );
     virtual ~api();
 
