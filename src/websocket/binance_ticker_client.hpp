@@ -3,6 +3,7 @@
 
 #include "json/json.hpp"
 
+#include <chrono>
 #include <string>
 
 using json = nlohmann::json;
@@ -38,7 +39,14 @@ private:
       ticker.m_ask = msg_json["a"];
       ticker.m_ask_vol = msg_json["A"];
       ticker.m_source_ts = 0; // not provided
+      // TODO: perhaps generate timestamp in base class and pass it to this method
+      using namespace std::chrono;
+      auto now = system_clock::now();
+      system_clock::duration tp = now.time_since_epoch();
+      microseconds us = duration_cast<microseconds>(tp);
+      ticker.m_arrived_ts = us.count();
       ticker.m_exchange = GetExchangeName();
+      // TODO: this should be an internally common enum
       ticker.m_symbol = msg_json["s"];
       return std::make_optional(ticker);
   }

@@ -51,6 +51,7 @@ public:
         using namespace std::chrono;
         // Make sure system clock is adjusted in controlled manner
         // on the machine where this runs.
+        // TODO: FIXME: set it when receiving message in TickerClient
         auto now = system_clock::now();
         system_clock::duration tp = now.time_since_epoch();
         minutes mins = duration_cast<minutes>(tp);

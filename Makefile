@@ -16,7 +16,7 @@ SOURCES=src/collector.cc \
 				src/websocket/poloniex_ticker_client.hpp \
 				src/websocket/ticker_client.hpp
 CFLAGS=--std=c++17 -g -Wall -Wextra -Isrc/ -I. $(shell pkg-config --cflags libmongocxx) $(shell pkg-config --cflags zlib) -Iboost/boost_1_75_0/
-LDFLAGS=-DBOOST_LOG_DYN_LINK -Lboost/boost_1_75_0/build/lib -lboost_filesystem -lboost_thread -lboost_log -lpthread -latomic -lboost_system -lboost_iostreams -lcrypto -lssl -L/usr/local/lib  $(shell pkg-config --libs libmongocxx) $(shell pkg-config --libs zlib)
+LDFLAGS=-DBOOST_LOG_DYN_LINK -Lboost/boost_1_75_0/build/lib -lboost_filesystem -lboost_thread -lboost_regex -lboost_log_setup -lboost_log -lpthread -latomic -lboost_system -lboost_iostreams -lcrypto -lssl -L/usr/local/lib  $(shell pkg-config --libs libmongocxx) $(shell pkg-config --libs zlib)
 TEST_FLAGS=-Ithird_party/googletest/googletest/include/ third_party/googletest/build/lib/libgtest.a third_party/googletest/build/lib/libgtest_main.a -lpthread
 
 collector:

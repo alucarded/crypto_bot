@@ -12,7 +12,7 @@
 
 class TickerBroker : public Consumer<RawTicker> {
 public:
-  TickerBroker(std::initializer_list<TickerSubscriber*> subscribers) : m_subscribers(subscribers) {
+  TickerBroker(std::initializer_list<TickerSubscriber*> subscribers) : m_subscribers(subscribers), m_last_ticker_id(0) {
 
   }
 
@@ -35,6 +35,7 @@ public:
       ticker.m_arrived_ts = raw_ticker.m_arrived_ts;
       ticker.m_symbol = raw_ticker.m_symbol;
       ticker.m_exchange = raw_ticker.m_exchange;
+      ticker.m_id = m_last_ticker_id++;
       // if (m_tickers.count(raw_ticker.m_exchange)) {
       //   assert(ticker.m_arrived_ts > m_tickers[raw_ticker.m_exchange].m_arrived_ts);
       // }
@@ -48,4 +49,5 @@ public:
   }
 private:
   std::vector<TickerSubscriber*> m_subscribers;
+  uint64_t m_last_ticker_id;
 };

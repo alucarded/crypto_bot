@@ -36,7 +36,15 @@ private:
       ticker.m_ask = data["a"][0];
       ticker.m_ask_vol = data["a"][2];
       ticker.m_source_ts = 0; // not provided
+      // TODO: perhaps generate timestamp in base class and pass it to this method
+      using namespace std::chrono;
+      auto now = system_clock::now();
+      system_clock::duration tp = now.time_since_epoch();
+      microseconds us = duration_cast<microseconds>(tp);
+      ticker.m_arrived_ts = us.count();
       ticker.m_exchange = GetExchangeName();
+      // TODO: use enum
+      ticker.m_symbol = "BTCUSDT";
       return std::make_optional(ticker);
   }
 };

@@ -12,10 +12,13 @@ enum Exchange : int {
   KRAKEN
 };
 
+enum Symbol : int {
+  BTC_USDT
+};
+
 struct Ticker {
   // Ticker(double ask, double ask_vol, double bid, double bid_vol, int64_t source_ts, int64_t arrived_ts) :
   //     m_ask(ask), m_ask_vol(ask_vol), m_bid(bid), m_bid_vol(bid_vol), m_source_ts(source_ts), m_arrived_ts(arrived_ts) {
-
   // }
 
   double m_ask;
