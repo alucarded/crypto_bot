@@ -2,11 +2,14 @@
 
 #include "gtest/gtest.h"
 
+#include <map>
+#include <unordered_map>
+
 class ArbitrageStrategyMatcherFixture : public testing::Test { 
 public:
   ArbitrageStrategyMatcherFixture() {
     // Initialization code here
-    std::map<std::string, ExchangeParams> exchange_params;
+    std::unordered_map<std::string, ExchangeParams> exchange_params;
     exchange_params.emplace("A", ExchangeParams("A", 0.01, 0.01));
     exchange_params.emplace("B", ExchangeParams("B", 0.01, 0.02));
     arbitrage_strategy_matcher = ArbitrageStrategyMatcher(exchange_params);

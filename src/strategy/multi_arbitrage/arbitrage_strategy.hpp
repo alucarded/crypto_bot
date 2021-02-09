@@ -34,6 +34,16 @@ public:
         }
   }
 
+  // For testing
+  ArbitrageStrategy(const ArbitrageStrategyOptions& opts, const ArbitrageStrategyMatcher& matcher)
+    : m_opts(opts), m_matcher(matcher) {
+  }
+
+  // For testing
+  ArbitrageStrategy() {
+    
+  }
+
   virtual void execute(const std::string& updated_ticker, const std::map<std::string, Ticker>& tickers) override {
     // unused
   }

@@ -3,6 +3,7 @@
 #include "ticker.h"
 
 #include <map>
+#include <memory>
 
 [[deprecated]]
 struct StrategyOptions {

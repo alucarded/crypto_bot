@@ -1,6 +1,7 @@
 #include "ticker.h"
 
 #include <optional>
+#include <map>
 #include <unordered_map>
 
 struct ExchangeParams {
@@ -36,8 +37,9 @@ struct ArbitrageStrategyMatch {
 };
 
 std::ostream &operator<<(std::ostream &os, const ArbitrageStrategyMatch &match) {
-  os << "ARBITRAGE MATCH" << std::endl << "BEST BID" << std::endl << match.m_best_bid
-      << std::endl << "BEST ASK" << std::endl << match.m_best_ask << std::endl
+  // TODO: print every object as JSON! Use variable names without "m_" prefix
+  os << "ARBITRAGE MATCH" << std::endl << "BEST BID: " << match.m_best_bid << std::endl
+      << "BEST ASK: " << std::endl << match.m_best_ask << std::endl
       << "ESTIMATED PROFIT: " << std::to_string(match.m_profit) << std::endl;
   return os;
 }
@@ -53,7 +55,11 @@ public:
 
   }
 
-  std::optional<ArbitrageStrategyMatch> FindMatch(const std::map<std::string, Ticker>& tickers) {
+  virtual ~ArbitrageStrategyMatcher() {
+
+  }
+
+  virtual std::optional<ArbitrageStrategyMatch> FindMatch(const std::map<std::string, Ticker>& tickers) {
     std::string best_bid_ex, best_ask_ex;
     double best_bid = 0, best_ask = std::numeric_limits<double>::max();
     for (auto it = tickers.begin(); it != tickers.end(); ++it) {
