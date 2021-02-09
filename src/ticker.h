@@ -76,11 +76,12 @@ struct RawTicker {
 };
 
 std::ostream& operator<<(std::ostream& os, const RawTicker& rt) {
-    return os << "Ask: " << rt.m_ask << std::endl
-        << "Ask Volume: " << rt.m_ask_vol << std::endl
-        << "Bid: " << rt.m_bid << std::endl
-        << "Bid Volume: " << rt.m_bid_vol << std::endl
-        << "Source Timestamp: " << std::to_string(rt.m_source_ts) << std::endl
-        << "Arrived Timestamp: " << std::to_string(rt.m_arrived_ts) << std::endl
-        << "Exchange: " << rt.m_exchange << std::endl;
+    return os << "m_ask=" << rt.m_ask
+        << ", m_ask_volume=" << rt.m_ask_vol
+        << ", m_bid=" << rt.m_bid
+        << ", m_bid_volume=" << rt.m_bid_vol
+        << ", m_source_ts=" << std::to_string(rt.m_source_ts)
+        << ", m_arrived_ts=" << std::to_string(rt.m_arrived_ts)
+        << ", m_exchange=" << rt.m_exchange
+        << ", m_symbol=" << rt.m_symbol;
 }

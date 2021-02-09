@@ -23,7 +23,7 @@ public:
         ,g_secret // can be empty for non USER_DATA reqs
         // From docs: "An additional parameter, recvWindow, may be sent
         // to specify the number of milliseconds after timestamp the request is valid for."
-        ,200 // recvWindow
+        ,1000 // recvWindow
         ,"cryptobot-1.0.0"
     ) {
 

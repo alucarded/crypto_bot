@@ -39,6 +39,7 @@ int main(int argc, char* argv[]) {
       { "binance", ExchangeParams("binance", 5.0, 0.00075) },
       { "kraken", ExchangeParams("kraken", 5.0, 0.002) }
     };
+    strategy_opts.m_default_amount = 0.0005;
     ArbitrageStrategy arbitrage_strategy(strategy_opts);
     BinanceClient binance_client;
     KrakenClient kraken_client;
