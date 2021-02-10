@@ -41,7 +41,7 @@ public:
 
   // For testing
   ArbitrageStrategy() {
-    
+
   }
 
   virtual void execute(const std::string& updated_ticker, const std::map<std::string, Ticker>& tickers) override {
@@ -85,7 +85,6 @@ public:
         BOOST_LOG_TRIVIAL(info) << match << std::endl << "Response from " << best_bid_exchange << ": " << std::endl << f1.get() << std::endl
             << "Response from " << best_ask_exchange << ": " << std::endl << f2.get() << std::endl;
       }
-    
     }
   }
 

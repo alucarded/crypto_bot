@@ -34,21 +34,9 @@ public:
   }
 
   virtual MarketOrderResult MarketOrder(const std::string& symbol, Side side, double qty) override {
-    auto res = m_api.new_order(symbol, binapi::e_side::buy, binapi::e_type::market, binapi::e_time::IOC,
-        // TODO: hardcoded quantity for now
-        "0.001", std::string(), std::to_string(++m_last_order_id), std::string(), std::string()
-        // ,
-        // [] (const char *fl, int ec, std::string emsg, auto res) {
-        //   if ( ec ) {
-        //       BOOST_LOG_TRIVIAL(error) << "New order error: fl=" << fl << ", ec=" << ec
-        //           << ", emsg=" << emsg << std::endl;
-        //       return false;
-        //   }
-        //   BOOST_LOG_TRIVIAL(info) << "New order: " << res << std::endl;
-        //   //const auto& res_obj = res.get_response_full();
-        //   return true;
-        // }
-    );
+    auto res = m_api.new_order(symbol, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
+        binapi::e_type::market, binapi::e_time::IOC,
+        std::to_string(qty), std::string(), std::to_string(++m_last_order_id), std::string(), std::string());
     if ( !res ) {
         BOOST_LOG_TRIVIAL(error) << "Binance new order error: " << res.errmsg << std::endl;
     }

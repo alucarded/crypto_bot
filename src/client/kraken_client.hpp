@@ -6,11 +6,9 @@
 #include <vector>
 
 namespace {
-  // https://demo-futures.kraken.com/
-  // login: 2ej6pr8b@futures-demo.com
-  // password: y2oms8fazvgoh7j5czz5
-  std::string g_public_key = "Oo6F+yOZcgbM2dVurfx4ABtkF49V3X0B9sKxviyU7hNtWb3Lq5EKh4x5";
-  std::string g_private_key = "u927517zU8BeDEHAkVpXKGdt6WiN37ymulTQ74n3Myg6CH6r2E0QSse8Ebqg41WPVaUl0ujL31+jyh/qoUZJow==";
+  // TODO: FIXME: read it from secure config!
+  std::string g_public_key = "4XUCr+2lTgf14sOhZEDDC/Z/9wKliuFORLkMh+QH4Hgy4+NAW4Rvt2Fg";
+  std::string g_private_key = "EZbALHeU+EqvpJdVWtPNxBbfhoLEEPYgfrxuP5Vqy59XpddpdbvcTNKG/tki8uwERPMX8mx1Imvgzl1wdoVEHA==";
 
 // TODO: following functions are under GPL, implement replacements
 using namespace std;
