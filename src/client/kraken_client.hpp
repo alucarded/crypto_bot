@@ -90,31 +90,44 @@ using namespace std;
 
 }
 
+using namespace std::placeholders; // _1, _2, etc.
+
 class KrakenClient : public ExchangeClient {
 public:
   inline static const std::string HOST = "api.kraken.com";
+  inline static const std::string PORT = "443";
+  inline static const std::string ADD_ORDER_PATH = "/0/private/AddOrder";
 
   KrakenClient() : m_http_client(HttpClient::Options("cryptobot-1.0.0")) {
 
   }
 
-  virtual MarketOrderResult MarketOrder(const std::string& symbol, Side side, double qty) override {
-    using namespace std::placeholders; // _1, _2, etc.
-    HttpClient::Result res = m_http_client.post("api.kraken.com", "443", "/0/private/AddOrder")
+  virtual NewOrderResult MarketOrder(const std::string& symbol, Side side, double qty) override {
+    HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
         .QueryParam("pair", symbol)
         .QueryParam("type", (Side::BID == side ? "buy" : "sell"))
         .QueryParam("ordertype", "market")
         // TODO: std::to_string has default precision of 6 digits, use ostringstream
         .QueryParam("volume", std::to_string(qty))
-        //.QueryParam("trading_agreement", "agree")
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
         .send();
       return res.response;
   }
 
-  virtual void LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
-
+  // TODO: add expiration time ?
+  virtual NewOrderResult LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
+    HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
+        .QueryParam("pair", symbol)
+        .QueryParam("type", (Side::BID == side ? "buy" : "sell"))
+        .QueryParam("ordertype", "limit")
+        // TODO: std::to_string has default precision of 6 digits, use ostringstream
+        .QueryParam("price", std::to_string(price))
+        .QueryParam("volume", std::to_string(qty))
+        .Header("API-Key", g_public_key)
+        .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
+        .send();
+    return res.response;
   }
 
   virtual void CancelAllOrders() override {

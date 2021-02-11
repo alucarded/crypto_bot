@@ -33,7 +33,7 @@ public:
 
   }
 
-  virtual MarketOrderResult MarketOrder(const std::string& symbol, Side side, double qty) override {
+  virtual NewOrderResult MarketOrder(const std::string& symbol, Side side, double qty) override {
     auto res = m_api.new_order(symbol, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
         binapi::e_type::market, binapi::e_time::IOC,
         std::to_string(qty), std::string(), std::to_string(++m_last_order_id), std::string(), std::string());
@@ -43,7 +43,7 @@ public:
     return res.reply;
   }
 
-  virtual void LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
+  virtual NewOrderResult LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
 
   }
 
