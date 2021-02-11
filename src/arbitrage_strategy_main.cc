@@ -40,6 +40,8 @@ int main(int argc, char* argv[]) {
       { "kraken", ExchangeParams("kraken", 5.0, 0.002) }
     };
     strategy_opts.m_default_amount = 0.0005;
+    strategy_opts.m_max_ticker_age_us = 1000000; // 1s
+    strategy_opts.m_max_ticker_delay_us = 500000; // 500 ms
     ArbitrageStrategy arbitrage_strategy(strategy_opts);
     BinanceClient binance_client;
     KrakenClient kraken_client;

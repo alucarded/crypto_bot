@@ -127,7 +127,6 @@ public:
           request.Header("API-Sign", hmac);
         })
         .send();
-      //BOOST_LOG_TRIVIAL(info) << "Got response:" << std::endl << res.response << std::endl;
       return res.response;
   }
 

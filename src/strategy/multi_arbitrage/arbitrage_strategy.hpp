@@ -7,6 +7,7 @@
 
 #include <boost/log/trivial.hpp>
 
+#include <chrono>
 #include <future>
 #include <string>
 #include <map>
@@ -19,6 +20,8 @@
 struct ArbitrageStrategyOptions {
   std::unordered_map<std::string, ExchangeParams> m_exchange_params;
   double m_default_amount;
+  int64_t m_max_ticker_age_us;
+  int64_t m_max_ticker_delay_us;
 };
 
 class ArbitrageStrategy : public TradingStrategy, public TickerSubscriber {
@@ -55,22 +58,41 @@ public:
     auto match_opt = m_matcher.FindMatch(m_tickers);
     if (match_opt.has_value()) {
       auto match = match_opt.value();
-      // TODO: add match writer - write somewhere for analysis
       const auto& best_bid_ticker = match.m_best_bid;
       const auto& best_ask_ticker = match.m_best_ask;
       const auto& best_bid_exchange = best_bid_ticker.m_exchange;
       const auto& best_ask_exchange = best_ask_ticker.m_exchange;
-      std::cout << "Got match between " << best_bid_exchange << " and " << best_ask_exchange
-        << " with profit " << std::to_string(match.m_profit) << std::endl;
+      // Check tickers arrival timestamp
+      using namespace std::chrono;
+      auto now_us = duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+      auto best_bid_ticker_age = now_us - best_bid_ticker.m_arrived_ts;
+      auto best_ask_ticker_age = now_us - best_ask_ticker.m_arrived_ts;
+      BOOST_LOG_TRIVIAL(info) << "Best bid ticker age (" << best_bid_exchange
+            << "): " << std::to_string(best_bid_ticker_age) << ", best ask ticker age (" << best_ask_exchange
+            << "): " << std::to_string(best_ask_ticker_age);
+      if (best_bid_ticker_age > m_opts.m_max_ticker_age_us
+        || best_ask_ticker_age > m_opts.m_max_ticker_age_us) {
+        BOOST_LOG_TRIVIAL(warning) << "Ticker is too old";
+        return;
+      }
+      // Check tickers source timestamp, if present
+      auto best_bid_ticker_delay = best_bid_ticker.m_source_ts.has_value()
+          ? best_bid_ticker.m_arrived_ts - best_bid_ticker.m_source_ts.value() : -1;
+      auto best_ask_ticker_delay = best_ask_ticker.m_source_ts.has_value()
+          ? best_ask_ticker.m_arrived_ts - best_ask_ticker.m_source_ts.value() : -1;
+      BOOST_LOG_TRIVIAL(info) << "Best bid ticker delay (" << best_bid_exchange
+            << "): " << std::to_string(best_bid_ticker_delay) << ", best ask ticker delay (" << best_ask_exchange
+            << "): " << std::to_string(best_ask_ticker_delay);
+      if (best_bid_ticker_delay > m_opts.m_max_ticker_delay_us
+          || best_ask_ticker_delay > m_opts.m_max_ticker_delay_us) {
+        BOOST_LOG_TRIVIAL(warning) << "Ticker arrived with too big delay";
+        return;
+      }
+      // std::cout << "Got match between " << best_bid_exchange << " and " << best_ask_exchange
+      //   << " with profit " << std::to_string(match.m_profit) << std::endl;
       if (m_exchange_clients.count(best_bid_exchange) > 0
-        && m_exchange_clients.count(best_ask_exchange) > 0
-        // Make sure we have new tickers after sending last order
-        && m_is_fresh[best_bid_exchange]
-        && m_is_fresh[best_ask_exchange]) {
-        // TODO: After sending an order to an exchange block until we got new ticker AND the previous order is executed
-        // TODO: For safety, add adjustable timer to wait until another order is sent ?
-        m_is_fresh[best_bid_exchange] = false;
-        m_is_fresh[best_ask_exchange] = false;
+        && m_exchange_clients.count(best_ask_exchange) > 0) {
+        // Set trade amount to minimum across best bid, best ask and default amount
         double vol = m_opts.m_default_amount;
         if (best_bid_ticker.m_bid_vol.has_value()) {
           vol = std::min(best_bid_ticker.m_bid_vol.value(), vol);

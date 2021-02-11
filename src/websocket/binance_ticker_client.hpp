@@ -14,7 +14,7 @@ public:
   BinanceTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
   }
 
-  virtual inline const std::string GetUrl() const override { return "wss://stream.binance.com:9443/ws/bookTicker"; }
+  virtual inline const std::string GetUrl() const override { return "wss://fstream.binance.com/ws/bookTicker"; }
   virtual inline const std::string GetExchangeName() const override { return "binance"; }
 
 private:
@@ -28,7 +28,7 @@ private:
       auto msg_json = json::parse(msg->get_payload());
       // TODO: Perhaps do not do schema validation for every message in production
       if (!msg_json.is_object()
-          || !utils::check_message(msg_json, {"u", "s", "b", "B", "a", "A"})
+          || !utils::check_message(msg_json, {"u", "s", "b", "B", "a", "A", "T"})
           || msg_json["s"].get<std::string>() != "BTCUSDT") {
         std::cout << "Binance: Not an expected ticker object" << std::endl;
         return {};
@@ -38,7 +38,8 @@ private:
       ticker.m_bid_vol = msg_json["B"];
       ticker.m_ask = msg_json["a"];
       ticker.m_ask_vol = msg_json["A"];
-      ticker.m_source_ts = 0; // not provided
+      // Transaction time (received in ms)
+      ticker.m_source_ts = msg_json["T"].get<int64_t>() * 1000;
       // TODO: perhaps generate timestamp in base class and pass it to this method
       using namespace std::chrono;
       auto now = system_clock::now();

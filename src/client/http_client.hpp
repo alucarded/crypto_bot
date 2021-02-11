@@ -108,7 +108,7 @@ public:
         req.insert(kv.first, kv.second);
       }
 
-      std::cout << req << std::endl;
+      BOOST_LOG_TRIVIAL(debug) << req << std::endl;
       return req;
     }
 
@@ -200,7 +200,7 @@ public:
       __MAKE_ERRMSG(res, ec.message());
       return res;
     }
-    std::cout << "Up to handshake milliseconds: " << timer.elapsedMilliseconds() << std::endl;
+    BOOST_LOG_TRIVIAL(debug) << "Up to handshake milliseconds: " << timer.elapsedMilliseconds() << std::endl;
 
     boost::beast::http::request<boost::beast::http::string_body> req = request.build();
 
@@ -211,7 +211,7 @@ public:
         __MAKE_ERRMSG(res, ec.message());
         return res;
     }
-    std::cout << "HTTP write milliseconds: " << timer.elapsedMilliseconds() << std::endl;
+    BOOST_LOG_TRIVIAL(debug) << "HTTP write milliseconds: " << timer.elapsedMilliseconds() << std::endl;
 
     boost::beast::flat_buffer buffer;
     boost::beast::http::response<boost::beast::http::string_body> bres;
@@ -224,11 +224,11 @@ public:
         return res;
     }
     timer.stop();
-    std::cout << "HTTP response read milliseconds: " << timer.elapsedMilliseconds() << std::endl;
+    BOOST_LOG_TRIVIAL(debug) << "HTTP response read milliseconds: " << timer.elapsedMilliseconds() << std::endl;
 
     // TODO: perhaps add parsing in this move assignment (response class implementing move assignment with parsing)
     res.response = std::move(bres.body());
-    std::cout << request.m_path << " REPLY:\n" << res.response << std::endl << std::endl;
+    BOOST_LOG_TRIVIAL(debug) << request.m_path << " REPLY:\n" << res.response << std::endl << std::endl;
 
     ssl_stream.shutdown(ec);
 

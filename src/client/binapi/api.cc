@@ -24,6 +24,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
+#include <boost/log/trivial.hpp>
 
 #include <chrono>
 #include <queue>
@@ -330,7 +331,7 @@ struct api::impl {
             __MAKE_ERRMSG(res, ec.message());
             return res;
         }
-        std::cout << "Up to handshake milliseconds: " << timer.elapsedMilliseconds() << std::endl;
+        BOOST_LOG_TRIVIAL(debug) << "Up to handshake milliseconds: " << timer.elapsedMilliseconds() << std::endl;
 
         boost::beast::http::request<boost::beast::http::string_body> req;
         req.target(target);
@@ -354,7 +355,7 @@ struct api::impl {
             __MAKE_ERRMSG(res, ec.message());
             return res;
         }
-        std::cout << "HTTP write milliseconds: " << timer.elapsedMilliseconds() << std::endl;
+        BOOST_LOG_TRIVIAL(debug) << "HTTP write milliseconds: " << timer.elapsedMilliseconds() << std::endl;
 
         boost::beast::flat_buffer buffer;
         boost::beast::http::response<boost::beast::http::string_body> bres;
@@ -367,10 +368,10 @@ struct api::impl {
             return res;
         }
         timer.stop();
-        std::cout << "HTTP response read milliseconds: " << timer.elapsedMilliseconds() << std::endl;
+        BOOST_LOG_TRIVIAL(debug) << "HTTP response read milliseconds: " << timer.elapsedMilliseconds() << std::endl;
 
         res.v = std::move(bres.body());
-        std::cout << target << " REPLY:\n" << res.v << std::endl << std::endl;
+        BOOST_LOG_TRIVIAL(debug) << target << " REPLY:\n" << res.v << std::endl << std::endl;
 
         ssl_stream.shutdown(ec);
 
