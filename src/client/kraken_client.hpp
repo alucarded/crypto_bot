@@ -2,6 +2,7 @@
 #include "http_client.hpp"
 
 #include <array>
+#include <functional>
 #include <sstream>
 #include <vector>
 
@@ -98,6 +99,7 @@ public:
   }
 
   virtual MarketOrderResult MarketOrder(const std::string& symbol, Side side, double qty) override {
+    using namespace std::placeholders; // _1, _2, etc.
     HttpClient::Result res = m_http_client.post("api.kraken.com", "443", "/0/private/AddOrder")
         .QueryParam("pair", symbol)
         .QueryParam("type", (Side::BID == side ? "buy" : "sell"))
@@ -106,26 +108,7 @@ public:
         .QueryParam("volume", std::to_string(qty))
         //.QueryParam("trading_agreement", "agree")
         .Header("API-Key", g_public_key)
-        .WithQueryParamSigning([g_private_key](HttpClient::Request& request, std::string& query_string) {
-          struct timeval sys_time;   gettimeofday  (&sys_time, nullptr);
-
-          auto nonce  =  ostringstream {};
-    
-          nonce << (uint64_t) ((sys_time.tv_sec * 1000000) + sys_time.tv_usec);
-
-          if (!query_string.empty()) {
-            query_string += '&';
-          }
-          query_string += "nonce=" + nonce.str();
-          auto const  D       =  sha256 (nonce.str ()  +  query_string);
-          auto const  digest  =  "/0/private/AddOrder"  +  std::string {std::begin (D), std::end (D)};
-          auto private_key = base64_decode (g_private_key); //std::vector<uint8_t>(std::begin(g_private_key), std::end(g_private_key));
-          auto const  hmac
-              =  base64_encode  
-                 (hmac_sha512  (vector<uint8_t> {std::begin (digest), std::end (digest)},
-                                private_key));
-          request.Header("API-Sign", hmac);
-        })
+        .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
         .send();
       return res.response;
   }
@@ -137,6 +120,27 @@ public:
   virtual void CancelAllOrders() override {
 
   }
+
+private:
+  void SignQueryString(HttpClient::Request& request, std::string& query_string) {
+    struct timeval sys_time;
+    gettimeofday(&sys_time, nullptr);
+
+    auto nonce = ostringstream{};
+    nonce << (uint64_t) ((sys_time.tv_sec * 1000000) + sys_time.tv_usec);
+
+    if (!query_string.empty()) {
+      query_string += '&';
+    }
+    query_string += "nonce=" + nonce.str();
+    auto const D = sha256(nonce.str() + query_string);
+    auto const digest = "/0/private/AddOrder" + std::string{std::begin(D), std::end(D)};
+    auto private_key = base64_decode(g_private_key); //std::vector<uint8_t>(std::begin(g_private_key), std::end(g_private_key));
+    auto const hmac = base64_encode(
+        hmac_sha512(vector<uint8_t>{std::begin(digest), std::end(digest)}, private_key));
+    request.Header("API-Sign", hmac);
+  }
+
 private:
   HttpClient m_http_client;
 };
