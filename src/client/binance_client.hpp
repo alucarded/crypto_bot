@@ -35,16 +35,22 @@ public:
 
   virtual NewOrderResult MarketOrder(const std::string& symbol, Side side, double qty) override {
     auto res = m_api.new_order(symbol, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
-        binapi::e_type::market, binapi::e_time::IOC,
+        binapi::e_type::market, binapi::e_time::GTC,
         std::to_string(qty), std::string(), std::to_string(++m_last_order_id), std::string(), std::string());
     if ( !res ) {
-        BOOST_LOG_TRIVIAL(error) << "Binance new order error: " << res.errmsg << std::endl;
+        BOOST_LOG_TRIVIAL(error) << "Binance MarketOrder error: " << res.errmsg << std::endl;
     }
     return res.reply;
   }
 
   virtual NewOrderResult LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
-
+    auto res = m_api.new_order(symbol, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
+        binapi::e_type::limit, binapi::e_time::GTC,
+        std::to_string(qty), std::to_string(price), std::to_string(++m_last_order_id), std::string(), std::string());
+    if ( !res ) {
+        BOOST_LOG_TRIVIAL(error) << "Binance LimitOrder error: " << res.errmsg << std::endl;
+    }
+    return res.reply;
   }
 
   virtual void CancelAllOrders() override {
