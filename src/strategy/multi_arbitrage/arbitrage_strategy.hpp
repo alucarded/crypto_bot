@@ -22,12 +22,13 @@ struct ArbitrageStrategyOptions {
   double m_default_amount;
   int64_t m_max_ticker_age_us;
   int64_t m_max_ticker_delay_us;
+  int64_t m_min_trade_interval;
 };
 
 class ArbitrageStrategy : public TradingStrategy, public TickerSubscriber {
 public:
     ArbitrageStrategy(const ArbitrageStrategyOptions& opts)
-      : m_opts(opts), m_matcher(opts.m_exchange_params) {
+      : m_opts(opts), m_matcher(opts.m_exchange_params), m_last_trade_us(0) {
         // Validations
         if (m_opts.m_exchange_params.size() < 2) {
           throw std::invalid_argument("Parameters for at least 2 exchanges required");
@@ -39,11 +40,11 @@ public:
 
   // For testing
   ArbitrageStrategy(const ArbitrageStrategyOptions& opts, const ArbitrageStrategyMatcher& matcher)
-    : m_opts(opts), m_matcher(matcher) {
+    : m_opts(opts), m_matcher(matcher), m_last_trade_us(0) {
   }
 
   // For testing
-  ArbitrageStrategy() {
+  ArbitrageStrategy() : m_last_trade_us(0) {
 
   }
 
@@ -53,7 +54,6 @@ public:
 
   virtual void OnTicker(const Ticker& ticker) override {
     //std::cout << "Ticker." << std::endl << "Bid: " << std::to_string(ticker.m_bid) << std::endl << "Ask: " << std::to_string(ticker.m_ask) << std::endl;
-    m_is_fresh[ticker.m_exchange] = true;
     m_tickers[ticker.m_exchange] = ticker;
     auto match_opt = m_matcher.FindMatch(m_tickers);
     if (match_opt.has_value()) {
@@ -62,9 +62,14 @@ public:
       const auto& best_ask_ticker = match.m_best_ask;
       const auto& best_bid_exchange = best_bid_ticker.m_exchange;
       const auto& best_ask_exchange = best_ask_ticker.m_exchange;
-      // Check tickers arrival timestamp
+      // Limit trades rate
       using namespace std::chrono;
       auto now_us = duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+      if (now_us - m_last_trade_us < m_opts.m_min_trade_interval) {
+        BOOST_LOG_TRIVIAL(info) << "Rate limiting trades";
+        return;
+      }
+      // Check tickers arrival timestamp
       auto best_bid_ticker_age = now_us - best_bid_ticker.m_arrived_ts;
       auto best_ask_ticker_age = now_us - best_ask_ticker.m_arrived_ts;
       BOOST_LOG_TRIVIAL(info) << "Best bid ticker age (" << best_bid_exchange
@@ -100,10 +105,11 @@ public:
         if (best_ask_ticker.m_ask_vol.has_value()) {
           vol = std::min(best_ask_ticker.m_ask_vol.value(), vol);
         }
-        auto f1 = std::async(std::launch::async, &ExchangeClient::MarketOrder, m_exchange_clients[best_bid_exchange].get(),
-            "BTCUSDT", Side::ASK, vol);
-        auto f2 = std::async(std::launch::async, &ExchangeClient::MarketOrder, m_exchange_clients[best_ask_exchange].get(),
-            "BTCUSDT", Side::BID, vol);
+        auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_exchange_clients[best_bid_exchange].get(),
+            "BTCUSDT", Side::ASK, vol, best_bid_ticker.m_bid);
+        auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_exchange_clients[best_ask_exchange].get(),
+            "BTCUSDT", Side::BID, vol, best_ask_ticker.m_ask);
+        m_last_trade_us = now_us;
         BOOST_LOG_TRIVIAL(info) << match << std::endl << "Response from " << best_bid_exchange << ": " << std::endl << f1.get() << std::endl
             << "Response from " << best_ask_exchange << ": " << std::endl << f2.get() << std::endl;
       }
@@ -117,6 +123,6 @@ public:
 private:
   ArbitrageStrategyOptions m_opts;
   ArbitrageStrategyMatcher m_matcher;
-  std::unordered_map<std::string, bool> m_is_fresh;
   std::map<std::string, Ticker> m_tickers;
+  int64_t m_last_trade_us;
 };
