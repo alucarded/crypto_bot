@@ -22,7 +22,7 @@ struct ArbitrageStrategyOptions {
   double m_default_amount;
   int64_t m_max_ticker_age_us;
   int64_t m_max_ticker_delay_us;
-  int64_t m_min_trade_interval;
+  int64_t m_min_trade_interval_us;
 };
 
 class ArbitrageStrategy : public TradingStrategy, public TickerSubscriber {
@@ -65,7 +65,7 @@ public:
       // Limit trades rate
       using namespace std::chrono;
       auto now_us = duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
-      if (now_us - m_last_trade_us < m_opts.m_min_trade_interval) {
+      if (now_us - m_last_trade_us < m_opts.m_min_trade_interval_us) {
         BOOST_LOG_TRIVIAL(info) << "Rate limiting trades";
         return;
       }
