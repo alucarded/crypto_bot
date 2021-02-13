@@ -1,4 +1,3 @@
-//#include "client/exchange_client.h"
 #include "consumer/consumer.h"
 #include "ticker_subscriber.h"
 
@@ -40,7 +39,7 @@ public:
     m_results_file.close();
   }
 
-  virtual void MarketOrder(const std::string& symbol, Side side, double qty) override {
+  virtual NewOrderResult MarketOrder(const std::string& symbol, Side side, double qty) override {
     //std::cout << "Market order " << ((side == 1) ? "BUY" : "SELL") << std::endl;
     // TODO: for now BTCUSD (BTCUSDT) assumed, add enum for symbols, data types (tickers, order book etc ?) and exchanges
     double rate, price;
@@ -52,7 +51,7 @@ public:
       }
       if (m_balances["BTC"] < qty) {
         std::cout << "Not enough BTC" << std::endl;
-        return;
+        return NewOrderResult("");
       }
       price = qty*(m_ticker.m_bid - m_settings.m_slippage)*(1.0 - m_settings.m_fee);
       m_balances["USDT"] = m_balances["USDT"] + price;
@@ -66,16 +65,17 @@ public:
       price = qty*(m_ticker.m_ask + m_settings.m_slippage)*(1.0 + m_settings.m_fee);
       if (m_balances["USDT"] < price) {
         std::cout << "Not enough USDT" << std::endl;
-        return;
+        return NewOrderResult("");
       }
       m_balances["USDT"] = m_balances["USDT"] - price;
       m_balances["BTC"] = m_balances["BTC"] + qty;
     }
     PrintBalances(side, qty, rate, price);
+    return NewOrderResult("");
   }
 
-  virtual void LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
-    
+  virtual NewOrderResult LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
+    return NewOrderResult("");
   }
 
   virtual void CancelAllOrders() override {

@@ -1,5 +1,5 @@
-#include "client/binance_client.hpp"
-#include "client/kraken_client.hpp"
+#include "http/binance_client.hpp"
+#include "http/kraken_client.hpp"
 #include "strategy/multi_arbitrage/arbitrage_strategy.hpp"
 #include "strategy/ticker_broker.hpp"
 #include "websocket/binance_ticker_client.hpp"

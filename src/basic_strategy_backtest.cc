@@ -1,6 +1,6 @@
 #include "db/mongo_client.hpp"
 #include "producer/mongo_ticker_producer.hpp"
-#include "strategy/backtest_exchange_account.hpp"
+#include "strategy/backtest_exchange_client.hpp"
 #include "strategy/basic_strategy.hpp"
 
 #include <iostream>
@@ -23,8 +23,8 @@ int main(int argc, char* argv[]) {
     BacktestSettings backtest_settings;
     backtest_settings.m_slippage = 5;
     backtest_settings.m_fee = 0.0025;
-    BacktestExchangeAccount exchange_account(backtest_settings, "backtest_results.csv");
-    BasicStrategy basic_strategy(strategy_opts, &exchange_account);
+    BacktestExchangeClient exchange_client(backtest_settings, "backtest_results.csv");
+    BasicStrategy basic_strategy(strategy_opts, &exchange_client);
     MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v4", &basic_strategy);
     mongo_producer.Produce(last_mins_count);
     basic_strategy.PrintStats();

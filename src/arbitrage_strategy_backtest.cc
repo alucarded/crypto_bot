@@ -1,5 +1,5 @@
-#include "client/exchange_client.h"
-#include "client/binance_client.hpp"
+#include "http/exchange_client.h"
+#include "http/binance_client.hpp"
 #include "db/mongo_client.hpp"
 #include "producer/mongo_ticker_producer.hpp"
 #include "strategy/backtest_exchange_client.hpp"
@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
       return -1;
     }
     std::string config_path(argv[1]);
-    auto config_json = GetConfigJson(config_path);
+    auto config_json = cryptobot::GetConfigJson(config_path);
     // TODO: take credentials from parameter store
     std::string pass("DRt99xd4o7PMfygqotE8");
     MongoClient* mongo_client =

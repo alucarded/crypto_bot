@@ -1,6 +1,6 @@
 #include "arbitrage_strategy_matcher.hpp"
 
-#include "client/exchange_client.h"
+#include "http/exchange_client.h"
 #include "consumer/consumer.h"
 #include "strategy/trading_strategy.h"
 #include "ticker_subscriber.h"

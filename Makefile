@@ -33,7 +33,7 @@ tests:
 	g++ -pipe src/strategy/multi_arbitrage/arbitrage_strategy_unittest.cc -o arbitrage_strategy_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 binapi_test:
-	g++ -pipe src/client/binapi_test.cc src/client/binapi/* -o binapi_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe src/http/binapi_test.cc src/http/binapi/* -o binapi_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 # DBOOST_LOG_DYN_LINK 
 kraken_test:

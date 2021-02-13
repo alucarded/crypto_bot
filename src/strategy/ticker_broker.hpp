@@ -1,4 +1,3 @@
-#include "client/exchange_client.h"
 #include "consumer/consumer.h"
 #include "ticker.h"
 #include "ticker_subscriber.h"
