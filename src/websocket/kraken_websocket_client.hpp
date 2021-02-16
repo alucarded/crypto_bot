@@ -1,5 +1,5 @@
 #include "serialization_utils.hpp"
-#include "websocket/ticker_client.hpp"
+#include "websocket/websocket_client.hpp"
 
 #include "json/json.hpp"
 
@@ -7,9 +7,9 @@
 
 using json = nlohmann::json;
 
-class KrakenTickerClient : public TickerClient {
+class KrakenWebsocketClient : public WebsocketClient {
 public:
-  KrakenTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
+  KrakenWebsocketClient(Consumer<RawTicker>* ticker_consumer) : WebsocketClient(ticker_consumer) {
   }
 
 virtual inline const std::string GetUrl() const override { return "wss://ws.kraken.com"; }
@@ -19,7 +19,7 @@ virtual inline const std::string GetExchangeName() const override { return "krak
 private:
   virtual void request_ticker() override {
       const std::string message = "{\"event\": \"subscribe\",\"pair\": [\"XBT/USDT\"],\"subscription\": {\"name\": \"ticker\"}}";
-      TickerClient::send(message);
+      WebsocketClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {

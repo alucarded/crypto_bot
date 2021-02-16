@@ -1,5 +1,5 @@
 #include "serialization_utils.hpp"
-#include "websocket/ticker_client.hpp"
+#include "websocket/websocket_client.hpp"
 
 #include "json/json.hpp"
 
@@ -7,9 +7,9 @@
 
 using json = nlohmann::json;
 
-class FtxTickerClient : public TickerClient {
+class FtxWebsocketClient : public WebsocketClient {
 public:
-  FtxTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
+  FtxWebsocketClient(Consumer<RawTicker>* ticker_consumer) : WebsocketClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://ftx.com/ws/"; }
@@ -18,7 +18,7 @@ public:
 private:
   virtual void request_ticker() override {
       const std::string message = "{\"op\": \"subscribe\", \"channel\": \"ticker\", \"market\": \"BTC/USDT\"}";
-      TickerClient::send(message);
+      WebsocketClient::send(message);
   }
 
   // TODO: maybe try implementing something like https://www.okex.com/docs/en/#spot_ws-limit

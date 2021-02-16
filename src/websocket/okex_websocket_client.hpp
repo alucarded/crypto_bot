@@ -1,5 +1,5 @@
 #include "serialization_utils.hpp"
-#include "websocket/ticker_client.hpp"
+#include "websocket/websocket_client.hpp"
 
 #include "json/json.hpp"
 
@@ -7,9 +7,9 @@
 
 using json = nlohmann::json;
 
-class OkexTickerClient : public TickerClient {
+class OkexWebsocketClient : public WebsocketClient {
 public:
-  OkexTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
+  OkexWebsocketClient(Consumer<RawTicker>* ticker_consumer) : WebsocketClient(ticker_consumer) {
   }
 
 virtual inline const std::string GetUrl() const override { return "wss://real.okex.com:8443/ws/v3"; }
@@ -19,7 +19,7 @@ virtual inline const std::string GetExchangeName() const override { return "okex
 private:
   virtual void request_ticker() override {
       const std::string message = "{\"op\": \"subscribe\", \"args\": [\"spot/ticker:BTC-USDT\"]}";
-      TickerClient::send(message);
+      WebsocketClient::send(message);
   }
 
   // TODO: maybe try implementing something like https://www.okex.com/docs/en/#spot_ws-limit

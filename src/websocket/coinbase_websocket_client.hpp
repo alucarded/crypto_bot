@@ -1,5 +1,5 @@
 #include "serialization_utils.hpp"
-#include "websocket/ticker_client.hpp"
+#include "websocket/websocket_client.hpp"
 
 #include "json/json.hpp"
 
@@ -7,9 +7,9 @@
 
 using json = nlohmann::json;
 
-class CoinbaseTickerClient : public TickerClient {
+class CoinbaseWebsocketClient : public WebsocketClient {
 public:
-  CoinbaseTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
+  CoinbaseWebsocketClient(Consumer<RawTicker>* ticker_consumer) : WebsocketClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://ws-feed.pro.coinbase.com"; }
@@ -18,7 +18,7 @@ public:
 private:
   virtual void request_ticker() override {
       const std::string message = "{\"type\": \"subscribe\",\"product_ids\": [\"BTC-USD\", \"USDT-USD\"],\"channels\": [{\"name\": \"ticker\",\"product_ids\": [\"BTC-USD\"]}]}";
-      TickerClient::send(message);
+      WebsocketClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {

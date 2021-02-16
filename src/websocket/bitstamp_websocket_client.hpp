@@ -1,5 +1,5 @@
 #include "serialization_utils.hpp"
-#include "websocket/ticker_client.hpp"
+#include "websocket/websocket_client.hpp"
 
 #include "json/json.hpp"
 
@@ -7,9 +7,9 @@
 
 using json = nlohmann::json;
 
-class BitstampTickerClient : public TickerClient {
+class BitstampWebsocketClient : public WebsocketClient {
 public:
-  BitstampTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
+  BitstampWebsocketClient(Consumer<RawTicker>* ticker_consumer) : WebsocketClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://ws.bitstamp.net"; }
@@ -18,7 +18,7 @@ public:
 private:
   virtual void request_ticker() override {
       const std::string message = "{\"event\": \"bts:subscribe\",\"data\": {\"channel\": \"order_book_btcusd\"}}";
-      TickerClient::send(message);
+      WebsocketClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {

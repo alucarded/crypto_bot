@@ -1,4 +1,4 @@
-#include "ticker_client.hpp"
+#include "websocket_client.hpp"
 #include "consumer.h"
 
 #include "../json/json.hpp"
@@ -8,10 +8,10 @@
 
 using json = nlohmann::json;
 
-class EtoroxTickerClient : public TickerClient {
+class EtoroxWebsocketClient : public WebsocketClient {
 public:
 
-  EtoroxTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
+  EtoroxWebsocketClient(Consumer<RawTicker>* ticker_consumer) : WebsocketClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return ""; }
@@ -20,7 +20,7 @@ public:
 private:
   virtual void request_ticker() override {
         // const std::string message = "{\"event\": \"bts:subscribe\",\"data\": {\"channel\": \"order_book_btcusd\"}}";
-        // TickerClient::send(message);
+        // WebsocketClient::send(message);
   }
 
   virtual void on_message(websocketpp::connection_hdl hdl, client::message_ptr msg) override {

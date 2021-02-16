@@ -1,5 +1,5 @@
 #include "serialization_utils.hpp"
-#include "websocket/ticker_client.hpp"
+#include "websocket/websocket_client.hpp"
 
 #include "json/json.hpp"
 
@@ -8,9 +8,9 @@
 using json = nlohmann::json;
 
 // TODO: connection is disconnected after 24 hours - need to re-connect
-class HuobiGlobalTickerClient : public TickerClient {
+class HuobiGlobalWebsocketClient : public WebsocketClient {
 public:
-  HuobiGlobalTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
+  HuobiGlobalWebsocketClient(Consumer<RawTicker>* ticker_consumer) : WebsocketClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://api.btcgateway.pro/swap-ws"; }
@@ -21,7 +21,7 @@ private:
 
   virtual void request_ticker() override {
       const std::string message = "{\"sub\": \"" + CHANNEL + "\",\"id\": \"1234\"}";
-      TickerClient::send(message);
+      WebsocketClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {
@@ -42,7 +42,7 @@ private:
         //m_endpoint.pong(m_con->get_handle(), "{\"op\":\"pong\", \"ts\":" + std::to_string(msg_json["ping"].get<uint64_t>()) +"}", ec);
         //std::string message = "{\"op\":\"pong\", \"ts\":" + std::to_string(msg_json["ping"].get<uint64_t>()) +"}";
         std::string message = "{\"pong\": " + std::to_string(msg_json["ping"].get<uint64_t>()) +"}";
-        TickerClient::send(message);
+        WebsocketClient::send(message);
         return {};
       }
       if (!utils::check_message(msg_json, {"ch", "ts", "tick"})

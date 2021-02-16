@@ -1,5 +1,5 @@
 #include "serialization_utils.hpp"
-#include "websocket/ticker_client.hpp"
+#include "websocket/websocket_client.hpp"
 
 #include "json/json.hpp"
 
@@ -8,9 +8,9 @@
 using json = nlohmann::json;
 
 // TODO: try re-opening connection on close, routing policy might change few time per day
-class BitbayTickerClient : public TickerClient {
+class BitbayWebsocketClient : public WebsocketClient {
 public:
-  BitbayTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
+  BitbayWebsocketClient(Consumer<RawTicker>* ticker_consumer) : WebsocketClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://api.bitbay.net/websocket/"; }
@@ -19,7 +19,7 @@ public:
 private:
   virtual void request_ticker() override {
       const std::string message = "{\"action\": \"subscribe-public\",\"module\": \"trading\",\"path\": \"ticker/BTC-USDT\"}";
-      TickerClient::send(message);
+      WebsocketClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {

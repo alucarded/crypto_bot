@@ -1,5 +1,5 @@
 #include "serialization_utils.hpp"
-#include "websocket/ticker_client.hpp"
+#include "websocket/websocket_client.hpp"
 
 #include "json/json.hpp"
 
@@ -9,9 +9,9 @@
 using json = nlohmann::json;
 
 // TODO: connection is disconnected after 24 hours - need to re-connect
-class BinanceTickerClient : public TickerClient {
+class BinanceWebsocketClient : public WebsocketClient {
 public:
-  BinanceTickerClient(Consumer<RawTicker>* ticker_consumer) : TickerClient(ticker_consumer) {
+  BinanceWebsocketClient(Consumer<RawTicker>* ticker_consumer) : WebsocketClient(ticker_consumer) {
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://fstream.binance.com/ws/bookTicker"; }
@@ -20,7 +20,7 @@ public:
 private:
   virtual void request_ticker() override {
       const std::string message = "{\"method\": \"SUBSCRIBE\",\"params\": [\"btcusdt@bookTicker\"],\"id\": 1}";
-      TickerClient::send(message);
+      WebsocketClient::send(message);
   }
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {
