@@ -20,6 +20,7 @@
 struct ArbitrageStrategyOptions {
   std::unordered_map<std::string, ExchangeParams> m_exchange_params;
   double m_default_amount;
+  double m_min_amount;
   int64_t m_max_ticker_age_us;
   int64_t m_max_ticker_delay_us;
   int64_t m_min_trade_interval_us;
@@ -104,6 +105,11 @@ public:
         }
         if (best_ask_ticker.m_ask_vol.has_value()) {
           vol = std::min(best_ask_ticker.m_ask_vol.value(), vol);
+        }
+        // Make sure the amount is above minimum
+        if (vol < m_opts.m_min_amount) {
+          BOOST_LOG_TRIVIAL(warning) << "Order amount below minimum.";
+          return;
         }
         auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_exchange_clients[best_bid_exchange].get(),
             "BTCUSDT", Side::ASK, vol, best_bid_ticker.m_bid);
