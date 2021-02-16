@@ -37,7 +37,7 @@ binapi_test:
 
 # DBOOST_LOG_DYN_LINK 
 kraken_test:
-	g++ -pipe src/client/kraken_client_test.cc -o kraken_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe src/http/kraken_client_test.cc -o kraken_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 arbitrage_main:
 	g++ -pipe src/arbitrage_strategy_main.cc src/client/binapi/* -o arbitrage_main $(CFLAGS) $(LDFLAGS)

@@ -1,9 +1,12 @@
 #include "exchange_client.h"
 #include "http_client.hpp"
 
+#include "json/json.hpp"
+
 #include <array>
 #include <functional>
 #include <sstream>
+#include <unordered_map>
 #include <vector>
 
 namespace {
@@ -90,6 +93,8 @@ using namespace std;
 
 }
 
+using json = nlohmann::json;
+
 using namespace std::placeholders; // _1, _2, etc.
 
 class KrakenClient : public ExchangeClient {
@@ -97,6 +102,7 @@ public:
   inline static const std::string HOST = "api.kraken.com";
   inline static const std::string PORT = "443";
   inline static const std::string ADD_ORDER_PATH = "/0/private/AddOrder";
+  inline static const std::string GET_ACCOUNT_BALANCE_PATH = "/0/private/Balance";
 
   KrakenClient() : m_http_client(HttpClient::Options("cryptobot-1.0.0")) {
 
@@ -134,6 +140,17 @@ public:
 
   }
 
+  virtual AccountBalance GetAccountBalance() override {
+    HttpClient::Result res = m_http_client.post(HOST, PORT, GET_ACCOUNT_BALANCE_PATH)
+        .Header("API-Key", g_public_key)
+        .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
+        .send();
+    json response_json = json::parse(res.response);
+    std::unordered_map<std::string, std::string> balances;
+    nlohmann::detail::from_json(response_json["result"], balances);
+    return AccountBalance(balances);
+  }
+
 private:
   void SignQueryString(HttpClient::Request& request, std::string& query_string) {
     struct timeval sys_time;
@@ -147,7 +164,7 @@ private:
     }
     query_string += "nonce=" + nonce.str();
     auto const D = sha256(nonce.str() + query_string);
-    auto const digest = "/0/private/AddOrder" + std::string{std::begin(D), std::end(D)};
+    auto const digest = request.GetPath() + std::string{std::begin(D), std::end(D)};
     auto private_key = base64_decode(g_private_key); //std::vector<uint8_t>(std::begin(g_private_key), std::end(g_private_key));
     auto const hmac = base64_encode(
         hmac_sha512(vector<uint8_t>{std::begin(digest), std::end(digest)}, private_key));

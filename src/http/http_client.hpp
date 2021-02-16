@@ -61,6 +61,11 @@ public:
       return m_http_client.send(*this);
     }
 
+    // Getters
+    inline
+    const std::string& GetPath() const {
+      return m_path;
+    }
   private:
 
     // TODO: support different body types ?
