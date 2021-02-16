@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
         // TODO: take credentials from parameter store ?
         MongoClient* mongo_client =
                 MongoClient::GetInstance()->CreatePool("mongodb://app:DRt99xd4o7PMfygqotE8@18.132.211.87:28888/?authSource=findata");
-        MongoTickerConsumer mongo_consumer(mongo_client, "findata", "BtcUsdtTicker_v1");
+        MongoTickerConsumer mongo_consumer(mongo_client, "findata", "BtcUsdtTicker_v2");
         // TODO: add Binance US for USDT-USD rates
         BinanceTickerClient binance_client(&mongo_consumer);
         // No USDT on Bitstamp
@@ -30,14 +30,19 @@ int main(int argc, char* argv[]) {
         KrakenTickerClient kraken_client(&mongo_consumer);
         // No USDT on Coinbase
         //CoinbaseTickerClient coinbase_client(&mongo_consumer);
-        PoloniexTickerClient poloniex_client(&mongo_consumer);
-        BitbayTickerClient bitbay_client(&mongo_consumer);
-        HuobiGlobalTickerClient huobi_global_client(&mongo_consumer);
+        //PoloniexTickerClient poloniex_client(&mongo_consumer);
+        //BitbayTickerClient bitbay_client(&mongo_consumer);
+        //HuobiGlobalTickerClient huobi_global_client(&mongo_consumer);
         // OkexTickerClient huobi_global_client(&mongo_consumer);
         // BybitTickerClient bybit_client(&mongo_consumer);
-        FtxTickerClient ftx_client(&mongo_consumer);
-        std::list<TickerClient*> ticker_client_list = {&binance_client, &kraken_client,
-                &poloniex_client, &bitbay_client, &huobi_global_client, &ftx_client};
+        //FtxTickerClient ftx_client(&mongo_consumer);
+        std::list<TickerClient*> ticker_client_list = {&binance_client,
+                &kraken_client//,
+                //&poloniex_client,
+                //&bitbay_client,
+                //&huobi_global_client,
+                //&ftx_client
+                };
         std::for_each(ticker_client_list.begin(), ticker_client_list.end(), [](TickerClient* tc) { tc->start(); });
         // Just wait for now
         std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
