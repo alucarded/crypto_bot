@@ -12,6 +12,7 @@
 #include <string>
 #include <map>
 #include <memory>
+#include <mutex>
 #include <stdexcept>
 #include <unordered_map>
 #include <utility>
@@ -54,6 +55,7 @@ public:
   }
 
   virtual void OnTicker(const Ticker& ticker) override {
+    std::unique_lock<std::mutex> scoped_lock(m_mutex);
     //std::cout << "Ticker." << std::endl << "Bid: " << std::to_string(ticker.m_bid) << std::endl << "Ask: " << std::to_string(ticker.m_ask) << std::endl;
     m_tickers[ticker.m_exchange] = ticker;
     auto match_opt = m_matcher.FindMatch(m_tickers);
@@ -123,10 +125,12 @@ public:
   }
 
   virtual void OnDisconnected(const std::string& exchange_name) override {
+    std::unique_lock<std::mutex> scoped_lock(m_mutex);
     m_tickers.erase(exchange_name);
   }
 
 private:
+  std::mutex m_mutex;
   ArbitrageStrategyOptions m_opts;
   ArbitrageStrategyMatcher m_matcher;
   std::map<std::string, Ticker> m_tickers;
