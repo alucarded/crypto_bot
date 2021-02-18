@@ -150,6 +150,10 @@ public:
   }
 
   // TODO: For now it is always https
+  HttpClient::Request get(const std::string& host, const std::string& port, const std::string& path) {
+    return Request(*this, host, port, path, boost::beast::http::verb::get, m_options.m_user_agent);
+  }
+
   HttpClient::Request post(const std::string& host, const std::string& port, const std::string& path) {
     return Request(*this, host, port, path, boost::beast::http::verb::post, m_options.m_user_agent);
   }

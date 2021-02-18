@@ -17,7 +17,7 @@ const std::string g_secret = "giavUBTzRVa91h58H8GhQ0UWqfGFW7Mu93PF5oXPG6AMKWIlbp
 
 }
 
-TEST(BinanceClientTest, BasicTest)
+TEST(BinanceClientTest, NewOrderTest)
 {
   boost::asio::io_context ioctx;
   binapi::rest::api api{
@@ -26,7 +26,7 @@ TEST(BinanceClientTest, BasicTest)
       ,"443"
       ,g_api_key // can be empty for non USER_DATA reqs
       ,g_secret // can be empty for non USER_DATA reqs
-      ,200 // recvWindow
+      ,1000 // recvWindow
       , "cryptobot-1.0.0"
   };
   cryptobot::Timer timer;
@@ -48,4 +48,22 @@ TEST(BinanceClientTest, BasicTest)
         // }
     );
   //ioctx.run();
+}
+
+TEST(BinanceClientTest, AccountInfoTest)
+{
+  boost::asio::io_context ioctx;
+  binapi::rest::api api{
+      ioctx
+      ,"testnet.binance.vision"
+      ,"443"
+      ,g_api_key // can be empty for non USER_DATA reqs
+      ,g_secret // can be empty for non USER_DATA reqs
+      ,1000 // recvWindow
+      , "cryptobot-1.0.0"
+  };
+  cryptobot::Timer timer;
+  timer.start();
+  auto res = api.account_info();
+  std::cout << res.v << std::endl;
 }

@@ -28,15 +28,15 @@ basic_backtest:
 arbitrage_backtest:
 	g++ -pipe src/arbitrage_strategy_backtest.cc src/db/mongo_client.hpp src/producer/mongo_ticker_producer.hpp -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
 
-tests:
+unit_tests:
 	g++ -pipe src/strategy/multi_arbitrage/arbitrage_strategy_matcher_unittest.cc -o arbitrage_strategy_matcher_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 	g++ -pipe src/strategy/multi_arbitrage/arbitrage_strategy_unittest.cc -o arbitrage_strategy_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 binapi_test:
 	g++ -pipe src/http/binapi_test.cc src/http/binapi/* -o binapi_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
-# DBOOST_LOG_DYN_LINK 
-kraken_test:
+integration_tests:
+	g++ -pipe src/http/binance_client_test.cc src/http/binapi/* -o binance_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 	g++ -pipe src/http/kraken_client_test.cc -o kraken_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 arbitrage_main:

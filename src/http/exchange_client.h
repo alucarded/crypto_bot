@@ -32,6 +32,10 @@ struct AccountBalance {
       : m_asset_balance_map(asset_balance_map) {
   }
 
+  AccountBalance(AccountBalance&& b) : AccountBalance(std::move(b.m_asset_balance_map)) {
+    
+  }
+
   std::unordered_map<std::string, double> m_asset_balance_map;
 
   friend std::ostream &operator<<(std::ostream &os, const AccountBalance &res);
