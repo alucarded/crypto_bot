@@ -1,3 +1,4 @@
+#pragma once
 #include "utils/timer.hpp"
 
 #include <boost/preprocessor.hpp>

@@ -50,6 +50,12 @@ public:
 
   }
 
+  void Initialize() {
+    for (const auto& p : m_exchange_clients) {
+      m_balances.insert(std::make_pair(p.first, std::move(p.second->GetAccountBalance())));
+    }
+  }
+
   virtual void execute(const std::string& updated_ticker, const std::map<std::string, Ticker>& tickers) override {
     // unused
   }
@@ -113,13 +119,21 @@ public:
           BOOST_LOG_TRIVIAL(warning) << "Order amount below minimum.";
           return;
         }
+        // Finally
+        if (!CanSell(best_bid_exchange, vol) || !CanBuy(best_ask_exchange, vol, best_ask_ticker.m_ask)) {
+          BOOST_LOG_TRIVIAL(warning) << "Not enough funds.";
+          return;
+        }
         auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_exchange_clients[best_bid_exchange].get(),
             "BTCUSDT", Side::ASK, vol, best_bid_ticker.m_bid);
         auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_exchange_clients[best_ask_exchange].get(),
             "BTCUSDT", Side::BID, vol, best_ask_ticker.m_ask);
         m_last_trade_us = now_us;
-        BOOST_LOG_TRIVIAL(info) << match << std::endl << "Response from " << best_bid_exchange << ": " << std::endl << f1.get() << std::endl
-            << "Response from " << best_ask_exchange << ": " << std::endl << f2.get() << std::endl;
+        auto f1_res = f1.get();
+        auto f2_res = f2.get();
+        BOOST_LOG_TRIVIAL(info) << match << std::endl << "Response from " << best_bid_exchange << ": " << std::endl << f1_res << std::endl
+            << "Response from " << best_ask_exchange << ": " << std::endl << f2_res << std::endl;
+        UpdateBalances(best_bid_exchange, best_ask_exchange);
       }
     }
   }
@@ -130,9 +144,31 @@ public:
   }
 
 private:
+
+  inline bool CanSell(const std::string& exchange_name, double amount) {
+    assert(m_balances.count(exchange_name) > 0);
+    // TODO: here we assume BTCUSDT
+    double balance = m_balances.at(exchange_name).GetBalance("BTC");
+    return balance > amount * (1.0 + m_opts.m_exchange_params.at(exchange_name).m_fee);
+  }
+
+  inline bool CanBuy(const std::string& exchange_name, double amount, double price) {
+    assert(m_balances.count(exchange_name) > 0);
+    double balance = m_balances.at(exchange_name).GetBalance("USDT");
+    return balance > amount * price * (1.0 + m_opts.m_exchange_params.at(exchange_name).m_fee);
+  }
+
+  void UpdateBalances(const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
+    auto acc_f1 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_exchange_clients[best_bid_exchange].get());
+    auto acc_f2 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_exchange_clients[best_ask_exchange].get());
+    m_balances.insert_or_assign(best_bid_exchange, std::move(acc_f1.get()));
+    m_balances.insert_or_assign(best_ask_exchange, std::move(acc_f2.get()));
+  }
+private:
   std::mutex m_mutex;
   ArbitrageStrategyOptions m_opts;
   ArbitrageStrategyMatcher m_matcher;
   std::map<std::string, Ticker> m_tickers;
+  std::unordered_map<std::string, AccountBalance> m_balances;
   int64_t m_last_trade_us;
 };

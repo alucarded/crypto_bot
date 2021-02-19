@@ -40,7 +40,7 @@ int main(int argc, char* argv[]) {
       { "kraken", ExchangeParams("kraken", 5.0, 0.0026) }
     };
     strategy_opts.m_default_amount = 0.0002;
-    startegy_opts.m_min_amount = 0.0002;
+    strategy_opts.m_min_amount = 0.0002;
     strategy_opts.m_max_ticker_age_us = 1000000; // 1s
     strategy_opts.m_max_ticker_delay_us = 500000; // 500 ms
     strategy_opts.m_min_trade_interval_us = 500000; // 500 ms
@@ -49,6 +49,7 @@ int main(int argc, char* argv[]) {
     KrakenClient kraken_client;
     arbitrage_strategy.RegisterExchangeClient("binance", &binance_client);
     arbitrage_strategy.RegisterExchangeClient("kraken", &kraken_client);
+    arbitrage_strategy.Initialize();
     TickerBroker ticker_broker({&arbitrage_strategy});
     BinanceWebsocketClient binance_websocket_client(&ticker_broker);
     KrakenWebsocketClient kraken_websocket_client(&ticker_broker);

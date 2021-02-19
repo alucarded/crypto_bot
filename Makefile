@@ -40,7 +40,7 @@ integration_tests:
 	g++ -pipe src/http/kraken_client_test.cc -o kraken_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 arbitrage_main:
-	g++ -pipe src/arbitrage_strategy_main.cc src/client/binapi/* -o arbitrage_main $(CFLAGS) $(LDFLAGS)
+	g++ -pipe src/arbitrage_strategy_main.cc src/http/binapi/* -o arbitrage_main $(CFLAGS) $(LDFLAGS)
 
 clean:
 	if [ -f collector ]; then rm collector; fi; \

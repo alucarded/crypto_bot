@@ -36,6 +36,18 @@ struct AccountBalance {
     
   }
 
+  AccountBalance& operator=(AccountBalance&& account_balance) {
+    m_asset_balance_map = std::move(account_balance.m_asset_balance_map);
+    return *this;
+  }
+
+  double GetBalance(const std::string& asset_name) const {
+    if (m_asset_balance_map.count(asset_name) < 1) {
+      return 0;
+    }
+    return m_asset_balance_map.at(asset_name);
+  }
+
   std::unordered_map<std::string, double> m_asset_balance_map;
 
   friend std::ostream &operator<<(std::ostream &os, const AccountBalance &res);
