@@ -23,7 +23,7 @@ void InitLogging() {
   //logging::add_file_log(keywords::file_name = "cryptobot.log", boost::log::keywords::target = "/mnt/e/logs");
   //logging::add_console_log(std::cout, boost::log::keywords::format = ">> %Message%");
   logging::core::get()->set_filter(
-      logging::trivial::severity >= logging::trivial::info);
+      logging::trivial::severity >= logging::trivial::debug);
   logging::add_common_attributes();
 }
 

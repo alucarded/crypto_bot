@@ -1,19 +1,9 @@
+#include "options.h"
 #include "ticker.h"
 
 #include <optional>
 #include <map>
 #include <unordered_map>
-
-struct ExchangeParams {
-  ExchangeParams(const std::string& exchange_name, double slippage, double fee)
-    : m_exchange_name(exchange_name), m_slippage(slippage), m_fee(fee) {
-
-  }
-
-  std::string m_exchange_name;
-  double m_slippage;
-  double m_fee;
-};
 
 static std::unordered_map<std::string, ExchangeParams> g_exchange_params = {
   { "binance", ExchangeParams("binance", 10.0, 0.001) },

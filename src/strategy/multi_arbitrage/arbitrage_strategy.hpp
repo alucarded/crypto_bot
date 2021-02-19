@@ -2,6 +2,7 @@
 
 #include "http/exchange_client.h"
 #include "consumer/consumer.h"
+#include "options.h"
 #include "strategy/trading_strategy.h"
 #include "ticker_subscriber.h"
 
@@ -149,13 +150,17 @@ private:
     assert(m_balances.count(exchange_name) > 0);
     // TODO: here we assume BTCUSDT
     double balance = m_balances.at(exchange_name).GetBalance("BTC");
-    return balance > amount * (1.0 + m_opts.m_exchange_params.at(exchange_name).m_fee);
+    double min_balance = amount * (1.0 + m_opts.m_exchange_params.at(exchange_name).m_fee);
+    BOOST_LOG_TRIVIAL(debug) << "Minimum required BTC balance on " << exchange_name << " is " << std::to_string(min_balance);
+    return balance > min_balance;
   }
 
   inline bool CanBuy(const std::string& exchange_name, double amount, double price) {
     assert(m_balances.count(exchange_name) > 0);
     double balance = m_balances.at(exchange_name).GetBalance("USDT");
-    return balance > amount * price * (1.0 + m_opts.m_exchange_params.at(exchange_name).m_fee);
+    double min_balance = amount * price * (1.0 + m_opts.m_exchange_params.at(exchange_name).m_fee);
+    BOOST_LOG_TRIVIAL(debug) << "Minimum required USDT balance on " << exchange_name << " is " << std::to_string(min_balance);
+    return balance > min_balance;
   }
 
   void UpdateBalances(const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
