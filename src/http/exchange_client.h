@@ -48,6 +48,7 @@ struct AccountBalance {
     return m_asset_balance_map.at(asset_name);
   }
 
+  // TODO: depending on exchange this can contain total asset amount in possession or free amount (not locked by open order etc.)
   std::unordered_map<std::string, double> m_asset_balance_map;
 
   friend std::ostream &operator<<(std::ostream &os, const AccountBalance &res);

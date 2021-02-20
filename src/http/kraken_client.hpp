@@ -104,6 +104,9 @@ public:
   inline static const std::string ADD_ORDER_PATH = "/0/private/AddOrder";
   inline static const std::string GET_ACCOUNT_BALANCE_PATH = "/0/private/Balance";
 
+  // Maps Kraken asset names to our names
+  static const std::unordered_map<std::string, std::string> ASSET_NAME_MAP;
+
   KrakenClient() : m_http_client(HttpClient::Options("cryptobot-1.0.0")) {
 
   }
@@ -147,7 +150,11 @@ public:
         .send();
     json response_json = json::parse(res.response);
     std::unordered_map<std::string, std::string> balances;
-    nlohmann::detail::from_json(response_json["result"], balances);
+    // nlohmann::detail::from_json(response_json["result"], balances);
+    for (const auto& el : response_json["result"].items()) {
+      auto key = ASSET_NAME_MAP.count(el.key()) > 0 ? ASSET_NAME_MAP.at(el.key()) : el.key();
+      balances.insert(std::make_pair(key, el.value()));
+    }
     return AccountBalance(balances);
   }
 
@@ -173,4 +180,9 @@ private:
 
 private:
   HttpClient m_http_client;
+};
+
+const std::unordered_map<std::string, std::string> KrakenClient::ASSET_NAME_MAP = {
+  {"XXBT", "BTC"},
+  {"XBT", "BTC"}
 };
