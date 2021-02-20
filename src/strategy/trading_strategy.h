@@ -1,5 +1,5 @@
 #pragma once
-#include "exchange/exchange_client.h"
+#include "exchange/account_manager.hpp"
 #include "ticker.h"
 
 #include <map>
@@ -16,10 +16,10 @@ public:
   [[deprecated]]
   virtual void execute(const std::string& updated_ticker, const std::map<std::string, Ticker>& tickers) = 0;
 
-  void RegisterExchangeClient(const std::string& exchange_name, ExchangeClient* exchange_client) {
-    m_exchange_clients.insert(std::make_pair(exchange_name, std::unique_ptr<ExchangeClient>(exchange_client)));
+  void RegisterExchangeClient(const std::string& exchange_name, ExchangeClient* exchange) {
+    m_account_managers.insert(std::make_pair(exchange_name, std::unique_ptr<AccountManager>(new AccountManager(exchange))));
   }
 protected:
   // TODO: use enum instead of string for key
-  std::map<std::string, std::unique_ptr<ExchangeClient>> m_exchange_clients;
+  std::map<std::string, std::unique_ptr<AccountManager>> m_account_managers;
 };

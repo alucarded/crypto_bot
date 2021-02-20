@@ -6,13 +6,13 @@
 #include <string>
 
 // TODO: use this
-enum Exchange : int {
+enum ExchangeId : int {
   BINANCE,
   COINBASE,
   KRAKEN
 };
 
-enum Symbol : int {
+enum SymbolId : int {
   BTC_USDT
 };
 

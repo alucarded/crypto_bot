@@ -45,10 +45,8 @@ int main(int argc, char* argv[]) {
     strategy_opts.m_max_ticker_delay_us = 500000; // 500 ms
     strategy_opts.m_min_trade_interval_us = 500000; // 500 ms
     ArbitrageStrategy arbitrage_strategy(strategy_opts);
-    BinanceClient binance_client;
-    KrakenClient kraken_client;
-    arbitrage_strategy.RegisterExchangeClient("binance", &binance_client);
-    arbitrage_strategy.RegisterExchangeClient("kraken", &kraken_client);
+    arbitrage_strategy.RegisterExchangeClient("binance", new BinanceClient());
+    arbitrage_strategy.RegisterExchangeClient("kraken", new KrakenClient());
     arbitrage_strategy.Initialize();
     TickerBroker ticker_broker({&arbitrage_strategy});
     BinanceWebsocketClient binance_websocket_client(&ticker_broker);

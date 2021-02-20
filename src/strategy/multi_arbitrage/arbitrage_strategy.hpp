@@ -52,7 +52,7 @@ public:
   }
 
   void Initialize() {
-    for (const auto& p : m_exchange_clients) {
+    for (const auto& p : m_account_managers) {
       m_balances.insert(std::make_pair(p.first, std::move(p.second->GetAccountBalance())));
     }
   }
@@ -105,8 +105,8 @@ public:
       }
       // std::cout << "Got match between " << best_bid_exchange << " and " << best_ask_exchange
       //   << " with profit " << std::to_string(match.m_profit) << std::endl;
-      if (m_exchange_clients.count(best_bid_exchange) > 0
-        && m_exchange_clients.count(best_ask_exchange) > 0) {
+      if (m_account_managers.count(best_bid_exchange) > 0
+        && m_account_managers.count(best_ask_exchange) > 0) {
         // Set trade amount to minimum across best bid, best ask and default amount
         double vol = m_opts.m_default_amount;
         if (best_bid_ticker.m_bid_vol.has_value()) {
@@ -125,9 +125,9 @@ public:
           BOOST_LOG_TRIVIAL(warning) << "Not enough funds.";
           return;
         }
-        auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_exchange_clients[best_bid_exchange].get(),
+        auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
             "BTCUSDT", Side::ASK, vol, best_bid_ticker.m_bid);
-        auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_exchange_clients[best_ask_exchange].get(),
+        auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
             "BTCUSDT", Side::BID, vol, best_ask_ticker.m_ask);
         m_last_trade_us = now_us;
         auto f1_res = f1.get();
@@ -164,8 +164,8 @@ private:
   }
 
   void UpdateBalances(const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
-    auto acc_f1 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_exchange_clients[best_bid_exchange].get());
-    auto acc_f2 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_exchange_clients[best_ask_exchange].get());
+    auto acc_f1 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_account_managers[best_bid_exchange].get());
+    auto acc_f2 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_account_managers[best_ask_exchange].get());
     m_balances.insert_or_assign(best_bid_exchange, std::move(acc_f1.get()));
     m_balances.insert_or_assign(best_ask_exchange, std::move(acc_f2.get()));
   }
