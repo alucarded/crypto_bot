@@ -4,11 +4,20 @@
 
 int main() {
   BinanceClient binance_client;
-  //kraken_client.MarketOrder("xbtusdt", Side::BID, 0.001);
+  BOOST_LOG_TRIVIAL(info) << "GetAccountBalance";
   auto balance = binance_client.GetAccountBalance();
   BOOST_LOG_TRIVIAL(info) << balance.GetRawResponse();
   BOOST_LOG_TRIVIAL(info) << "AccountBalance:" << balance.Get();
   if (!balance) {
     BOOST_LOG_TRIVIAL(error) << balance.GetErrorMsg();
+  }
+  BOOST_LOG_TRIVIAL(info) << "GetOpenOrders";
+  auto orders = binance_client.GetOpenOrders("BTCUSDT");
+  BOOST_LOG_TRIVIAL(info) << orders.GetRawResponse();
+  for (const auto& order : orders.Get()) {
+    BOOST_LOG_TRIVIAL(info) << "Order: " << order.m_id;
+  }
+  if (!orders) {
+    BOOST_LOG_TRIVIAL(error) << orders.GetErrorMsg();
   }
 }

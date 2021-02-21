@@ -66,6 +66,7 @@ public:
   inline static const std::string PORT = "443";
   inline static const std::string ADD_ORDER_PATH = "/api/v3/order";
   inline static const std::string GET_ACCOUNT_BALANCE_PATH = "/api/v3/account";
+  inline static const std::string GET_OPEN_ORDERS_PATH = "/api/v3/openOrders";
 
   BinanceClient()
       : m_last_order_id(0), m_ioctx(), m_api(
@@ -139,9 +140,21 @@ public:
     return Result<AccountBalance>(res.response, AccountBalance(balances));
   }
 
-  virtual Result<std::vector<Order>> GetOpenOrders() override {
-    // TODO:
-    return Result<std::vector<Order>>("", std::vector<Order>());
+  virtual Result<std::vector<Order>> GetOpenOrders(const std::string& symbol) override {
+    HttpClient::Result res = m_http_client.get(HOST, PORT, GET_OPEN_ORDERS_PATH)
+        .Header("X-MBX-APIKEY", g_api_key)
+        .QueryParam("symbol", symbol)
+        .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
+        .send();
+    json response_json = json::parse(res.response);
+    if (response_json.contains("code")) {
+      return Result<std::vector<Order>>(res.response, response_json["msg"].get<std::string>());
+    }
+    std::vector<Order> orders;
+    for (const auto& order : response_json) {
+      orders.push_back(Order(order["clientOrderId"].get<std::string>()));
+    }
+    return Result<std::vector<Order>>(res.response, orders);
   }
 private:
 

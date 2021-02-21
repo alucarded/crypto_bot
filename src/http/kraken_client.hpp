@@ -175,7 +175,7 @@ public:
     return Result<AccountBalance>(res.response, AccountBalance(balances));
   }
 
-  virtual Result<std::vector<Order>> GetOpenOrders() override {
+  virtual Result<std::vector<Order>> GetOpenOrders(const std::string& symbol) override {
     HttpClient::Result res = m_http_client.post(HOST, PORT, GET_OPEN_ORDERS_PATH)
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
@@ -185,7 +185,9 @@ public:
       return Result<std::vector<Order>>(res.response, response_json["error"][0]);
     }
     std::vector<Order> orders;
-    // TODO:
+    for (auto& o : response_json["result"]["open"].items()) {
+      orders.push_back(Order(o.key()));
+    }
     return Result<std::vector<Order>>(res.response, orders);
   }
 
