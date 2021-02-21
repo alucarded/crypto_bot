@@ -39,11 +39,11 @@ int main(int argc, char* argv[]) {
       { "binance", ExchangeParams("binance", 5.0, 0.00075) },
       { "kraken", ExchangeParams("kraken", 5.0, 0.0026) }
     };
-    strategy_opts.m_default_amount = 0.0002;
+    strategy_opts.m_default_amount = 0.001;
     strategy_opts.m_min_amount = 0.0002;
     strategy_opts.m_max_ticker_age_us = 1000000; // 1s
     strategy_opts.m_max_ticker_delay_us = 500000; // 500 ms
-    strategy_opts.m_min_trade_interval_us = 500000; // 500 ms
+    strategy_opts.m_min_trade_interval_us = 0;
     strategy_opts.m_base_currency_ratio = 0.5;
     strategy_opts.m_allowed_deviation = 0.3;
     ArbitrageStrategy arbitrage_strategy(strategy_opts);
