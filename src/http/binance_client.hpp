@@ -88,26 +88,30 @@ public:
 
   }
 
-  virtual Result<NewOrder> MarketOrder(const std::string& symbol, Side side, double qty) override {
+  virtual std::string GetExchange() override {
+    return "binance";
+  }
+
+  virtual Result<Order> MarketOrder(const std::string& symbol, Side side, double qty) override {
     binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
         binapi::e_type::market, binapi::e_time::GTC,
         std::to_string(qty), std::string(), std::to_string(++m_last_order_id), std::string(), std::string());
     if ( !res ) {
         BOOST_LOG_TRIVIAL(error) << "Binance MarketOrder error: " << res.errmsg << std::endl;
-        return Result<NewOrder>(res.reply, res.errmsg);
+        return Result<Order>(res.reply, res.errmsg);
     }
-    return Result<NewOrder>(res.reply, NewOrder(std::to_string(m_last_order_id)));
+    return Result<Order>(res.reply, Order(std::to_string(m_last_order_id)));
   }
 
-  virtual Result<NewOrder> LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
+  virtual Result<Order> LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
     binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
         binapi::e_type::limit, binapi::e_time::GTC,
         std::to_string(qty), std::to_string(price), std::to_string(++m_last_order_id), std::string(), std::string());
     if ( !res ) {
         BOOST_LOG_TRIVIAL(error) << "Binance LimitOrder error: " << res.errmsg << std::endl;
-        return Result<NewOrder>(res.reply, res.errmsg);
+        return Result<Order>(res.reply, res.errmsg);
     }
-    return Result<NewOrder>(res.reply, NewOrder(std::to_string(m_last_order_id)));
+    return Result<Order>(res.reply, Order(std::to_string(m_last_order_id)));
   }
 
   virtual void CancelAllOrders() override {
@@ -165,7 +169,6 @@ private:
         data += "&";
     }
     data += "timestamp=";
-    char buf[32];
     std::uint64_t timestamp = get_current_ms_epoch();
     data += std::to_string(timestamp);
 

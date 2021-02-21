@@ -112,7 +112,11 @@ public:
 
   }
 
-  virtual Result<NewOrder> MarketOrder(const std::string& symbol, Side side, double qty) override {
+  virtual std::string GetExchange() override {
+    return "kraken";
+  }
+
+  virtual Result<Order> MarketOrder(const std::string& symbol, Side side, double qty) override {
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
         .QueryParam("pair", symbol)
         .QueryParam("type", (Side::BID == side ? "buy" : "sell"))
@@ -125,14 +129,14 @@ public:
       json response_json = json::parse(res.response);
       if (response_json["error"].size() > 0) {
         // TODO: propagate all errors ?
-        return Result<NewOrder>(res.response, response_json["error"][0]);
+        return Result<Order>(res.response, response_json["error"][0]);
       }
       // TODO: support multiple transaction ids per order ?
-      return Result<NewOrder>(res.response, NewOrder(response_json["result"]["txid"][0]));
+      return Result<Order>(res.response, Order(response_json["result"]["txid"][0]));
   }
 
   // TODO: add expiration time ?
-  virtual Result<NewOrder> LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
+  virtual Result<Order> LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
         .QueryParam("pair", symbol)
         .QueryParam("type", (Side::BID == side ? "buy" : "sell"))
@@ -146,10 +150,10 @@ public:
       json response_json = json::parse(res.response);
       if (response_json["error"].size() > 0) {
         // TODO: propagate all errors ?
-        return Result<NewOrder>(res.response, response_json["error"][0]);
+        return Result<Order>(res.response, response_json["error"][0]);
       }
       // TODO: support multiple transaction ids per order ?
-      return Result<NewOrder>(res.response, NewOrder(response_json["result"]["txid"][0]));
+      return Result<Order>(res.response, Order(response_json["result"]["txid"][0]));
   }
 
   virtual void CancelAllOrders() override {

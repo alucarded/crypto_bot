@@ -43,22 +43,23 @@ private:
   T m_result_object;
 };
 
-struct NewOrder {
-  NewOrder() {
+struct Order {
+  Order() {
 
   }
 
-  NewOrder(const std::string& response) : m_full_response(response) {
+  Order(const std::string& id) : m_id(id) {
 
   }
 
-  std::string m_full_response;
+  inline const std::string& GetId() const { return m_id; }
+  std::string m_id;
 
-  friend std::ostream &operator<<(std::ostream &os, const NewOrder &res);
+  friend std::ostream &operator<<(std::ostream &os, const Order &res);
 };
 
-std::ostream &operator<<(std::ostream &os, const NewOrder &res) {
-  os << res.m_full_response;
+std::ostream &operator<<(std::ostream &os, const Order &res) {
+  os << res.m_id;
   return os;
 }
 
@@ -107,21 +108,11 @@ std::ostream &operator<<(std::ostream &os, const AccountBalance &res) {
   return os;
 }
 
-struct Order {
-  Order() {
-
-  }
-
-  Order(const std::string& id) : m_id(id) {
-  }
-
-  std::string m_id;
-};
-
 class ExchangeClient {
 public:
-  virtual Result<NewOrder> MarketOrder(const std::string& symbol, Side side, double qty) = 0;
-  virtual Result<NewOrder> LimitOrder(const std::string& symbol, Side side, double qty, double price) = 0;
+  virtual std::string GetExchange() = 0;
+  virtual Result<Order> MarketOrder(const std::string& symbol, Side side, double qty) = 0;
+  virtual Result<Order> LimitOrder(const std::string& symbol, Side side, double qty, double price) = 0;
   virtual Result<AccountBalance> GetAccountBalance() = 0;
   virtual Result<std::vector<Order>> GetOpenOrders(const std::string& symbol) = 0;
   virtual void CancelAllOrders() = 0;
