@@ -2,26 +2,71 @@
 #include <iostream>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 enum Side : int {
   ASK = -1,
   BID = 1
 };
 
-struct NewOrderResult {
-  NewOrderResult(const std::string& response) : m_full_response(response) {}
-  std::string m_full_response;
-  // TODO:
+template <typename T>
+class Result {
+public:
+  Result(const std::string& raw_response, const T& obj)
+      : m_raw_response(raw_response), m_error_msg(), m_result_object(obj) {
 
-  friend std::ostream &operator<<(std::ostream &os, const NewOrderResult &res);
+  }
+
+  Result(const std::string& raw_response, T&& obj)
+      : m_raw_response(raw_response), m_error_msg(), m_result_object(std::move(obj)) {
+
+  }
+
+  Result(const std::string& raw_response, const std::string& error_msg)
+      : m_raw_response(raw_response), m_error_msg(error_msg) {
+
+  }
+  // TODO: add move constructors
+
+  // Returns false when error
+  explicit operator bool() const { return m_error_msg.empty(); }
+  
+  inline const std::string& GetErrorMsg() const { return m_error_msg; }
+
+  inline const std::string& GetRawResponse() const { return m_raw_response; }
+
+  inline const T& Get() const { return m_result_object; };
+  inline T& Get() { return m_result_object; };
+private:
+  std::string m_raw_response;
+  std::string m_error_msg;
+  T m_result_object;
 };
 
-std::ostream &operator<<(std::ostream &os, const NewOrderResult &res) {
+struct NewOrder {
+  NewOrder() {
+
+  }
+
+  NewOrder(const std::string& response) : m_full_response(response) {
+
+  }
+
+  std::string m_full_response;
+
+  friend std::ostream &operator<<(std::ostream &os, const NewOrder &res);
+};
+
+std::ostream &operator<<(std::ostream &os, const NewOrder &res) {
   os << res.m_full_response;
   return os;
 }
 
 struct AccountBalance {
+  AccountBalance() {
+
+  }
+
   AccountBalance(const std::unordered_map<std::string, std::string>& asset_balance_map) {
     for (auto p : asset_balance_map) {
       m_asset_balance_map.insert(std::make_pair(p.first, std::stod(p.second)));
@@ -62,10 +107,22 @@ std::ostream &operator<<(std::ostream &os, const AccountBalance &res) {
   return os;
 }
 
+struct Order {
+  Order() {
+
+  }
+
+  Order(const std::string& id) : m_id(id) {
+  }
+
+  std::string m_id;
+};
+
 class ExchangeClient {
 public:
-  virtual NewOrderResult MarketOrder(const std::string& symbol, Side side, double qty) = 0;
-  virtual NewOrderResult LimitOrder(const std::string& symbol, Side side, double qty, double price) = 0;
-  virtual AccountBalance GetAccountBalance() = 0;
+  virtual Result<NewOrder> MarketOrder(const std::string& symbol, Side side, double qty) = 0;
+  virtual Result<NewOrder> LimitOrder(const std::string& symbol, Side side, double qty, double price) = 0;
+  virtual Result<AccountBalance> GetAccountBalance() = 0;
+  virtual Result<std::vector<Order>> GetOpenOrders() = 0;
   virtual void CancelAllOrders() = 0;
 };

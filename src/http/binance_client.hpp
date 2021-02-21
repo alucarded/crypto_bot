@@ -87,33 +87,33 @@ public:
 
   }
 
-  virtual NewOrderResult MarketOrder(const std::string& symbol, Side side, double qty) override {
+  virtual Result<NewOrder> MarketOrder(const std::string& symbol, Side side, double qty) override {
     binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
         binapi::e_type::market, binapi::e_time::GTC,
         std::to_string(qty), std::string(), std::to_string(++m_last_order_id), std::string(), std::string());
     if ( !res ) {
         BOOST_LOG_TRIVIAL(error) << "Binance MarketOrder error: " << res.errmsg << std::endl;
+        return Result<NewOrder>(res.reply, res.errmsg);
     }
-    // TODO: return res.v
-    return res.reply;
+    return Result<NewOrder>(res.reply, NewOrder(std::to_string(m_last_order_id)));
   }
 
-  virtual NewOrderResult LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
+  virtual Result<NewOrder> LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
     binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
         binapi::e_type::limit, binapi::e_time::GTC,
         std::to_string(qty), std::to_string(price), std::to_string(++m_last_order_id), std::string(), std::string());
     if ( !res ) {
         BOOST_LOG_TRIVIAL(error) << "Binance LimitOrder error: " << res.errmsg << std::endl;
+        return Result<NewOrder>(res.reply, res.errmsg);
     }
-    // TODO: return res.v
-    return res.reply;
+    return Result<NewOrder>(res.reply, NewOrder(std::to_string(m_last_order_id)));
   }
 
   virtual void CancelAllOrders() override {
 
   }
 
-  virtual AccountBalance GetAccountBalance() override {
+  virtual Result<AccountBalance> GetAccountBalance() override {
     // binapi::rest::api::result<binapi::rest::account_info_t> res = m_api.account_info();
     // //auto account_info = res.response;
     // json response_json = json::parse(res.reply);
@@ -128,12 +128,20 @@ public:
         .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
         .send();
     json response_json = json::parse(res.response);
+    if (response_json.contains("code")) {
+      return Result<AccountBalance>(res.response, response_json["msg"].get<std::string>());
+    }
     std::unordered_map<std::string, std::string> balances;
     for (const auto& b : response_json["balances"]) {
       balances.insert(std::make_pair(b["asset"], b["free"]));
     }
-    // nlohmann::detail::from_json(response_json["balances"], balances);
-    return AccountBalance(balances);
+    
+    return Result<AccountBalance>(res.response, AccountBalance(balances));
+  }
+
+  virtual Result<std::vector<Order>> GetOpenOrders() override {
+    // TODO:
+    return Result<std::vector<Order>>("", std::vector<Order>());
   }
 private:
 

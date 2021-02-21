@@ -53,7 +53,12 @@ public:
 
   void Initialize() {
     for (const auto& p : m_account_managers) {
-      m_balances.insert(std::make_pair(p.first, std::move(p.second->GetAccountBalance())));
+      auto res = p.second->GetAccountBalance();
+      if (!res) {
+        BOOST_LOG_TRIVIAL(error) << "Failed getting account balance for " << p.first;
+        continue;
+      }
+      m_balances.insert(std::make_pair(p.first, std::move(res.Get())));
     }
   }
 
@@ -131,9 +136,15 @@ public:
             "BTCUSDT", Side::BID, vol, best_ask_ticker.m_ask);
         m_last_trade_us = now_us;
         auto f1_res = f1.get();
+        if (!f1_res) {
+          BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();;
+        }
         auto f2_res = f2.get();
-        BOOST_LOG_TRIVIAL(info) << match << std::endl << "Response from " << best_bid_exchange << ": " << std::endl << f1_res << std::endl
-            << "Response from " << best_ask_exchange << ": " << std::endl << f2_res << std::endl;
+        if (!f2_res) {
+          BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
+        }
+        BOOST_LOG_TRIVIAL(info) << match << std::endl << "Response from " << best_bid_exchange << ": " << std::endl << f1_res.GetRawResponse() << std::endl
+            << "Response from " << best_ask_exchange << ": " << std::endl << f2_res.GetRawResponse() << std::endl;
         UpdateBalances(best_bid_exchange, best_ask_exchange);
       }
     }
@@ -166,8 +177,18 @@ private:
   void UpdateBalances(const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
     auto acc_f1 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_account_managers[best_bid_exchange].get());
     auto acc_f2 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_account_managers[best_ask_exchange].get());
-    m_balances.insert_or_assign(best_bid_exchange, std::move(acc_f1.get()));
-    m_balances.insert_or_assign(best_ask_exchange, std::move(acc_f2.get()));
+    auto res_best_bid = acc_f1.get();
+    auto res_best_ask = acc_f2.get();
+    if (!res_best_bid) {
+      BOOST_LOG_TRIVIAL(warning) << "Could not get account balance for " << best_bid_exchange;
+      // TODO: FIXME: in this case we probably should block strategy execution until it is successful
+    }
+    if (!res_best_ask) {
+      BOOST_LOG_TRIVIAL(warning) << "Could not get account balance for " << best_ask_exchange;
+      // TODO: FIXME: in this case we probably should block strategy execution until it is successful
+    }
+    m_balances.insert_or_assign(best_bid_exchange, std::move(res_best_bid.Get()));
+    m_balances.insert_or_assign(best_ask_exchange, std::move(res_best_ask.Get()));
   }
 private:
   std::mutex m_mutex;

@@ -103,6 +103,7 @@ public:
   inline static const std::string PORT = "443";
   inline static const std::string ADD_ORDER_PATH = "/0/private/AddOrder";
   inline static const std::string GET_ACCOUNT_BALANCE_PATH = "/0/private/Balance";
+  inline static const std::string GET_OPEN_ORDERS_PATH = "/0/private/OpenOrders";
 
   // Maps Kraken asset names to our names
   static const std::unordered_map<std::string, std::string> ASSET_NAME_MAP;
@@ -111,7 +112,7 @@ public:
 
   }
 
-  virtual NewOrderResult MarketOrder(const std::string& symbol, Side side, double qty) override {
+  virtual Result<NewOrder> MarketOrder(const std::string& symbol, Side side, double qty) override {
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
         .QueryParam("pair", symbol)
         .QueryParam("type", (Side::BID == side ? "buy" : "sell"))
@@ -121,11 +122,17 @@ public:
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
         .send();
-      return res.response;
+      json response_json = json::parse(res.response);
+      if (response_json["error"].size() > 0) {
+        // TODO: propagate all errors ?
+        return Result<NewOrder>(res.response, response_json["error"][0]);
+      }
+      // TODO: support multiple transaction ids per order ?
+      return Result<NewOrder>(res.response, NewOrder(response_json["result"]["txid"][0]));
   }
 
   // TODO: add expiration time ?
-  virtual NewOrderResult LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
+  virtual Result<NewOrder> LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
         .QueryParam("pair", symbol)
         .QueryParam("type", (Side::BID == side ? "buy" : "sell"))
@@ -136,26 +143,50 @@ public:
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
         .send();
-    return res.response;
+      json response_json = json::parse(res.response);
+      if (response_json["error"].size() > 0) {
+        // TODO: propagate all errors ?
+        return Result<NewOrder>(res.response, response_json["error"][0]);
+      }
+      // TODO: support multiple transaction ids per order ?
+      return Result<NewOrder>(res.response, NewOrder(response_json["result"]["txid"][0]));
   }
 
   virtual void CancelAllOrders() override {
 
   }
 
-  virtual AccountBalance GetAccountBalance() override {
+  virtual Result<AccountBalance> GetAccountBalance() override {
     HttpClient::Result res = m_http_client.post(HOST, PORT, GET_ACCOUNT_BALANCE_PATH)
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
         .send();
     json response_json = json::parse(res.response);
+    if (response_json["error"].size() > 0) {
+      // TODO: propagate all errors ?
+      return Result<AccountBalance>(res.response, response_json["error"][0]);
+    }
     std::unordered_map<std::string, std::string> balances;
     // nlohmann::detail::from_json(response_json["result"], balances);
     for (const auto& el : response_json["result"].items()) {
       auto key = ASSET_NAME_MAP.count(el.key()) > 0 ? ASSET_NAME_MAP.at(el.key()) : el.key();
       balances.insert(std::make_pair(key, el.value()));
     }
-    return AccountBalance(balances);
+    return Result<AccountBalance>(res.response, AccountBalance(balances));
+  }
+
+  virtual Result<std::vector<Order>> GetOpenOrders() override {
+    HttpClient::Result res = m_http_client.post(HOST, PORT, GET_OPEN_ORDERS_PATH)
+        .Header("API-Key", g_public_key)
+        .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
+        .send();
+    json response_json = json::parse(res.response);
+    if (response_json["error"].size() > 0) {
+      return Result<std::vector<Order>>(res.response, response_json["error"][0]);
+    }
+    std::vector<Order> orders;
+    // TODO:
+    return Result<std::vector<Order>>(res.response, orders);
   }
 
 private:
