@@ -44,6 +44,8 @@ int main(int argc, char* argv[]) {
     strategy_opts.m_max_ticker_age_us = 1000000; // 1s
     strategy_opts.m_max_ticker_delay_us = 500000; // 500 ms
     strategy_opts.m_min_trade_interval_us = 500000; // 500 ms
+    strategy_opts.m_base_currency_ratio = 0.5;
+    strategy_opts.m_allowed_deviation = 0.3;
     ArbitrageStrategy arbitrage_strategy(strategy_opts);
     arbitrage_strategy.RegisterExchangeClient("binance", new BinanceClient());
     arbitrage_strategy.RegisterExchangeClient("kraken", new KrakenClient());

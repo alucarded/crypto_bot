@@ -26,6 +26,8 @@ struct ArbitrageStrategyOptions {
   int64_t m_max_ticker_age_us;
   int64_t m_max_ticker_delay_us;
   int64_t m_min_trade_interval_us;
+  double m_base_currency_ratio;
+  double m_allowed_deviation;
 };
 
 class ArbitrageStrategy : public TradingStrategy, public TickerSubscriber {
@@ -51,14 +53,21 @@ public:
 
   }
 
-  void Initialize() {
+  bool Initialize() {
     for (const auto& p : m_account_managers) {
       auto res = p.second->GetAccountBalance();
       if (!res) {
         BOOST_LOG_TRIVIAL(error) << "Failed getting account balance for " << p.first;
-        continue;
+        return false;
       }
       m_balances.insert(std::make_pair(p.first, std::move(res.Get())));
+
+      auto res_orders = p.second->GetOpenOrders("BTCUSDT");
+      if (!res_orders) {
+        BOOST_LOG_TRIVIAL(error) << "Failed getting open orders for " << p.first;
+        return false;
+      }
+      m_open_orders.insert(std::make_pair(p.first, std::move(res_orders.Get())));
     }
   }
 
@@ -128,6 +137,12 @@ public:
         // Finally
         if (!CanSell(best_bid_exchange, vol) || !CanBuy(best_ask_exchange, vol, best_ask_ticker.m_ask)) {
           BOOST_LOG_TRIVIAL(warning) << "Not enough funds.";
+          UpdateBalances(best_bid_exchange, best_ask_exchange);
+          return;
+        }
+        if (HasOpenOrders(best_bid_exchange) || HasOpenOrders(best_ask_exchange)) {
+          BOOST_LOG_TRIVIAL(warning) << "There are open orders.";
+          UpdateOpenOrders(best_bid_exchange, best_ask_exchange);
           return;
         }
         auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
@@ -146,6 +161,7 @@ public:
         BOOST_LOG_TRIVIAL(info) << match << std::endl << "Response from " << best_bid_exchange << ": " << std::endl << f1_res.GetRawResponse() << std::endl
             << "Response from " << best_ask_exchange << ": " << std::endl << f2_res.GetRawResponse() << std::endl;
         UpdateBalances(best_bid_exchange, best_ask_exchange);
+        UpdateOpenOrders(best_bid_exchange, best_ask_exchange);
       }
     }
   }
@@ -174,6 +190,18 @@ private:
     return balance > min_balance;
   }
 
+  inline bool HasOpenOrders(const std::string& exchange_name) {
+    if (m_open_orders.count(exchange_name) > 0) {
+      const auto& orders = m_open_orders.at(exchange_name);
+      if (orders.size() > 0) {
+        return true;
+      }
+      return false;
+    }
+    // No information, so better to assume there are open orders
+    return true;
+  }
+
   void UpdateBalances(const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
     auto acc_f1 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_account_managers[best_bid_exchange].get());
     auto acc_f2 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_account_managers[best_ask_exchange].get());
@@ -182,13 +210,34 @@ private:
     if (!res_best_bid) {
       BOOST_LOG_TRIVIAL(warning) << "Could not get account balance for " << best_bid_exchange;
       // TODO: FIXME: in this case we probably should block strategy execution until it is successful
+      return;
     }
+    m_balances.insert_or_assign(best_bid_exchange, std::move(res_best_bid.Get()));
     if (!res_best_ask) {
       BOOST_LOG_TRIVIAL(warning) << "Could not get account balance for " << best_ask_exchange;
       // TODO: FIXME: in this case we probably should block strategy execution until it is successful
+      return;
     }
-    m_balances.insert_or_assign(best_bid_exchange, std::move(res_best_bid.Get()));
     m_balances.insert_or_assign(best_ask_exchange, std::move(res_best_ask.Get()));
+  }
+
+  void UpdateOpenOrders(const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
+    auto acc_f1 = std::async(std::launch::async, &ExchangeClient::GetOpenOrders, m_account_managers[best_bid_exchange].get(), "BTCUSDT");
+    auto acc_f2 = std::async(std::launch::async, &ExchangeClient::GetOpenOrders, m_account_managers[best_ask_exchange].get(), "BTCUSDT");
+    auto res_best_bid = acc_f1.get();
+    auto res_best_ask = acc_f2.get();
+    if (!res_best_bid) {
+      BOOST_LOG_TRIVIAL(warning) << "Could not get open orders for " << best_bid_exchange;
+      // TODO: FIXME: in this case we probably should block strategy execution until it is successful
+      return;
+    }
+    m_open_orders.insert_or_assign(best_bid_exchange, std::move(res_best_bid.Get()));
+    if (!res_best_ask) {
+      BOOST_LOG_TRIVIAL(warning) << "Could not get open orders for " << best_ask_exchange;
+      // TODO: FIXME: in this case we probably should block strategy execution until it is successful
+      return;
+    }
+    m_open_orders.insert_or_assign(best_ask_exchange, std::move(res_best_ask.Get()));
   }
 private:
   std::mutex m_mutex;
@@ -196,5 +245,6 @@ private:
   ArbitrageStrategyMatcher m_matcher;
   std::map<std::string, Ticker> m_tickers;
   std::unordered_map<std::string, AccountBalance> m_balances;
+  std::unordered_map<std::string, std::vector<Order>> m_open_orders;
   int64_t m_last_trade_us;
 };
