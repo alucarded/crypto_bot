@@ -5,17 +5,8 @@
 #include <map>
 #include <memory>
 
-[[deprecated]]
-struct StrategyOptions {
-  std::string m_trading_exchange = "binance";
-  size_t m_required_exchanges = 8;
-};
-
 class TradingStrategy {
 public:
-  [[deprecated]]
-  virtual void execute(const std::string& updated_ticker, const std::map<std::string, Ticker>& tickers) = 0;
-
   void RegisterExchangeClient(const std::string& exchange_name, ExchangeClient* exchange) {
     m_account_managers.insert(std::make_pair(exchange_name, std::unique_ptr<AccountManager>(new AccountManager(exchange))));
   }

@@ -180,6 +180,7 @@ public:
   }
 
   virtual Result<std::vector<Order>> GetOpenOrders(const std::string& symbol) override {
+    (void) symbol; // unused
     HttpClient::Result res = m_http_client.post(HOST, PORT, GET_OPEN_ORDERS_PATH)
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))

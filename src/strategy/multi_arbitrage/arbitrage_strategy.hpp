@@ -53,26 +53,21 @@ public:
 
   }
 
-  bool Initialize() {
+  void Initialize() {
     for (const auto& p : m_account_managers) {
       auto res = p.second->GetAccountBalance();
       if (!res) {
-        BOOST_LOG_TRIVIAL(error) << "Failed getting account balance for " << p.first;
-        return false;
+        throw std::runtime_error("Failed getting account balance for " + p.first);
       }
       m_balances.insert(std::make_pair(p.first, std::move(res.Get())));
 
       auto res_orders = p.second->GetOpenOrders("BTCUSDT");
       if (!res_orders) {
-        BOOST_LOG_TRIVIAL(error) << "Failed getting open orders for " << p.first;
-        return false;
+        throw std::runtime_error("Failed getting open orders for " + p.first);
       }
       m_open_orders.insert(std::make_pair(p.first, std::move(res_orders.Get())));
     }
-  }
-
-  virtual void execute(const std::string& updated_ticker, const std::map<std::string, Ticker>& tickers) override {
-    // unused
+    m_is_up_to_date = true;
   }
 
   virtual void OnTicker(const Ticker& ticker) override {
@@ -202,42 +197,40 @@ private:
     return true;
   }
 
-  void UpdateBalances(const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
+  bool UpdateBalances(const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
     auto acc_f1 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_account_managers[best_bid_exchange].get());
     auto acc_f2 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_account_managers[best_ask_exchange].get());
     auto res_best_bid = acc_f1.get();
     auto res_best_ask = acc_f2.get();
     if (!res_best_bid) {
       BOOST_LOG_TRIVIAL(warning) << "Could not get account balance for " << best_bid_exchange;
-      // TODO: FIXME: in this case we probably should block strategy execution until it is successful
-      return;
+      return false;
     }
     m_balances.insert_or_assign(best_bid_exchange, std::move(res_best_bid.Get()));
     if (!res_best_ask) {
       BOOST_LOG_TRIVIAL(warning) << "Could not get account balance for " << best_ask_exchange;
-      // TODO: FIXME: in this case we probably should block strategy execution until it is successful
-      return;
+      return false;
     }
     m_balances.insert_or_assign(best_ask_exchange, std::move(res_best_ask.Get()));
+    return true;
   }
 
-  void UpdateOpenOrders(const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
+  bool UpdateOpenOrders(const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
     auto acc_f1 = std::async(std::launch::async, &ExchangeClient::GetOpenOrders, m_account_managers[best_bid_exchange].get(), "BTCUSDT");
     auto acc_f2 = std::async(std::launch::async, &ExchangeClient::GetOpenOrders, m_account_managers[best_ask_exchange].get(), "BTCUSDT");
     auto res_best_bid = acc_f1.get();
     auto res_best_ask = acc_f2.get();
     if (!res_best_bid) {
       BOOST_LOG_TRIVIAL(warning) << "Could not get open orders for " << best_bid_exchange;
-      // TODO: FIXME: in this case we probably should block strategy execution until it is successful
-      return;
+      return false;
     }
     m_open_orders.insert_or_assign(best_bid_exchange, std::move(res_best_bid.Get()));
     if (!res_best_ask) {
       BOOST_LOG_TRIVIAL(warning) << "Could not get open orders for " << best_ask_exchange;
-      // TODO: FIXME: in this case we probably should block strategy execution until it is successful
-      return;
+      return false;
     }
     m_open_orders.insert_or_assign(best_ask_exchange, std::move(res_best_ask.Get()));
+    return true;
   }
 private:
   std::mutex m_mutex;
@@ -247,4 +240,5 @@ private:
   std::unordered_map<std::string, AccountBalance> m_balances;
   std::unordered_map<std::string, std::vector<Order>> m_open_orders;
   int64_t m_last_trade_us;
+  bool m_is_up_to_date;
 };

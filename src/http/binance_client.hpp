@@ -163,6 +163,7 @@ public:
 private:
 
   void SignData(HttpClient::Request& request, std::string& data) {
+    (void) request; // unused
     assert(!g_api_key.empty() && !g_secret.empty());
 
     if ( !data.empty() ) {

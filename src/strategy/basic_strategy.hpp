@@ -34,7 +34,7 @@ public:
     m_transformers["coinbase"] = std::make_unique<CoinbaseTickerTransformer>();
   }
 
-  virtual void execute(const std::string& updated_ticker, const std::map<std::string, Ticker>& tickers) override {
+  void execute(const std::string& updated_ticker, const std::map<std::string, Ticker>& tickers) {
     if (!tickers.count(m_opts.m_trading_exchange)) {
       return;
     }
