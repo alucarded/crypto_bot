@@ -126,12 +126,16 @@ protected:
     }
 
     virtual void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
-        std::optional<RawTicker> ticker_opt = extract_ticker(msg);
-        if (!ticker_opt.has_value()) {
-            return;
-        }
-        if (m_ticker_consumer) {
-            m_ticker_consumer->Consume(ticker_opt.value());
+        try {
+            std::optional<RawTicker> ticker_opt = extract_ticker(msg);
+            if (!ticker_opt.has_value()) {
+                return;
+            }
+            if (m_ticker_consumer) {
+                m_ticker_consumer->Consume(ticker_opt.value());
+            }
+        } catch (std::exception const & e) {
+            std::cerr << "WebsocketClient::on_message exception: " << e.what() << std::endl;
         }
     }
 
