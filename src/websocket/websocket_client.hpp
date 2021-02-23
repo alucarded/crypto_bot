@@ -12,6 +12,8 @@
 #include <memory>
 #include <optional>
 
+using namespace std::chrono_literals;
+
 typedef websocketpp::client<websocketpp::config::asio_tls_client> client;
 //typedef websocketpp::client<websocketpp::config::asio_client> client;
 
@@ -23,7 +25,7 @@ typedef websocketpp::config::asio_tls_client::message_type::ptr message_ptr;
 typedef websocketpp::lib::shared_ptr<boost::asio::ssl::context> context_ptr;
 typedef client::connection_ptr connection_ptr;
 
-class TickerClient {
+class WebsocketClient {
 public:
     virtual const std::string GetUrl() const = 0;
     // TODO: Use Exchange enum
@@ -34,19 +36,19 @@ public:
     }
 protected:
     // TODO: add collection of tickers as parameter (perhaps create enum for abstraction - specific clients can then support different sets of tickers)
-    TickerClient(Consumer<RawTicker>* ticker_consumer) : m_ticker_consumer(ticker_consumer), m_reconnect_delay(100ms) {
+    WebsocketClient(Consumer<RawTicker>* ticker_consumer) : m_ticker_consumer(ticker_consumer), m_reconnect_delay(100ms) {
         m_endpoint.set_access_channels(websocketpp::log::alevel::connect);
         m_endpoint.set_error_channels(websocketpp::log::elevel::warn);
 
         m_endpoint.init_asio();
         m_endpoint.start_perpetual();
 
-        //m_endpoint.set_socket_init_handler(bind(&TickerClient::on_socket_init,this,::_1));
-        m_endpoint.set_tls_init_handler(bind(&TickerClient::on_tls_init,this,::_1));
-        m_endpoint.set_message_handler(bind(&TickerClient::on_message,this,::_1,::_2));
-        m_endpoint.set_open_handler(bind(&TickerClient::on_open,this,::_1));
-        m_endpoint.set_close_handler(bind(&TickerClient::on_close,this,::_1));
-        m_endpoint.set_fail_handler(bind(&TickerClient::on_fail,this,::_1));
+        //m_endpoint.set_socket_init_handler(bind(&WebsocketClient::on_socket_init,this,::_1));
+        m_endpoint.set_tls_init_handler(bind(&WebsocketClient::on_tls_init,this,::_1));
+        m_endpoint.set_message_handler(bind(&WebsocketClient::on_message,this,::_1,::_2));
+        m_endpoint.set_open_handler(bind(&WebsocketClient::on_open,this,::_1));
+        m_endpoint.set_close_handler(bind(&WebsocketClient::on_close,this,::_1));
+        m_endpoint.set_fail_handler(bind(&WebsocketClient::on_fail,this,::_1));
     }
 
     void start(const std::string& uri) {
