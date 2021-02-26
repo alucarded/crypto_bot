@@ -13,7 +13,7 @@ public:
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://ws-feed.pro.coinbase.com"; }
-  virtual inline const std::string GetExchangeName() const override { return "coinbase"; }
+  virtual inline const std::string GetConnectionName() const override { return "coinbase"; }
 
 private:
   virtual void request_ticker() override {
@@ -37,7 +37,7 @@ private:
       ticker.m_ask_vol = "";
       // TODO: time provided in datetime format, needs parsing https://en.cppreference.com/w/cpp/io/manip/get_time
       ticker.m_source_ts = 0;
-      ticker.m_exchange = GetExchangeName();
+      ticker.m_exchange = GetConnectionName();
       ticker.m_symbol = msg_json["product_id"];
       return std::make_optional(ticker);
   }

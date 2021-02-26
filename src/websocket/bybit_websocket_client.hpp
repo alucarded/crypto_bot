@@ -13,7 +13,7 @@ public:
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://stream.bybit.com/realtime"; }
-  virtual inline const std::string GetExchangeName() const override { return "bybit"; }
+  virtual inline const std::string GetConnectionName() const override { return "bybit"; }
 
 private:
   virtual void request_ticker() override {

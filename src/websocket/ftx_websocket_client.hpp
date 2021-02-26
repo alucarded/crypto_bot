@@ -13,7 +13,7 @@ public:
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://ftx.com/ws/"; }
-  virtual inline const std::string GetExchangeName() const override { return "ftx"; }
+  virtual inline const std::string GetConnectionName() const override { return "ftx"; }
 
 private:
   virtual void request_ticker() override {
@@ -42,7 +42,7 @@ private:
       ticker.m_ask = utils::to_string(data["ask"].get<double>(), 1);
       ticker.m_ask_vol = std::to_string(data["askSize"].get<double>());
       ticker.m_source_ts = static_cast<uint64_t>(data["time"].get<double>() * 1000000);
-      ticker.m_exchange = GetExchangeName();
+      ticker.m_exchange = GetConnectionName();
       return std::make_optional(ticker);
   }
 };

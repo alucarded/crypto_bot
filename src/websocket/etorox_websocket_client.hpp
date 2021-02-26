@@ -15,7 +15,7 @@ public:
   }
 
   virtual inline const std::string GetUrl() const override { return ""; }
-  virtual inline const std::string GetExchangeName() const override { return "etorox"; }
+  virtual inline const std::string GetConnectionName() const override { return "etorox"; }
 
 private:
   virtual void request_ticker() override {

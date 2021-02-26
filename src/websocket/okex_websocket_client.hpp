@@ -14,7 +14,7 @@ public:
 
 virtual inline const std::string GetUrl() const override { return "wss://real.okex.com:8443/ws/v3"; }
 
-virtual inline const std::string GetExchangeName() const override { return "okex"; }
+virtual inline const std::string GetConnectionName() const override { return "okex"; }
 
 private:
   virtual void request_ticker() override {
@@ -38,7 +38,7 @@ private:
       // ticker.m_ask = data["a"][0];
       // ticker.m_ask_vol = data["a"][2];
       // ticker.m_source_ts = 0; // not provided
-      // ticker.m_exchange = GetExchangeName();
+      // ticker.m_exchange = GetConnectionName();
       // return std::make_optional(ticker);
       return {};
   }

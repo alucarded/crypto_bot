@@ -14,7 +14,7 @@ public:
 
   virtual inline const std::string GetUrl() const override { return "wss://api2.poloniex.com"; }
 
-  virtual inline const std::string GetExchangeName() const override { return "poloniex"; }
+  virtual inline const std::string GetConnectionName() const override { return "poloniex"; }
 
 private:
   virtual void request_ticker() override {
@@ -41,7 +41,7 @@ private:
       ticker.m_ask = data[2];
       ticker.m_ask_vol = "";
       ticker.m_source_ts = 0; // not provided
-      ticker.m_exchange = GetExchangeName();
+      ticker.m_exchange = GetConnectionName();
       return std::make_optional(ticker);
   }
 };

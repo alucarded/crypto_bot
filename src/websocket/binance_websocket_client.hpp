@@ -15,7 +15,7 @@ public:
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://fstream.binance.com/ws/bookTicker"; }
-  virtual inline const std::string GetExchangeName() const override { return "binance"; }
+  virtual inline const std::string GetConnectionName() const override { return "binance"; }
 
 private:
   virtual void request_ticker() override {
@@ -46,7 +46,7 @@ private:
       system_clock::duration tp = now.time_since_epoch();
       microseconds us = duration_cast<microseconds>(tp);
       ticker.m_arrived_ts = us.count();
-      ticker.m_exchange = GetExchangeName();
+      ticker.m_exchange = GetConnectionName();
       // TODO: this should be an internally common enum
       ticker.m_symbol = msg_json["s"];
       return std::make_optional(ticker);

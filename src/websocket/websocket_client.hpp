@@ -29,7 +29,7 @@ class WebsocketClient {
 public:
     virtual const std::string GetUrl() const = 0;
     // TODO: Use Exchange enum
-    virtual const std::string GetExchangeName() const = 0;
+    virtual const std::string GetConnectionName() const = 0;
 
     void start() {
         start(GetUrl());
@@ -69,7 +69,7 @@ protected:
     }
 
     virtual void send(const std::string& message) {
-        std::cout << GetExchangeName() + ": Sending" << std::endl;
+        std::cout << GetConnectionName() + ": Sending" << std::endl;
         websocketpp::lib::error_code ec;
         m_endpoint.send(m_con->get_handle(), message, websocketpp::frame::opcode::text, ec);
         if (ec) {
@@ -96,7 +96,7 @@ protected:
     virtual void on_fail(websocketpp::connection_hdl hdl) {
         client::connection_ptr con = m_endpoint.get_con_from_hdl(hdl);
         
-        std::cout << GetExchangeName() + ": Fail handler" << std::endl;
+        std::cout << GetConnectionName() + ": Fail handler" << std::endl;
         std::cout << con->get_state() << std::endl;
         std::cout << con->get_local_close_code() << std::endl;
         std::cout << con->get_local_close_reason() << std::endl;
@@ -106,19 +106,19 @@ protected:
     }
 
     virtual void on_open(websocketpp::connection_hdl) {
-        std::cout << GetExchangeName() + ": Connection opened" << std::endl;
+        std::cout << GetConnectionName() + ": Connection opened" << std::endl;
         // Send empty ticker
         if (m_ticker_consumer) {
-            m_ticker_consumer->Consume(RawTicker::Empty(GetExchangeName()));
+            m_ticker_consumer->Consume(RawTicker::Empty(GetConnectionName()));
         }
         request_ticker();
     }
 
     virtual void on_close(websocketpp::connection_hdl) {
-        std::cout << GetExchangeName() + ": Connection closed" << std::endl;
+        std::cout << GetConnectionName() + ": Connection closed" << std::endl;
         // Send empty ticker
         if (m_ticker_consumer) {
-            m_ticker_consumer->Consume(RawTicker::Empty(GetExchangeName()));
+            m_ticker_consumer->Consume(RawTicker::Empty(GetConnectionName()));
         }
         // Reconnect
         std::this_thread::sleep_for(m_reconnect_delay);

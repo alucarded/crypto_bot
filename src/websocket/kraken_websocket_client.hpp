@@ -16,7 +16,7 @@ public:
 
   virtual inline const std::string GetUrl() const override { return "wss://beta-ws.kraken.com"; }
 
-  virtual inline const std::string GetExchangeName() const override { return "kraken"; }
+  virtual inline const std::string GetConnectionName() const override { return "kraken"; }
 
 private:
   virtual void request_ticker() override {
@@ -43,7 +43,7 @@ private:
       system_clock::duration tp = now.time_since_epoch();
       microseconds us = duration_cast<microseconds>(tp);
       ticker.m_arrived_ts = us.count();
-      ticker.m_exchange = GetExchangeName();
+      ticker.m_exchange = GetConnectionName();
       // TODO: use enum
       ticker.m_symbol = "BTCUSDT";
       return std::make_optional(ticker);

@@ -13,7 +13,7 @@ public:
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://ws.bitstamp.net"; }
-  virtual inline const std::string GetExchangeName() const override { return "bitstamp"; }
+  virtual inline const std::string GetConnectionName() const override { return "bitstamp"; }
 
 private:
   virtual void request_ticker() override {
@@ -36,7 +36,7 @@ private:
       ticker.m_ask = data["asks"][0][0];
       ticker.m_ask_vol = data["asks"][0][1];
       ticker.m_source_ts = std::stoull(data["microtimestamp"].get<std::string>());
-      ticker.m_exchange = GetExchangeName();
+      ticker.m_exchange = GetConnectionName();
       return std::make_optional(ticker);
   }
 };

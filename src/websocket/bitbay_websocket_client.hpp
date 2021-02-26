@@ -14,7 +14,7 @@ public:
   }
 
   virtual inline const std::string GetUrl() const override { return "wss://api.bitbay.net/websocket/"; }
-  virtual inline const std::string GetExchangeName() const override { return "bitbay"; }
+  virtual inline const std::string GetConnectionName() const override { return "bitbay"; }
 
 private:
   virtual void request_ticker() override {
@@ -39,7 +39,7 @@ private:
       ticker.m_ask = message["lowestAsk"];
       ticker.m_ask_vol = "";
       ticker.m_source_ts = std::stoull(message["time"].get<std::string>()) * 1000;
-      ticker.m_exchange = GetExchangeName();
+      ticker.m_exchange = GetConnectionName();
       return std::make_optional(ticker);
   }
 };
