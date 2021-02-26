@@ -12,9 +12,11 @@ public:
   KrakenWebsocketClient(Consumer<RawTicker>* ticker_consumer) : WebsocketClient(ticker_consumer) {
   }
 
-virtual inline const std::string GetUrl() const override { return "wss://ws.kraken.com"; }
 
-virtual inline const std::string GetExchangeName() const override { return "kraken"; }
+
+  virtual inline const std::string GetUrl() const override { return "wss://beta-ws.kraken.com"; }
+
+  virtual inline const std::string GetExchangeName() const override { return "kraken"; }
 
 private:
   virtual void request_ticker() override {
@@ -24,7 +26,7 @@ private:
 
   virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) override {
       auto msg_json = json::parse(msg->get_payload());
-      // std::cout << msg_json << std::endl;
+      //std::cout << msg_json << std::endl;
       if (!msg_json.is_array()) {
         return {};
       }
