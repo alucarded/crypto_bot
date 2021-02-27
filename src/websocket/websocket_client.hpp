@@ -8,6 +8,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <future>
 #include <iostream>
 #include <memory>
 #include <optional>
@@ -27,16 +28,14 @@ typedef client::connection_ptr connection_ptr;
 
 class WebsocketClient {
 public:
-    virtual const std::string GetUrl() const = 0;
-    // TODO: Use Exchange enum
-    virtual const std::string GetConnectionName() const = 0;
-
-    void start() {
-        start(GetUrl());
+    void start(std::promise<void>&& promise) {
+        m_start_promise = std::move(promise);
+        start(m_uri);
     }
+
 protected:
-    // TODO: add collection of tickers as parameter (perhaps create enum for abstraction - specific clients can then support different sets of tickers)
-    WebsocketClient(Consumer<RawTicker>* ticker_consumer) : m_ticker_consumer(ticker_consumer), m_reconnect_delay(100ms) {
+    WebsocketClient(const std::string& uri, const std::string& name) :  m_uri(uri), m_name(name),
+            m_do_reconnect(true), m_reconnect_delay(100ms) {
         m_endpoint.set_access_channels(websocketpp::log::alevel::connect);
         m_endpoint.set_error_channels(websocketpp::log::elevel::warn);
 
@@ -69,7 +68,7 @@ protected:
     }
 
     virtual void send(const std::string& message) {
-        std::cout << GetConnectionName() + ": Sending" << std::endl;
+        std::cout << m_name + ": Sending" << std::endl;
         websocketpp::lib::error_code ec;
         m_endpoint.send(m_con->get_handle(), message, websocketpp::frame::opcode::text, ec);
         if (ec) {
@@ -96,7 +95,7 @@ protected:
     virtual void on_fail(websocketpp::connection_hdl hdl) {
         client::connection_ptr con = m_endpoint.get_con_from_hdl(hdl);
         
-        std::cout << GetConnectionName() + ": Fail handler" << std::endl;
+        std::cout << m_name + ": Fail handler" << std::endl;
         std::cout << con->get_state() << std::endl;
         std::cout << con->get_local_close_code() << std::endl;
         std::cout << con->get_local_close_reason() << std::endl;
@@ -105,47 +104,43 @@ protected:
         std::cout << con->get_ec() << " - " << con->get_ec().message() << std::endl;
     }
 
-    virtual void on_open(websocketpp::connection_hdl) {
-        std::cout << GetConnectionName() + ": Connection opened" << std::endl;
-        // Send empty ticker
-        if (m_ticker_consumer) {
-            m_ticker_consumer->Consume(RawTicker::Empty(GetConnectionName()));
-        }
-        request_ticker();
+    virtual void on_open(websocketpp::connection_hdl conn) {
+        std::cout << m_name + ": Connection opened" << std::endl;
+        m_start_promise.set_value();
+        OnOpen(conn);
     }
 
-    virtual void on_close(websocketpp::connection_hdl) {
-        std::cout << GetConnectionName() + ": Connection closed" << std::endl;
-        // Send empty ticker
-        if (m_ticker_consumer) {
-            m_ticker_consumer->Consume(RawTicker::Empty(GetConnectionName()));
-        }
+    virtual void on_close(websocketpp::connection_hdl conn) {
+        std::cout << m_name + ": Connection closed" << std::endl;
+        OnClose(conn);
+        m_start_promise = std::move(std::promise<void>());
         // Reconnect
-        std::this_thread::sleep_for(m_reconnect_delay);
-        connect(GetUrl());
+        if (m_do_reconnect) {
+            // TODO: do we need to delay here ?
+            std::this_thread::sleep_for(m_reconnect_delay);
+            connect(m_uri);
+        }
     }
 
-    virtual void on_message(websocketpp::connection_hdl, client::message_ptr msg) {
+    virtual void on_message(websocketpp::connection_hdl conn, client::message_ptr msg) {
         try {
-            std::optional<RawTicker> ticker_opt = extract_ticker(msg);
-            if (!ticker_opt.has_value()) {
-                return;
-            }
-            if (m_ticker_consumer) {
-                m_ticker_consumer->Consume(ticker_opt.value());
-            }
+            OnMessage(conn, msg);
+            // TODO: FIXME: catch exceptions in OnMessage
         } catch (std::exception const & e) {
             std::cerr << "WebsocketClient::on_message exception: " << e.what() << std::endl;
         }
     }
 
-    virtual void request_ticker() = 0;
-    virtual std::optional<RawTicker> extract_ticker(client::message_ptr msg) = 0;
-
+    virtual void OnOpen(websocketpp::connection_hdl conn) = 0;
+    virtual void OnClose(websocketpp::connection_hdl conn) = 0;
+    virtual void OnMessage(websocketpp::connection_hdl conn, client::message_ptr msg) = 0;
 protected:
+    std::string m_uri;
+    std::string m_name;
     client m_endpoint;
     client::connection_ptr m_con;
     std::shared_ptr<std::thread> m_thread;
-    Consumer<RawTicker>* m_ticker_consumer;
+    bool m_do_reconnect;
     std::chrono::duration<int64_t, std::milli> m_reconnect_delay;
+    std::promise<void> m_start_promise;
 };

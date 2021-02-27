@@ -1,8 +1,9 @@
+#include "exchange/exchange_listener.h"
 #include "http/binance_client.hpp"
 #include "http/kraken_client.hpp"
 #include "strategy/multi_arbitrage/arbitrage_strategy.hpp"
-#include "strategy/ticker_broker.hpp"
-#include "websocket/binance_websocket_client.hpp"
+//#include "strategy/ticker_broker.hpp"
+//#include "websocket/binance_websocket_client.hpp"
 #include "websocket/kraken_websocket_client.hpp"
 
 #include <boost/log/core.hpp>
@@ -12,6 +13,7 @@
 #include <boost/log/utility/setup/file.hpp>
 #include <boost/log/utility/setup/common_attributes.hpp>
 
+#include <future>
 #include <iostream>
 #include <thread>
 
@@ -50,11 +52,18 @@ int main(int argc, char* argv[]) {
     arbitrage_strategy.RegisterExchangeClient("binance", new BinanceClient());
     arbitrage_strategy.RegisterExchangeClient("kraken", new KrakenClient());
     arbitrage_strategy.Initialize();
-    TickerBroker ticker_broker({&arbitrage_strategy});
-    BinanceWebsocketClient binance_websocket_client(&ticker_broker);
-    KrakenWebsocketClient kraken_websocket_client(&ticker_broker);
-    binance_websocket_client.start();
-    kraken_websocket_client.start();
+
+
+    //TickerBroker ticker_broker({&arbitrage_strategy});
+    //BinanceWebsocketClient binance_websocket_client(&ticker_broker);
+    ExchangeListener exchange_listener;
+    KrakenWebsocketClient kraken_websocket_client(&exchange_listener);
+    //binance_websocket_client.start();
+    std::promise<void> promise;
+    std::future<void> future = promise.get_future();
+    kraken_websocket_client.start(std::move(promise));
+    future.wait();
+    kraken_websocket_client.RequestTicker("XBT/USDT");
     std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
   } catch (websocketpp::exception const & e) {
       std::cout << e.what() << std::endl;

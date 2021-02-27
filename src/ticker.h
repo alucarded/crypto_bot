@@ -17,10 +17,6 @@ enum SymbolId : int {
 };
 
 struct Ticker {
-  // Ticker(double ask, double ask_vol, double bid, double bid_vol, int64_t source_ts, int64_t arrived_ts) :
-  //     m_ask(ask), m_ask_vol(ask_vol), m_bid(bid), m_bid_vol(bid_vol), m_source_ts(source_ts), m_arrived_ts(arrived_ts) {
-  // }
-
   double m_ask;
   std::optional<double> m_ask_vol;
   double m_bid;
@@ -56,6 +52,7 @@ struct RawTicker {
   int64_t m_arrived_ts;
   std::string m_exchange;
   std::string m_symbol;
+  static uint64_t m_last_ticker_id;
 
   static RawTicker Empty(const std::string& exchange) {
     RawTicker empty_ticker;
@@ -72,8 +69,24 @@ struct RawTicker {
     return empty_ticker;
   }
 
+  static Ticker ToTicker(const RawTicker& raw_ticker) {
+    Ticker ticker;
+    ticker.m_bid = std::stod(raw_ticker.m_bid);
+    ticker.m_bid_vol = raw_ticker.m_bid_vol.empty() ? std::nullopt : std::optional<double>(std::stod(raw_ticker.m_bid_vol));
+    ticker.m_ask = std::stod(raw_ticker.m_ask);
+    ticker.m_ask_vol = raw_ticker.m_ask_vol.empty() ? std::nullopt : std::optional<double>(std::stod(raw_ticker.m_ask_vol));
+    ticker.m_source_ts = raw_ticker.m_source_ts ? std::optional<int64_t>(raw_ticker.m_source_ts) : std::nullopt;
+    ticker.m_arrived_ts = raw_ticker.m_arrived_ts;
+    ticker.m_symbol = raw_ticker.m_symbol;
+    ticker.m_exchange = raw_ticker.m_exchange;
+    ticker.m_id = m_last_ticker_id++;
+    return ticker;
+  }
+
   friend std::ostream& operator<<(std::ostream& os, const RawTicker& rt);
 };
+
+uint64_t RawTicker::m_last_ticker_id = 0;
 
 std::ostream& operator<<(std::ostream& os, const RawTicker& rt) {
     return os << "m_ask=" << rt.m_ask
