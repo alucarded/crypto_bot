@@ -2,17 +2,37 @@
 #include "serialization_utils.hpp"
 #include "websocket/websocket_client.hpp"
 
+#include <boost/crc.hpp>
+#include <boost/log/trivial.hpp>
 #include "json/json.hpp"
 
+#include <algorithm>
+#include <iterator>
 #include <stdexcept>
 #include <string>
 
 using json = nlohmann::json;
 
+namespace {
+
+static int quick_pow10(int n)
+{
+    static int pow10[10] = {
+        1, 10, 100, 1000, 10000, 
+        100000, 1000000, 10000000, 100000000, 1000000000
+    };
+
+    return pow10[n]; 
+}
+
+}
+
 class KrakenWebsocketClient : public WebsocketClient {
 public:
   inline static const std::string NAME = "kraken";
+  // TODO: this should be per symbol
   inline static const size_t PRICE_SENT_PRECISION = 5;
+  inline static const size_t VOLUME_SENT_PRECISION = 8;
   inline static const size_t TIMESTAMP_SENT_PRECISION = 6;
 
   KrakenWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://beta-ws.kraken.com", NAME), m_exchange_listener(exchange_listener) {
@@ -20,17 +40,22 @@ public:
 
   void RequestTicker(const std::string& symbol) {
     const std::string message = "{\"event\": \"subscribe\",\"pair\": [\"" + symbol + "\"],\"subscription\": {\"name\": \"ticker\"}}";
+    m_subscription_msg.push_back(message);
     WebsocketClient::send(message);
   }
 
   void RequestOrderBook(const std::string& symbol) {
     const std::string message = "{\"event\": \"subscribe\",\"pair\": [\"" + symbol + "\"],\"subscription\": {\"name\": \"book\",\"depth\": 10}}";
+    m_subscription_msg.push_back(message);
     WebsocketClient::send(message);
   }
 
 private:
 
   virtual void OnOpen(websocketpp::connection_hdl conn) override {
+    for (const auto& msg : m_subscription_msg) {
+      WebsocketClient::send(msg);
+    }
     m_exchange_listener->OnConnectionOpen(NAME);
   }
 
@@ -50,13 +75,19 @@ private:
     if (channel_name == "ticker") {
       m_exchange_listener->OnTicker(RawTicker::ToTicker(ParseTicker(msg_json[1])));
     } else if (channel_name.get<std::string>().find("book") != std::string::npos) {
+      bool is_valid = false;
       auto book_obj = msg_json[1];
       if (book_obj.contains("as")) {
+        is_valid = true;
         OnOrderBookSnapshot(book_obj);
+      } else if (book_obj.contains("a") || book_obj.contains("b")) {
+        is_valid = OnOrderBookUpdate(book_obj);
       } else {
-        OnOrderBookUpdate(book_obj);
+        BOOST_LOG_TRIVIAL(error) << "Unexpected book message!";
       }
-      m_exchange_listener->OnOrderBookUpdate(m_order_book);
+      if (is_valid) {
+        m_exchange_listener->OnOrderBookUpdate(m_order_book);
+      }
     }
   }
 
@@ -92,6 +123,43 @@ private:
     }
   }
 
+  bool OnOrderBookUpdate(const json& update_obj) {
+    if (update_obj.contains("a")) {
+      for (const json& lvl : update_obj["a"]) {
+        // Upsert price level
+        PriceLevel pl = ParsePriceLevel(lvl);
+        if (pl.GetVolume() == 0.0) {
+          m_order_book.DeleteAsk(pl.GetPrice());
+        } else {
+          m_order_book.UpsertAsk(pl);
+        }
+      }
+    }
+    if (update_obj.contains("b")) {
+      for (const json& lvl : update_obj["b"]) {
+        // Upsert price level
+        PriceLevel pl = ParsePriceLevel(lvl);
+        if (pl.GetVolume() == 0.0) {
+          m_order_book.DeleteBid(pl.GetPrice());
+        } else {
+          m_order_book.UpsertBid(pl);
+        }
+      }
+    }
+    std::cout << m_order_book << std::endl;
+    if (update_obj.contains("c")) {
+      std::string crc32_in = CalculateChecksumInput();
+      std::cout << crc32_in << std::endl;
+      boost::crc_32_type crc;
+      crc.process_bytes(crc32_in.c_str(), crc32_in.size());
+      if (crc.checksum() != std::stoul(update_obj["c"].get<std::string>())) {
+        BOOST_LOG_TRIVIAL(warning) << "Wrong checksum!";
+        return false;
+      }
+    }
+    return true;
+  }
+
   PriceLevel ParsePriceLevel(const json& lvl) {
     // Parse price
     auto p = lvl[0].get<std::string>();
@@ -112,11 +180,24 @@ private:
     return PriceLevel(price_t(std::stoull(p)), std::stod(lvl[1].get<std::string>()), std::stoull(ts));
   }
 
-  void OnOrderBookUpdate(const json& update_obj) {
-    // TODO:
+  std::string CalculateChecksumInput() {
+    std::vector<std::string> partial_input;
+    const auto& asks = m_order_book.GetAsks(); 
+    std::transform(asks.rbegin(), asks.rend(), std::back_inserter(partial_input),
+        [](const PriceLevel& pl) -> std::string {
+          return std::to_string(uint64_t(pl.GetPrice())) + std::to_string(uint64_t(pl.GetVolume()*quick_pow10(8)));
+        });
+    const auto& bids = m_order_book.GetBids(); 
+    std::transform(bids.rbegin(), bids.rend(), std::back_inserter(partial_input),
+        [](const PriceLevel& pl) -> std::string {
+          return std::to_string(uint64_t(pl.GetPrice())) + std::to_string(uint64_t(pl.GetVolume()*quick_pow10(8)));
+        });
+    std::string res;
+    for (const auto &piece : partial_input) res += piece;
+    return res;
   }
-
 private:
   ExchangeListener* m_exchange_listener;
+  std::vector<std::string> m_subscription_msg;
   OrderBook m_order_book;
 };

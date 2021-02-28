@@ -1,6 +1,6 @@
 #include "exchange/exchange_listener.h"
-#include "http/binance_client.hpp"
-#include "http/kraken_client.hpp"
+// #include "http/binance_client.hpp"
+// #include "http/kraken_client.hpp"
 #include "strategy/multi_arbitrage/arbitrage_strategy.hpp"
 //#include "strategy/ticker_broker.hpp"
 //#include "websocket/binance_websocket_client.hpp"
@@ -49,9 +49,9 @@ int main(int argc, char* argv[]) {
     strategy_opts.m_base_currency_ratio = 0.5;
     strategy_opts.m_allowed_deviation = 0.3;
     ArbitrageStrategy arbitrage_strategy(strategy_opts);
-    arbitrage_strategy.RegisterExchangeClient("binance", new BinanceClient());
-    arbitrage_strategy.RegisterExchangeClient("kraken", new KrakenClient());
-    arbitrage_strategy.Initialize();
+    // arbitrage_strategy.RegisterExchangeClient("binance", new BinanceClient());
+    // arbitrage_strategy.RegisterExchangeClient("kraken", new KrakenClient());
+    // arbitrage_strategy.Initialize();
     //TickerBroker ticker_broker({&arbitrage_strategy});
     //BinanceWebsocketClient binance_websocket_client(&ticker_broker);
     //ExchangeListener exchange_listener;

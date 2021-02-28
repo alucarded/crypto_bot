@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <iomanip>
 #include <iostream>
 #include <utility>
 #include <list>
@@ -77,7 +78,10 @@ private:
 
 class OrderBook {
 public:
-	OrderBook() {
+	OrderBook() : OrderBook(10) {
+  }
+
+	OrderBook(size_t depth) : m_depth(depth) {
   }
 
 	/**
@@ -101,6 +105,9 @@ public:
 		if (!found) {
 			m_bids.insert(it, price_level);
 		}
+    if (m_bids.size() > m_depth) {
+      m_bids.pop_front();
+    }
   }
 
   /**
@@ -124,6 +131,9 @@ public:
 		if (!found) {
 			m_asks.insert(it, price_level);
 		}
+    if (m_asks.size() > m_depth) {
+      m_asks.pop_front();
+    }
   }
 
   void DeleteBid(price_t price) {
@@ -170,10 +180,11 @@ private:
 	std::list<PriceLevel> m_bids;
   // Lowest ask last
 	std::list<PriceLevel> m_asks;
+  size_t m_depth;
 };
 
 std::ostream& operator<<(std::ostream& os, const PriceLevel& pl) {
-  os << "{ \"price\": " << std::to_string(uint64_t(pl.m_price)) << ", \"volume\": " << std::to_string(pl.m_volume) << ", \"timestamp\": " << std::to_string(pl.m_timestamp) << " }";
+  os << "{ \"price\": " << std::to_string(uint64_t(pl.m_price)) << ", \"volume\": " << std::fixed << std::setprecision(8) << pl.m_volume << ", \"timestamp\": " << std::to_string(pl.m_timestamp) << " }";
   return os;
 }
 
