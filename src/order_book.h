@@ -156,14 +156,14 @@ public:
     if (m_bids.empty()) {
       return PriceLevel::Null();
     }
-    return *m_bids.end();
+    return m_bids.back();
   }
 
   const PriceLevel& GetBestAsk() const {
     if (m_asks.empty()) {
       return PriceLevel::Null();
     }
-    return *m_asks.end();
+    return m_asks.back();
   }
 
   const std::string& GetExchangeName() const { return m_exchange_name; }

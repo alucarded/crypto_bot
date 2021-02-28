@@ -2,6 +2,8 @@
 #include "ticker.h"
 #include "consumer/consumer.h"
 
+#include <boost/log/trivial.hpp>
+
 #include <websocketpp/config/asio_client.hpp>
 
 #include <websocketpp/client.hpp>
@@ -36,7 +38,7 @@ public:
 protected:
     WebsocketClient(const std::string& uri, const std::string& name) :  m_uri(uri), m_name(name),
             m_do_reconnect(true), m_reconnect_delay(100ms) {
-        m_endpoint.set_access_channels(websocketpp::log::alevel::connect);
+        m_endpoint.set_access_channels(websocketpp::log::alevel::none);
         m_endpoint.set_error_channels(websocketpp::log::elevel::warn);
 
         m_endpoint.init_asio();
@@ -68,7 +70,7 @@ protected:
     }
 
     virtual void send(const std::string& message) {
-        std::cout << m_name + ": Sending" << std::endl;
+        BOOST_LOG_TRIVIAL(debug) << m_name + ": Sending" << std::endl;
         websocketpp::lib::error_code ec;
         m_endpoint.send(m_con->get_handle(), message, websocketpp::frame::opcode::text, ec);
         if (ec) {
@@ -86,8 +88,8 @@ protected:
                              boost::asio::ssl::context::single_dh_use);
             //ctx->set_verify_mode(boost::asio::ssl::verify_none);
         } catch (std::exception& e) {
-            std::cout << "Got exception" << std::endl;
-            std::cout << e.what() << std::endl;
+            BOOST_LOG_TRIVIAL(error) << "Got exception" << std::endl;
+            BOOST_LOG_TRIVIAL(error) << e.what() << std::endl;
         }
         return ctx;
     }
@@ -105,13 +107,13 @@ protected:
     }
 
     virtual void on_open(websocketpp::connection_hdl conn) {
-        std::cout << m_name + ": Connection opened" << std::endl;
+        BOOST_LOG_TRIVIAL(debug) << m_name + ": Connection opened" << std::endl;
         m_start_promise.set_value();
         OnOpen(conn);
     }
 
     virtual void on_close(websocketpp::connection_hdl conn) {
-        std::cout << m_name + ": Connection closed" << std::endl;
+        BOOST_LOG_TRIVIAL(debug) << m_name + ": Connection closed" << std::endl;
         OnClose(conn);
         m_start_promise = std::move(std::promise<void>());
         // Reconnect

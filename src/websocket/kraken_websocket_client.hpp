@@ -169,10 +169,12 @@ private:
       boost::crc_32_type crc;
       crc.process_bytes(crc32_in.c_str(), crc32_in.size());
       if (crc.checksum() != std::stoul(update_obj["c"].get<std::string>())) {
-        BOOST_LOG_TRIVIAL(warning) << "Wrong checksum!";
+        BOOST_LOG_TRIVIAL(debug) << "Wrong checksum!";
         return false;
       }
     }
+    //std::cout << m_order_book << std::endl;
+    //std::cout << "Best ask: " << m_order_book.GetBestAsk() << ", best bid: " << m_order_book.GetBestBid() << std::endl;
     return true;
   }
 

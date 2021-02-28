@@ -165,11 +165,12 @@ public:
     const auto& best_ask = order_book.GetBestAsk();
     const auto& best_bid = order_book.GetBestBid();
     Ticker ticker;
-    ticker.m_ask = double(best_ask.GetPrice())/10.0;
-    ticker.m_ask_vol = best_ask.GetVolume();
-    ticker.m_bid = double(best_bid.GetPrice())/10.0;
-    ticker.m_bid_vol = best_bid.GetVolume();
-    ticker.m_source_ts = std::min(best_ask.GetTimestamp(), best_bid.GetTimestamp());
+    // TODO: get precision form order book object
+    ticker.m_ask = double(best_ask.GetPrice())/100000.0;
+    ticker.m_ask_vol = std::optional<double>(best_ask.GetVolume());
+    ticker.m_bid = double(best_bid.GetPrice())/100000.0;
+    ticker.m_bid_vol = std::optional<double>(best_bid.GetVolume());
+    ticker.m_source_ts = std::optional<int64_t>(std::min(best_ask.GetTimestamp(), best_bid.GetTimestamp()));
     using namespace std::chrono;
     auto now = system_clock::now();
     system_clock::duration tp = now.time_since_epoch();
@@ -178,6 +179,8 @@ public:
     ticker.m_exchange = order_book.GetExchangeName();
     // TODO: hardcoded
     ticker.m_symbol = "BTCUSDT";
+    //BOOST_LOG_TRIVIAL(info) << "Arrived: " << ticker.m_arrived_ts << ", best ask: " << best_ask.GetTimestamp() << ", best bid: " << best_bid.GetTimestamp() << std::endl;
+    //BOOST_LOG_TRIVIAL(info) << ticker << std::endl;
     OnTicker(ticker);
   }
 
