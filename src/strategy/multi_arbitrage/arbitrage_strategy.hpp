@@ -1,10 +1,10 @@
 #include "arbitrage_strategy_matcher.hpp"
 
 #include "exchange/exchange_client.h"
+#include "exchange/exchange_listener.h"
 #include "consumer/consumer.h"
 #include "options.h"
 #include "strategy/trading_strategy.h"
-#include "ticker_subscriber.h"
 
 #include <boost/log/trivial.hpp>
 
@@ -30,7 +30,7 @@ struct ArbitrageStrategyOptions {
   double m_allowed_deviation;
 };
 
-class ArbitrageStrategy : public TradingStrategy, public TickerSubscriber {
+class ArbitrageStrategy : public TradingStrategy, public ExchangeListener {
 public:
     ArbitrageStrategy(const ArbitrageStrategyOptions& opts)
       : m_opts(opts), m_matcher(opts.m_exchange_params), m_last_trade_us(0) {
@@ -161,9 +161,9 @@ public:
     }
   }
 
-  virtual void OnDisconnected(const std::string& exchange_name) override {
+  virtual void OnConnectionClose(const std::string& name) override {
     std::unique_lock<std::mutex> scoped_lock(m_mutex);
-    m_tickers.erase(exchange_name);
+    m_tickers.erase(name);
   }
 
 private:

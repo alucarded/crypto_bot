@@ -6,11 +6,11 @@
 
 class ExchangeListener {
 public:
-  virtual void OnConnectionOpen() {
+  virtual void OnConnectionOpen(const std::string& name) {
     BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnConnectionOpen";
   }
 
-  virtual void OnConnectionClose() {
+  virtual void OnConnectionClose(const std::string& name) {
     BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnConnectionClose";
   }
 
@@ -18,11 +18,7 @@ public:
     BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnTicker";
   }
 
-  virtual void OnOrderBook(const OrderBook& order_book) {
-    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnOrderBook";
-  }
-
-  virtual void OnOrderBookUpdate(const OrderBookUpdate& order_book) {
+  virtual void OnOrderBookUpdate(const OrderBook& order_book) {
     BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnOrderBookUpdate";
   }
 };
