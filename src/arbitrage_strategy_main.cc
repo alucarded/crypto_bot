@@ -61,8 +61,8 @@ int main(int argc, char* argv[]) {
     std::future<void> future = promise.get_future();
     kraken_websocket_client.start(std::move(promise));
     future.wait();
-    kraken_websocket_client.RequestTicker("XBT/USDT");
-    //kraken_websocket_client.RequestOrderBook("XBT/USDT");
+    //kraken_websocket_client.RequestTicker("XBT/USDT");
+    kraken_websocket_client.RequestOrderBook("XBT/USDT");
     std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
   } catch (websocketpp::exception const & e) {
       std::cout << e.what() << std::endl;

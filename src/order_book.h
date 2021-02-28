@@ -4,10 +4,14 @@
 #include <cstdint>
 #include <iostream>
 #include <utility>
-#include <vector>
+#include <list>
 
-using quantity_t = int64_t;
-enum class price_t : int32_t {};
+#include "json/json.hpp"
+
+using json = nlohmann::json;
+
+using quantity_t = double;
+enum class price_t : uint64_t {};
 
 class PriceLevel {
 public:
@@ -62,6 +66,8 @@ public:
   inline quantity_t GetVolume() const { return m_volume; }
   inline price_t GetPrice() const { return m_price; }
   inline uint64_t GetTimestamp() const { return m_timestamp; }
+
+  friend std::ostream& operator<<(std::ostream& os, const PriceLevel& ob);
 
 private:
   price_t m_price;
@@ -128,8 +134,8 @@ public:
     Delete(m_asks, price);
   }
 
-	const std::vector<PriceLevel>& GetBids() const { return m_bids; }
-	const std::vector<PriceLevel>& GetAsks() const { return m_asks; }
+	const std::list<PriceLevel>& GetBids() const { return m_bids; }
+	const std::list<PriceLevel>& GetAsks() const { return m_asks; }
 
   const PriceLevel& GetBestBid() const {
     if (m_bids.empty()) {
@@ -148,7 +154,7 @@ public:
   friend std::ostream& operator<<(std::ostream& os, const OrderBook& ob);
 
 private:
-  inline static void Delete(std::vector<PriceLevel>& vec, price_t price) {
+  inline static void Delete(std::list<PriceLevel>& vec, price_t price) {
 		auto it = vec.end();
 		while (it-- != vec.begin()) {
 			PriceLevel& cprice = *it;
@@ -161,12 +167,24 @@ private:
 
 private:
   // Highest bid last
-	std::vector<PriceLevel> m_bids;
+	std::list<PriceLevel> m_bids;
   // Lowest ask last
-	std::vector<PriceLevel> m_asks;
+	std::list<PriceLevel> m_asks;
 };
 
+std::ostream& operator<<(std::ostream& os, const PriceLevel& pl) {
+  os << "{ \"price\": " << std::to_string(uint64_t(pl.m_price)) << ", \"volume\": " << std::to_string(pl.m_volume) << ", \"timestamp\": " << std::to_string(pl.m_timestamp) << " }";
+  return os;
+}
+
 std::ostream& operator<<(std::ostream& os, const OrderBook& ob) {
-  // TODO:
+  os << "ASKS:" << std::endl;
+  for (const auto& lvl : ob.m_asks) {
+    os << lvl << std::endl;
+  }
+  os << "BIDS:" << std::endl;
+  for (const auto& lvl : ob.m_bids) {
+    os << lvl << std::endl;
+  }
   return os;
 }

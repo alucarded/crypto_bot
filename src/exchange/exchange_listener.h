@@ -20,5 +20,6 @@ public:
 
   virtual void OnOrderBookUpdate(const OrderBook& order_book) {
     BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnOrderBookUpdate";
+    std::cout << order_book << std::endl;
   }
 };

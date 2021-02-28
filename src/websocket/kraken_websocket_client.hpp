@@ -4,6 +4,7 @@
 
 #include "json/json.hpp"
 
+#include <stdexcept>
 #include <string>
 
 using json = nlohmann::json;
@@ -11,6 +12,8 @@ using json = nlohmann::json;
 class KrakenWebsocketClient : public WebsocketClient {
 public:
   inline static const std::string NAME = "kraken";
+  inline static const size_t PRICE_SENT_PRECISION = 5;
+  inline static const size_t TIMESTAMP_SENT_PRECISION = 6;
 
   KrakenWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://beta-ws.kraken.com", NAME), m_exchange_listener(exchange_listener) {
   }
@@ -37,7 +40,7 @@ private:
 
   virtual void OnMessage(websocketpp::connection_hdl, client::message_ptr msg) override {
     auto msg_json = json::parse(msg->get_payload());
-    //std::cout << msg_json << std::endl;
+    std::cout << msg_json << std::endl;
     if (!msg_json.is_array()) {
       // It is most probably a publication or response
       // TODO:
@@ -77,7 +80,36 @@ private:
   }
 
   void OnOrderBookSnapshot(const json& snapshot_obj) {
-    // TODO:
+    for (const json& lvl : snapshot_obj["as"]) {
+      // Upsert price level
+      PriceLevel pl = ParsePriceLevel(lvl);
+      m_order_book.UpsertAsk(pl);
+    }
+    for (const json& lvl : snapshot_obj["bs"]) {
+      // Upsert price level
+      PriceLevel pl = ParsePriceLevel(lvl);
+      m_order_book.UpsertBid(pl);
+    }
+  }
+
+  PriceLevel ParsePriceLevel(const json& lvl) {
+    // Parse price
+    auto p = lvl[0].get<std::string>();
+    size_t dot_pos = p.find('.');
+    if (p.size() - 1 - dot_pos != PRICE_SENT_PRECISION) {
+      throw std::runtime_error("Unexpected price precision");
+    }
+    p.erase(dot_pos, 1);
+
+    // Parse timestamp
+    auto ts = lvl[2].get<std::string>();
+    dot_pos = ts.find('.');
+    if (ts.size() - 1 - dot_pos != TIMESTAMP_SENT_PRECISION) {
+      throw std::runtime_error("Unexpected timestamp precision");
+    }
+    ts.erase(dot_pos, 1);
+
+    return PriceLevel(price_t(std::stoull(p)), std::stod(lvl[1].get<std::string>()), std::stoull(ts));
   }
 
   void OnOrderBookUpdate(const json& update_obj) {
