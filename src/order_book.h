@@ -78,10 +78,10 @@ private:
 
 class OrderBook {
 public:
-	OrderBook() : OrderBook(10) {
+	OrderBook(const std::string& name) : OrderBook(name, 10) {
   }
 
-	OrderBook(size_t depth) : m_depth(depth) {
+	OrderBook(const std::string& name, size_t depth) : m_exchange_name(name), m_depth(depth) {
   }
 
 	/**
@@ -166,6 +166,7 @@ public:
     return *m_asks.end();
   }
 
+  const std::string& GetExchangeName() const { return m_exchange_name; }
   friend std::ostream& operator<<(std::ostream& os, const OrderBook& ob);
 
 private:
@@ -185,6 +186,7 @@ private:
 	std::list<PriceLevel> m_bids;
   // Lowest ask last
 	std::list<PriceLevel> m_asks;
+  std::string m_exchange_name;
   size_t m_depth;
 };
 

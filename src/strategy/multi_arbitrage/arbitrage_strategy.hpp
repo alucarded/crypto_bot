@@ -161,6 +161,26 @@ public:
     }
   }
 
+  virtual void OnOrderBookUpdate(const OrderBook& order_book) {
+    const auto& best_ask = order_book.GetBestAsk();
+    const auto& best_bid = order_book.GetBestBid();
+    Ticker ticker;
+    ticker.m_ask = double(best_ask.GetPrice())/10.0;
+    ticker.m_ask_vol = best_ask.GetVolume();
+    ticker.m_bid = double(best_bid.GetPrice())/10.0;
+    ticker.m_bid_vol = best_bid.GetVolume();
+    ticker.m_source_ts = std::min(best_ask.GetTimestamp(), best_bid.GetTimestamp());
+    using namespace std::chrono;
+    auto now = system_clock::now();
+    system_clock::duration tp = now.time_since_epoch();
+    microseconds us = duration_cast<microseconds>(tp);
+    ticker.m_arrived_ts = us.count();
+    ticker.m_exchange = order_book.GetExchangeName();
+    // TODO: hardcoded
+    ticker.m_symbol = "BTCUSDT";
+    OnTicker(ticker);
+  }
+
   virtual void OnConnectionClose(const std::string& name) override {
     std::unique_lock<std::mutex> scoped_lock(m_mutex);
     m_tickers.erase(name);

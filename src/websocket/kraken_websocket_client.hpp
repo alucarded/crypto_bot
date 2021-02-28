@@ -36,7 +36,8 @@ public:
   inline static const size_t VOLUME_SENT_PRECISION = 8;
   inline static const size_t TIMESTAMP_SENT_PRECISION = 6;
 
-  KrakenWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://beta-ws.kraken.com", NAME), m_exchange_listener(exchange_listener) {
+  KrakenWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://beta-ws.kraken.com", NAME), m_exchange_listener(exchange_listener),
+      m_order_book(NAME) {
   }
 
   void SubscribeTicker(const std::string& symbol) {
@@ -75,7 +76,7 @@ private:
 
   virtual void OnMessage(websocketpp::connection_hdl, client::message_ptr msg) override {
     auto msg_json = json::parse(msg->get_payload());
-    std::cout << msg_json << std::endl;
+    //std::cout << msg_json << std::endl;
     if (!msg_json.is_array()) {
       // It is most probably a publication or response
       // TODO:
@@ -161,10 +162,10 @@ private:
         }
       }
     }
-    std::cout << m_order_book << std::endl;
+    //std::cout << m_order_book << std::endl;
     if (update_obj.contains("c")) {
       std::string crc32_in = CalculateChecksumInput();
-      std::cout << crc32_in << std::endl;
+      //std::cout << crc32_in << std::endl;
       boost::crc_32_type crc;
       crc.process_bytes(crc32_in.c_str(), crc32_in.size());
       if (crc.checksum() != std::stoul(update_obj["c"].get<std::string>())) {
