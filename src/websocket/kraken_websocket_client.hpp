@@ -10,6 +10,7 @@
 #include <iterator>
 #include <stdexcept>
 #include <string>
+#include <thread>
 
 using json = nlohmann::json;
 
@@ -38,19 +39,28 @@ public:
   KrakenWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://beta-ws.kraken.com", NAME), m_exchange_listener(exchange_listener) {
   }
 
-  void RequestTicker(const std::string& symbol) {
+  void SubscribeTicker(const std::string& symbol) {
     const std::string message = "{\"event\": \"subscribe\",\"pair\": [\"" + symbol + "\"],\"subscription\": {\"name\": \"ticker\"}}";
     m_subscription_msg.push_back(message);
     WebsocketClient::send(message);
   }
 
-  void RequestOrderBook(const std::string& symbol) {
-    const std::string message = "{\"event\": \"subscribe\",\"pair\": [\"" + symbol + "\"],\"subscription\": {\"name\": \"book\",\"depth\": 10}}";
+  void SubscribeOrderBook(const std::string& symbol) {
+    std::string message = OrderBookSubscribeMsg(symbol);
     m_subscription_msg.push_back(message);
     WebsocketClient::send(message);
   }
 
+  void UnsubscribeOrderBook(const std::string& symbol) {
+    const std::string message = "{\"event\": \"unsubscribe\",\"pair\": [\"" + symbol + "\"],\"subscription\": {\"name\": \"book\",\"depth\": 10}}";
+    WebsocketClient::send(message);
+  }
+
 private:
+
+  std::string OrderBookSubscribeMsg(const std::string& symbol, bool subscribe = true) {
+    return std::string("{\"event\": \"") + (subscribe ? "subscribe" : "unsubscribe") + "\",\"pair\": [\"" + symbol + "\"],\"subscription\": {\"name\": \"book\",\"depth\": 10}}";
+  }
 
   virtual void OnOpen(websocketpp::connection_hdl conn) override {
     for (const auto& msg : m_subscription_msg) {
@@ -87,6 +97,11 @@ private:
       }
       if (is_valid) {
         m_exchange_listener->OnOrderBookUpdate(m_order_book);
+      } else {
+        m_order_book.clear();
+        // TODO: implement state machine, with subscription class objects in a vector as a state,
+        // with which subscriptions can be re-created upon receiving unsubscribed publication
+        WebsocketClient::send(OrderBookSubscribeMsg("XBT/USDT"));
       }
     }
   }

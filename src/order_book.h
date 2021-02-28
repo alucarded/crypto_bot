@@ -144,6 +144,11 @@ public:
     Delete(m_asks, price);
   }
 
+  void clear() {
+    m_asks.clear();
+    m_bids.clear();
+  }
+
 	const std::list<PriceLevel>& GetBids() const { return m_bids; }
 	const std::list<PriceLevel>& GetAsks() const { return m_asks; }
 
