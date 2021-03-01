@@ -127,9 +127,9 @@ protected:
     virtual void on_message(websocketpp::connection_hdl conn, client::message_ptr msg) {
         try {
             OnMessage(conn, msg);
-            // TODO: FIXME: catch exceptions in OnMessage
         } catch (std::exception const & e) {
-            std::cerr << "WebsocketClient::on_message exception: " << e.what() << std::endl;
+            BOOST_LOG_TRIVIAL(error) << "WebsocketClient::OnMessage exception for connection " << m_name << ": " << e.what() << std::endl;
+            BOOST_LOG_TRIVIAL(error) << "Message: " << msg->get_payload() << std::endl;
         }
     }
 
