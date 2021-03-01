@@ -127,6 +127,7 @@ private:
   }
 
   void OnOrderBookSnapshot(const json& snapshot_obj) {
+    BOOST_LOG_TRIVIAL(warning) << "Received order book snapshot";
     for (const json& lvl : snapshot_obj["as"]) {
       // Upsert price level
       PriceLevel pl = ParsePriceLevel(lvl);
