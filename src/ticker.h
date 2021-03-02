@@ -69,20 +69,6 @@ struct RawTicker {
     return empty_ticker;
   }
 
-  static Ticker ToTicker(const RawTicker& raw_ticker) {
-    Ticker ticker;
-    ticker.m_bid = std::stod(raw_ticker.m_bid);
-    ticker.m_bid_vol = raw_ticker.m_bid_vol.empty() ? std::nullopt : std::optional<double>(std::stod(raw_ticker.m_bid_vol));
-    ticker.m_ask = std::stod(raw_ticker.m_ask);
-    ticker.m_ask_vol = raw_ticker.m_ask_vol.empty() ? std::nullopt : std::optional<double>(std::stod(raw_ticker.m_ask_vol));
-    ticker.m_source_ts = raw_ticker.m_source_ts ? std::optional<int64_t>(raw_ticker.m_source_ts) : std::nullopt;
-    ticker.m_arrived_ts = raw_ticker.m_arrived_ts;
-    ticker.m_symbol = raw_ticker.m_symbol;
-    ticker.m_exchange = raw_ticker.m_exchange;
-    ticker.m_id = m_last_ticker_id++;
-    return ticker;
-  }
-
   friend std::ostream& operator<<(std::ostream& os, const RawTicker& rt);
 };
 

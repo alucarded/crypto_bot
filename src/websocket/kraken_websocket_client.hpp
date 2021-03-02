@@ -84,7 +84,7 @@ private:
     }
     auto channel_name = msg_json[msg_json.size() - 2];
     if (channel_name == "ticker") {
-      m_exchange_listener->OnTicker(RawTicker::ToTicker(ParseTicker(msg_json[1])));
+      m_exchange_listener->OnTicker(ParseTicker(msg_json[1]));
     } else if (channel_name.get<std::string>().find("book") != std::string::npos) {
       bool is_valid = false;
       auto book_obj = msg_json[1];
@@ -110,13 +110,13 @@ private:
     }
   }
 
-  RawTicker ParseTicker(json data) {
-      RawTicker ticker;
-      ticker.m_bid = data["b"][0];
-      ticker.m_bid_vol = data["b"][2];
-      ticker.m_ask = data["a"][0];
-      ticker.m_ask_vol = data["a"][2];
-      ticker.m_source_ts = 0; // not provided
+  Ticker ParseTicker(json data) {
+      Ticker ticker;
+      ticker.m_bid = std::stod(data["b"][0].get<std::string>());
+      ticker.m_bid_vol = std::optional<double>(std::stod(data["b"][2].get<std::string>()));
+      ticker.m_ask = std::stod(data["a"][0].get<std::string>());
+      ticker.m_ask_vol = std::optional<double>(std::stod(data["a"][2].get<std::string>()));
+      ticker.m_source_ts = std::nullopt; // not provided
       // TODO: perhaps generate timestamp in base class and pass it to this method
       using namespace std::chrono;
       auto now = system_clock::now();
@@ -124,6 +124,8 @@ private:
       microseconds us = duration_cast<microseconds>(tp);
       ticker.m_arrived_ts = us.count();
       ticker.m_exchange = NAME;
+      static uint64_t last_ticker_id = 0;
+      ticker.m_id = last_ticker_id++;
       // TODO: use enum
       ticker.m_symbol = "BTCUSDT";
       return ticker;
