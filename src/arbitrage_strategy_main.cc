@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     binance_future.wait();
     kraken_future.wait();
     binance_websocket_client.SubscribeTicker("btcusdt");
-    kraken_websocket_client.SubscribeOrderBook("XBT/USDT");
+    kraken_websocket_client.SubscribeTicker("XBT/USDT");
     std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
   } catch (websocketpp::exception const & e) {
       std::cout << e.what() << std::endl;
