@@ -82,7 +82,7 @@ private:
       // TODO:
       return;
     }
-    auto channel_name = msg_json[2];
+    auto channel_name = msg_json[msg_json.size() - 2];
     if (channel_name == "ticker") {
       m_exchange_listener->OnTicker(RawTicker::ToTicker(ParseTicker(msg_json[1])));
     } else if (channel_name.get<std::string>().find("book") != std::string::npos) {
@@ -93,6 +93,9 @@ private:
         OnOrderBookSnapshot(book_obj);
       } else if (book_obj.contains("a") || book_obj.contains("b")) {
         is_valid = OnOrderBookUpdate(book_obj);
+        if (msg_json.size() == 5) {
+          is_valid = OnOrderBookUpdate(msg_json[2]);
+        }
       } else {
         BOOST_LOG_TRIVIAL(error) << "Unexpected book message!";
       }
