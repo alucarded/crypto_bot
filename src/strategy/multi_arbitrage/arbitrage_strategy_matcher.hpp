@@ -30,7 +30,7 @@ std::ostream &operator<<(std::ostream &os, const ArbitrageStrategyMatch &match) 
   // TODO: print every object as JSON! Use variable names without "m_" prefix
   os << "ARBITRAGE MATCH" << std::endl << "BEST BID: " << match.m_best_bid << std::endl
       << "BEST ASK: " << std::endl << match.m_best_ask << std::endl
-      << "ESTIMATED PROFIT: " << std::to_string(match.m_profit) << std::endl;
+      << "ESTIMATED PROFIT PER BASE UNIT: " << std::to_string(match.m_profit) << std::endl;
   return os;
 }
 
