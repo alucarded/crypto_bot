@@ -84,7 +84,8 @@ private:
     }
     auto channel_name = msg_json[msg_json.size() - 2];
     if (channel_name == "ticker") {
-      m_exchange_listener->OnTicker(ParseTicker(msg_json[1]));
+      const auto& symbol = msg_json[msg_json.size() - 1].get<std::string>();
+      m_exchange_listener->OnTicker(ParseTicker(symbol, msg_json[1]));
     } else if (channel_name.get<std::string>().find("book") != std::string::npos) {
       bool is_valid = false;
       auto book_obj = msg_json[1];
@@ -110,7 +111,7 @@ private:
     }
   }
 
-  Ticker ParseTicker(json data) {
+  Ticker ParseTicker(json data, const std::string& symbol) {
       Ticker ticker;
       ticker.m_bid = std::stod(data["b"][0].get<std::string>());
       ticker.m_bid_vol = std::optional<double>(std::stod(data["b"][2].get<std::string>()));
@@ -127,7 +128,7 @@ private:
       static uint64_t last_ticker_id = 0;
       ticker.m_id = last_ticker_id++;
       // TODO: use enum
-      ticker.m_symbol = "BTCUSDT";
+      ticker.m_symbol = symbol;
       return ticker;
   }
 

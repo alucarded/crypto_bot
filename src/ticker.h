@@ -1,4 +1,7 @@
 #pragma once
+
+#include "symbol.h"
+
 #include <chrono>
 #include <cstdint>
 #include <iostream>
@@ -12,10 +15,6 @@ enum ExchangeId : int {
   KRAKEN
 };
 
-enum SymbolId : int {
-  BTC_USDT
-};
-
 struct Ticker {
   double m_ask;
   std::optional<double> m_ask_vol;
@@ -25,7 +24,7 @@ struct Ticker {
   int64_t m_arrived_ts;
   uint64_t m_id;
   std::string m_exchange;
-  std::string m_symbol;
+  PairSymbol m_symbol;
 
   friend std::ostream &operator<<(std::ostream &os, const Ticker &res);
 };
