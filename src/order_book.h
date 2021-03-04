@@ -20,20 +20,22 @@ public:
   PriceLevel(price_t p, quantity_t vol, uint64_t ts) : m_price(p),
       m_volume(vol),
       m_timestamp(ts) { }
-  PriceLevel(const PriceLevel& o) noexcept : m_volume(o.m_volume),
-      m_price(o.m_price),
+  PriceLevel(const PriceLevel& o) noexcept : m_price(o.m_price),
+      m_volume(o.m_volume),
       m_timestamp(o.m_timestamp) { }
-  PriceLevel(PriceLevel&& o) noexcept : m_volume(std::exchange(o.m_volume, 0)),
-      m_price(std::move(o.m_price)),
+  PriceLevel(PriceLevel&& o) noexcept : m_price(std::move(o.m_price)),
+      m_volume(std::exchange(o.m_volume, 0)),
       m_timestamp(std::exchange(o.m_timestamp, 0)) { }
-  PriceLevel&& operator=(PriceLevel&& o) {
-    m_volume = std::exchange(o.m_volume, 0);
+  PriceLevel& operator=(PriceLevel&& o) {
     m_price = std::move(o.m_price);
+    m_volume = std::exchange(o.m_volume, 0);
     m_timestamp = std::exchange(o.m_timestamp, 0);
+    return *this;
   }
 
-  static PriceLevel Null() {
-    return PriceLevel(price_t(0), 0, 0);
+  static const PriceLevel& Null() {
+    static PriceLevel s_null_level(price_t(0), 0, 0);
+    return s_null_level;
   }
 
   bool operator>(const PriceLevel& rhs) const noexcept {
