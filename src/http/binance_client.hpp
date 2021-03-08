@@ -10,6 +10,8 @@
 #include <openssl/hmac.h>
 #include <openssl/sha.h>
 
+#include <cstdlib>
+
 using json = nlohmann::json;
 
 using namespace std::placeholders; // _1, _2, etc.
@@ -68,6 +70,9 @@ public:
   inline static const std::string GET_ACCOUNT_BALANCE_PATH = "/api/v3/account";
   inline static const std::string GET_OPEN_ORDERS_PATH = "/api/v3/openOrders";
 
+  static std::unordered_map<SymbolPairId, std::string> SYMBOL_MAP;
+  static std::unordered_map<std::string, SymbolId> ASSET_MAP;
+
   BinanceClient()
       : m_last_order_id(0), m_ioctx(), m_api(
         m_ioctx
@@ -92,8 +97,9 @@ public:
     return "binance";
   }
 
-  virtual Result<Order> MarketOrder(const std::string& symbol, Side side, double qty) override {
-    binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
+  virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
+    const std::string& symbol_str = GetSymbolString(symbol);
+    binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol_str, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
         binapi::e_type::market, binapi::e_time::GTC,
         std::to_string(qty), std::string(), std::to_string(++m_last_order_id), std::string(), std::string());
     if ( !res ) {
@@ -103,8 +109,9 @@ public:
     return Result<Order>(res.reply, Order(std::to_string(m_last_order_id)));
   }
 
-  virtual Result<Order> LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
-    binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
+  virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
+    const std::string& symbol_str = GetSymbolString(symbol);
+    binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol_str, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
         binapi::e_type::limit, binapi::e_time::GTC,
         std::to_string(qty), std::to_string(price), std::to_string(++m_last_order_id), std::string(), std::string());
     if ( !res ) {
@@ -136,18 +143,19 @@ public:
     if (response_json.contains("code")) {
       return Result<AccountBalance>(res.response, response_json["msg"].get<std::string>());
     }
-    std::unordered_map<std::string, std::string> balances;
+    std::unordered_map<SymbolId, std::string> balances;
     for (const auto& b : response_json["balances"]) {
-      balances.insert(std::make_pair(b["asset"], b["free"]));
+      balances.insert(std::make_pair(ASSET_MAP[b["asset"]], b["free"]));
     }
     
     return Result<AccountBalance>(res.response, AccountBalance(balances));
   }
 
-  virtual Result<std::vector<Order>> GetOpenOrders(const std::string& symbol) override {
+  virtual Result<std::vector<Order>> GetOpenOrders(SymbolPairId symbol) override {
+    const std::string& symbol_str = GetSymbolString(symbol);
     HttpClient::Result res = m_http_client.get(HOST, PORT, GET_OPEN_ORDERS_PATH)
         .Header("X-MBX-APIKEY", g_api_key)
-        .QueryParam("symbol", symbol)
+        .QueryParam("symbol", symbol_str)
         .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
         .send();
     json response_json = json::parse(res.response);
@@ -161,6 +169,14 @@ public:
     return Result<std::vector<Order>>(res.response, orders);
   }
 private:
+
+  const std::string& GetSymbolString(SymbolPairId symbol) const {
+    if (SYMBOL_MAP.count(symbol) == 0) {
+      BOOST_LOG_TRIVIAL(error) << "Unknown symbol. Exiting.";
+      std::exit(1);
+    }
+    return SYMBOL_MAP.at(symbol);
+  }
 
   void SignData(HttpClient::Request& request, std::string& data) {
     (void) request; // unused
@@ -193,4 +209,23 @@ private:
   binapi::rest::api m_api;
   HttpClient m_http_client;
   int m_timeout;
+};
+
+std::unordered_map<SymbolPairId, std::string> BinanceClient::SYMBOL_MAP = {
+  {SymbolPairId::ADA_USDT, "ADAUSDT"},
+  {SymbolPairId::BTC_USDT, "BTCUSDT"},
+  {SymbolPairId::ETH_USDT, "ETHUSDT"},
+  {SymbolPairId::EOS_USDT, "EOSUSDT"},
+  {SymbolPairId::ADA_BTC, "ADABTC"},
+  {SymbolPairId::ETH_BTC, "ETHBTC"},
+  {SymbolPairId::EOS_BTC, "EOSBTC"},
+  {SymbolPairId::EOS_ETH, "EOSETH"}
+};
+
+std::unordered_map<std::string, SymbolId> BinanceClient::ASSET_MAP = {
+  {"ADA", SymbolId::ADA},
+  {"BTC", SymbolId::BTC},
+  {"ETH", SymbolId::ETH},
+  {"EOS", SymbolId::EOS},
+  {"USDT", SymbolId::USDT}
 };

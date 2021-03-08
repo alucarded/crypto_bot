@@ -1,6 +1,7 @@
 #include "options.h"
 #include "ticker.h"
 
+#include <cassert>
 #include <optional>
 #include <map>
 #include <unordered_map>
@@ -19,8 +20,8 @@ struct ArbitrageStrategyMatch {
   ArbitrageStrategyMatch(const Ticker& best_bid, const Ticker& best_ask, double profit)
     : m_best_bid(best_bid), m_best_ask(best_ask), m_profit(profit)
   {}
-  const Ticker& m_best_bid;
-  const Ticker& m_best_ask;
+  Ticker m_best_bid;
+  Ticker m_best_ask;
   double m_profit;
 
   friend std::ostream &operator<<(std::ostream &os, const ArbitrageStrategyMatch &match);
@@ -50,9 +51,15 @@ public:
   }
 
   virtual std::optional<ArbitrageStrategyMatch> FindMatch(const std::map<std::string, Ticker>& tickers) {
+    if (tickers.empty()) {
+      BOOST_LOG_TRIVIAL(error) << "Empty tickers map!";
+      return std::nullopt;
+    }
+    const auto& symbol = tickers.begin()->second.m_symbol();
     std::string best_bid_ex, best_ask_ex;
     double best_bid = 0, best_ask = std::numeric_limits<double>::max();
     for (auto it = tickers.begin(); it != tickers.end(); ++it) {
+      assert(symbol == it->second.m_symbol);
       // TODO: perhaps set some constraints on volume
       if (best_ask > it->second.m_ask) {
         best_ask = it->second.m_ask;
@@ -69,8 +76,20 @@ public:
     const Ticker& best_bid_ticker = tickers.at(best_bid_ex);
     const Ticker& best_ask_ticker = tickers.at(best_ask_ex);
     double profit = CalculateProfit(best_bid_ticker, best_ask_ticker);
+    auto best_match = ArbitrageStrategyMatch(best_bid_ticker, best_ask_ticker, profit);
+    auto bit = m_best_matches.find(symbol);
+    if (bit == m_best_matches.end()) {
+      m_best_matches.emplace(symbol, best_match);
+    } else {
+      const auto& prev_match = m_best_matches.at(symbol);
+      if (prev_match.m_profit < best_match.m_profit) {
+        bit->second = best_match;
+        BOOST_LOG_TRIVIAL(debug) << "Best match for " << symbol << " updated";
+        BOOST_LOG_TRIVIAL(debug) << best_match;
+      }
+    }
     if (profit >= 0) {
-      return std::optional<ArbitrageStrategyMatch>{ArbitrageStrategyMatch(best_bid_ticker, best_ask_ticker, profit)};
+      return std::optional<ArbitrageStrategyMatch>{best_match};
     }
     return std::nullopt;
   }
@@ -89,4 +108,5 @@ private:
   }
 
   std::unordered_map<std::string, ExchangeParams> m_exchange_params;
+  std::unordered_map<SymbolPairId, ArbitrageStrategyMatch> m_best_matches;
 };

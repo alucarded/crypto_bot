@@ -1,7 +1,10 @@
+#pragma once
+
+#include <iostream>
 #include <string>
 #include <unordered_map>
 
-enum SymbolId : int {
+enum SymbolPairId : int {
   ADA_USDT,
   BTC_USDT,
   ETH_USDT,
@@ -13,49 +16,99 @@ enum SymbolId : int {
   UNKNOWN
 };
 
-class PairSymbol {
+std::ostream& operator<< (std::ostream& os, SymbolPairId spid) {
+  switch (spid) {
+    case SymbolPairId::ADA_USDT: return os << "ADA_USDT";
+    case SymbolPairId::BTC_USDT: return os << "BTC_USDT";
+    case SymbolPairId::ETH_USDT: return os << "ETH_USDT";
+    case SymbolPairId::EOS_USDT: return os << "EOS_USDT";
+    case SymbolPairId::ADA_BTC: return os << "ADA_BTC";
+    case SymbolPairId::ETH_BTC: return os << "ETH_BTC";
+    case SymbolPairId::EOS_BTC: return os << "EOS_BTC";
+    case SymbolPairId::EOS_ETH: return os << "EOS_ETH";
+    default: return os << "SymbolPairId{" << spid << "}";
+  }
+}
+
+enum SymbolId : int {
+  ADA,
+  BTC,
+  ETH,
+  EOS,
+  USDT
+};
+
+class SymbolPair {
 public:
-  PairSymbol() : m_symbol_id(SymbolId::UNKNOWN) {}
-  PairSymbol(const std::string& s) : PairSymbol(GetSymbol(s)) {}
-  PairSymbol(SymbolId id) : m_symbol_id(id) {}
-  PairSymbol& operator=(const std::string& s) {
+  SymbolPair() : m_symbol_id(SymbolPairId::UNKNOWN) {}
+  SymbolPair(const std::string& s) : SymbolPair(GetSymbol(s)) {}
+  SymbolPair(SymbolPairId id) : m_symbol_id(id) {}
+  SymbolPair& operator=(const std::string& s) {
     m_symbol_id = GetSymbol(s);
     return *this;
   }
-  operator SymbolId() const { return m_symbol_id; }
+  operator SymbolPairId() const { return m_symbol_id; }
+  const SymbolPairId& operator()() const { return m_symbol_id; }
 
+  using AssetMap = std::unordered_map<SymbolPairId, SymbolId>;
+  SymbolId GetBaseAsset() const {
+    static const AssetMap s_base_map = {
+      {SymbolPairId::ADA_USDT, SymbolId::ADA},
+      {SymbolPairId::BTC_USDT, SymbolId::BTC},
+      {SymbolPairId::ETH_USDT, SymbolId::ETH},
+      {SymbolPairId::EOS_USDT, SymbolId::EOS},
+      {SymbolPairId::ADA_BTC, SymbolId::ADA},
+      {SymbolPairId::EOS_BTC, SymbolId::EOS},
+      {SymbolPairId::EOS_ETH, SymbolId::EOS},
+    };
+    return s_base_map.at(m_symbol_id);
+  }
+
+  SymbolId GetQuoteAsset() const {
+    static const AssetMap s_quote_map = {
+      {SymbolPairId::ADA_USDT, SymbolId::USDT},
+      {SymbolPairId::BTC_USDT, SymbolId::USDT},
+      {SymbolPairId::ETH_USDT, SymbolId::USDT},
+      {SymbolPairId::EOS_USDT, SymbolId::USDT},
+      {SymbolPairId::ADA_BTC, SymbolId::BTC},
+      {SymbolPairId::EOS_BTC, SymbolId::BTC},
+      {SymbolPairId::EOS_ETH, SymbolId::ETH},
+    };
+    return s_quote_map.at(m_symbol_id);
+  }
 private:
-  static SymbolId GetSymbol(const std::string& s) {
+  static SymbolPairId GetSymbol(const std::string& s) {
     auto it = getSymbols().find(s);
     if (it == getSymbols().end()) {
-      throw std::invalid_argument(s + " has no associated SymbolId value");
+      throw std::invalid_argument(s + " has no associated SymbolPairId value");
     }
     return it->second;
   }
 
-  using PairSymbolMap = std::unordered_map<std::string, SymbolId>;
-  static const PairSymbolMap& getSymbols() {
-    static const PairSymbolMap ret{
-      {"XBT/USDT", SymbolId::BTC_USDT},
-      {"BTCUSDT", SymbolId::BTC_USDT},
-      {"ETH/USDT", SymbolId::ETH_USDT},
-      {"ETHUSDT", SymbolId::ETH_USDT},
-      {"ADA/USDT", SymbolId::ADA_USDT},
-      {"ADAUSDT", SymbolId::ADA_USDT},
-      {"EOS/USDT", SymbolId::EOS_USDT},
-      {"EOSUSDT", SymbolId::EOS_USDT},
-      {"ETH/XBT", SymbolId::ETH_BTC},
-      {"ETHBTC", SymbolId::ETH_BTC},
-      {"ADA/XBT", SymbolId::ADA_BTC},
-      {"ADABTC", SymbolId::ADA_BTC},
-      {"EOS/XBT", SymbolId::EOS_BTC},
-      {"EOSBTC", SymbolId::EOS_BTC},
-      {"EOS/ETH", SymbolId::EOS_ETH},
-      {"EOSETH", SymbolId::EOS_ETH}
+  using SymbolPairMap = std::unordered_map<std::string, SymbolPairId>;
+  static const SymbolPairMap& getSymbols() {
+    // TODO: source-specific strings should be in source-specific classes
+    static const SymbolPairMap ret{
+      {"XBT/USDT", SymbolPairId::BTC_USDT},
+      {"BTCUSDT", SymbolPairId::BTC_USDT},
+      {"ETH/USDT", SymbolPairId::ETH_USDT},
+      {"ETHUSDT", SymbolPairId::ETH_USDT},
+      {"ADA/USDT", SymbolPairId::ADA_USDT},
+      {"ADAUSDT", SymbolPairId::ADA_USDT},
+      {"EOS/USDT", SymbolPairId::EOS_USDT},
+      {"EOSUSDT", SymbolPairId::EOS_USDT},
+      {"ETH/XBT", SymbolPairId::ETH_BTC},
+      {"ETHBTC", SymbolPairId::ETH_BTC},
+      {"ADA/XBT", SymbolPairId::ADA_BTC},
+      {"ADABTC", SymbolPairId::ADA_BTC},
+      {"EOS/XBT", SymbolPairId::EOS_BTC},
+      {"EOSBTC", SymbolPairId::EOS_BTC},
+      {"EOS/ETH", SymbolPairId::EOS_ETH},
+      {"EOSETH", SymbolPairId::EOS_ETH}
     };
     return ret;
   }
 
 private:
-  SymbolId m_symbol_id;
+  SymbolPairId m_symbol_id;
 };

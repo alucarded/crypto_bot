@@ -36,8 +36,7 @@ public:
   inline static const size_t VOLUME_SENT_PRECISION = 8;
   inline static const size_t TIMESTAMP_SENT_PRECISION = 6;
 
-  KrakenWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://beta-ws.kraken.com", NAME), m_exchange_listener(exchange_listener),
-      m_order_book(NAME) {
+  KrakenWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://beta-ws.kraken.com", NAME), m_exchange_listener(exchange_listener) {
   }
 
   void SubscribeTicker(const std::string& symbol) {
@@ -49,6 +48,7 @@ public:
   void SubscribeOrderBook(const std::string& symbol) {
     std::string message = OrderBookSubscribeMsg(symbol);
     m_subscription_msg.push_back(message);
+    m_order_book = OrderBook(NAME, symbol);
     WebsocketClient::send(message);
   }
 
@@ -83,9 +83,9 @@ private:
       return;
     }
     auto channel_name = msg_json[msg_json.size() - 2];
+    const auto& symbol = msg_json[msg_json.size() - 1].get<std::string>();
     if (channel_name == "ticker") {
-      const auto& symbol = msg_json[msg_json.size() - 1].get<std::string>();
-      m_exchange_listener->OnTicker(ParseTicker(symbol, msg_json[1]));
+      m_exchange_listener->OnTicker(ParseTicker(msg_json[1], symbol));
     } else if (channel_name.get<std::string>().find("book") != std::string::npos) {
       bool is_valid = false;
       auto book_obj = msg_json[1];
@@ -106,7 +106,7 @@ private:
         m_order_book.clear();
         // TODO: implement state machine, with subscription class objects in a vector as a state,
         // with which subscriptions can be re-created upon receiving unsubscribed publication
-        WebsocketClient::send(OrderBookSubscribeMsg("XBT/USDT"));
+        WebsocketClient::send(OrderBookSubscribeMsg(symbol));
       }
     }
   }

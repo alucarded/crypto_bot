@@ -26,6 +26,9 @@ integration_tests:
 arbitrage_main:
 	g++ -pipe src/arbitrage_strategy_main.cc src/http/binapi/* -o arbitrage_main $(CFLAGS) $(LDFLAGS)
 
+arbitrage_finder:
+	g++ -pipe src/arbitrage_finder_main.cc -o arbitrage_finder_main $(CFLAGS) $(LDFLAGS)
+
 clean:
 	if [ -f collector ]; then rm collector; fi; \
 	if [ -f basic_backtest ]; then rm basic_backtest; fi; \

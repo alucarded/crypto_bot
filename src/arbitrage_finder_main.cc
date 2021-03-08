@@ -1,6 +1,6 @@
 #include "exchange/exchange_listener.h"
-#include "exchange/arbitrage_finder_client.h"
-#include "exchange/dummy_client.h"
+#include "exchange/arbitrage_finder_client.hpp"
+#include "exchange/dummy_client.hpp"
 #include "strategy/multi_arbitrage/arbitrage_strategy.hpp"
 #include "websocket/binance_websocket_client.hpp"
 #include "websocket/kraken_websocket_client.hpp"
@@ -65,20 +65,23 @@ int main(int argc, char* argv[]) {
     binance_future.wait();
     kraken_future.wait();
     // Binance
-    binance_websocket_client.SubscribeTicker("BTCUSDT");
-    binance_websocket_client.SubscribeTicker("EOSETH");
-    binance_websocket_client.SubscribeTicker("ETHUSDT");
-    binance_websocket_client.SubscribeTicker("ETHBTC");
-    binance_websocket_client.SubscribeTicker("ADAUSDT");
-    binance_websocket_client.SubscribeTicker("ADABTC");
+    // TODO: Remember: ALL SYMBOLS FOR STREAMS ARE LOWERCASE!
+    binance_websocket_client.SubscribeTicker("btcusdt");
+    //binance_websocket_client.SubscribeTicker("eosusdt");
+    binance_websocket_client.SubscribeTicker("ethusdt");
+    binance_websocket_client.SubscribeTicker("ethbtc");
+    binance_websocket_client.SubscribeTicker("adausdt");
+    //binance_websocket_client.SubscribeTicker("adabtc");
 
     //Kraken
     kraken_websocket_client.SubscribeTicker("XBT/USDT");
-    kraken_websocket_client.SubscribeTicker("EOS/ETH");
+    //kraken_websocket_client.SubscribeTicker("EOS/USDT");
     kraken_websocket_client.SubscribeTicker("ETH/USDT");
     kraken_websocket_client.SubscribeTicker("ETH/XBT");
     kraken_websocket_client.SubscribeTicker("ADA/USDT");
-    kraken_websocket_client.SubscribeTicker("ADA/XBT");
+    //kraken_websocket_client.SubscribeTicker("ADA/XBT");
+
+    binance_websocket_client.ListSubscriptions();
   
     std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
   } catch (websocketpp::exception const & e) {

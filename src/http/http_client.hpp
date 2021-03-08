@@ -195,6 +195,7 @@ public:
       return res;
     }
 
+    // TODO: support keep-alive
     boost::asio::connect(ssl_stream.next_layer(), results.begin(), results.end(), ec);
     if ( ec ) {
       BOOST_LOG_TRIVIAL(error) << "msg=" << ec.message() << std::endl;

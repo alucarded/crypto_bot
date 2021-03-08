@@ -17,12 +17,11 @@ public:
     return "";
   }
 
-  virtual Result<Order> MarketOrder(const std::string& symbol, Side side, double qty) override {
-    
+  virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
     return Result<Order>("", Order());
   }
 
-  virtual Result<Order> LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
+  virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
     return Result<Order>("", Order());
   }
 
@@ -33,7 +32,7 @@ public:
     return Result<AccountBalance>("", AccountBalance());
   }
 
-  virtual Result<std::vector<Order>> GetOpenOrders(const std::string& symbol) override {
+  virtual Result<std::vector<Order>> GetOpenOrders(SymbolPairId symbol) override {
     return Result<std::vector<Order>>("", std::vector<Order>());
   }
 };

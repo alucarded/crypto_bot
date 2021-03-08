@@ -14,12 +14,17 @@ class BinanceWebsocketClient : public WebsocketClient {
 public:
   inline static const std::string NAME = "binance";
 
-  BinanceWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://fstream.binance.com/ws/bookTicker", NAME), m_exchange_listener(exchange_listener) {
+  BinanceWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://stream.binance.com:9443/ws/bookTicker", NAME), m_exchange_listener(exchange_listener) {
   }
 
   void SubscribeTicker(const std::string& symbol) {
-      const std::string message = "{\"method\": \"SUBSCRIBE\",\"params\": [\"" + symbol + "@bookTicker\"],\"id\": 1}";
+      const std::string message = "{\"method\": \"SUBSCRIBE\",\"params\": [\"" + symbol + "@bookTicker\"],\"id\": " + std::to_string(++s_sub_id) +"}";
       m_subscription_msg.push_back(message);
+      WebsocketClient::send(message);
+  }
+
+    void ListSubscriptions() {
+      const std::string message = "{\"method\": \"LIST_SUBSCRIPTIONS\",\"id\": " + std::to_string(++s_sub_id) +"}";
       WebsocketClient::send(message);
   }
 
@@ -40,9 +45,8 @@ private:
       auto msg_json = json::parse(msg->get_payload());
       // TODO: Perhaps do not do schema validation for every message in production
       if (!msg_json.is_object()
-          || !utils::check_message(msg_json, {"u", "s", "b", "B", "a", "A", "T"})
-          || msg_json["s"].get<std::string>() != "BTCUSDT") {
-        std::cout << "Binance: Not an expected ticker object" << std::endl;
+          || !utils::check_message(msg_json, {"u", "s", "b", "B", "a", "A"})) {
+        std::cout << "Binance: Not an expected ticker object: " << msg_json << std::endl;
         return;
       }
       Ticker ticker;
@@ -51,7 +55,7 @@ private:
       ticker.m_ask = std::stod(msg_json["a"].get<std::string>());
       ticker.m_ask_vol = std::optional<double>(std::stod(msg_json["A"].get<std::string>()));
       // Transaction time (received in ms)
-      ticker.m_source_ts = std::optional<int64_t>(msg_json["T"].get<int64_t>() * 1000);
+      ticker.m_source_ts = std::nullopt;//std::optional<int64_t>(msg_json["T"].get<int64_t>() * 1000);
       // TODO: perhaps generate timestamp in base class and pass it to this method
       using namespace std::chrono;
       auto now = system_clock::now();
@@ -69,4 +73,7 @@ private:
 private:
   ExchangeListener* m_exchange_listener;
   std::vector<std::string> m_subscription_msg;
+  static int s_sub_id;
 };
+
+int BinanceWebsocketClient::s_sub_id = 0;

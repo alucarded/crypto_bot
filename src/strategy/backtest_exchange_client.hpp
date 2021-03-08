@@ -1,4 +1,5 @@
 #include "consumer/consumer.h"
+#include "exchange/exchange_client.h"
 #include "ticker_subscriber.h"
 
 #include <fstream>
@@ -43,7 +44,7 @@ public:
     return "backtest";
   }
 
-  virtual Result<Order> MarketOrder(const std::string& symbol, Side side, double qty) override {
+  virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
     //std::cout << "Market order " << ((side == 1) ? "BUY" : "SELL") << std::endl;
     // TODO: for now BTCUSD (BTCUSDT) assumed, add enum for symbols, data types (tickers, order book etc ?) and exchanges
     double rate, price;
@@ -78,7 +79,7 @@ public:
     return Result<Order>("", Order());
   }
 
-  virtual Result<Order> LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
+  virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
     return Result<Order>("", Order());
   }
 
@@ -86,7 +87,7 @@ public:
     return Result<AccountBalance>("", AccountBalance());
   }
 
-  virtual Result<std::vector<Order>> GetOpenOrders(const std::string& symbol) override {
+  virtual Result<std::vector<Order>> GetOpenOrders(SymbolPairId symbol) override {
     return Result<std::vector<Order>>("", std::vector<Order>());
   }
 
@@ -114,7 +115,7 @@ public:
 
 private:
   BacktestSettings m_settings;
-  std::map<std::string, double> m_balances;
+  std::map<SymbolPairId, double> m_balances;
   Ticker m_ticker;
   std::ofstream m_results_file;
 };

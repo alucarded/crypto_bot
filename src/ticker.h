@@ -24,7 +24,7 @@ struct Ticker {
   int64_t m_arrived_ts;
   uint64_t m_id;
   std::string m_exchange;
-  PairSymbol m_symbol;
+  SymbolPair m_symbol;
 
   friend std::ostream &operator<<(std::ostream &os, const Ticker &res);
 };

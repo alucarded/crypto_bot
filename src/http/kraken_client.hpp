@@ -105,6 +105,9 @@ public:
   inline static const std::string GET_ACCOUNT_BALANCE_PATH = "/0/private/Balance";
   inline static const std::string GET_OPEN_ORDERS_PATH = "/0/private/OpenOrders";
 
+  static std::unordered_map<SymbolPairId, std::string> SYMBOL_MAP;
+  static std::unordered_map<std::string, SymbolId> ASSET_MAP;
+
   // Maps Kraken asset names to our names
   static const std::unordered_map<std::string, std::string> ASSET_NAME_MAP;
 
@@ -116,9 +119,10 @@ public:
     return "kraken";
   }
 
-  virtual Result<Order> MarketOrder(const std::string& symbol, Side side, double qty) override {
+  virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
+    const std::string& symbol_str = GetSymbolString(symbol);
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
-        .QueryParam("pair", symbol)
+        .QueryParam("pair", symbol_str)
         .QueryParam("type", (Side::BID == side ? "buy" : "sell"))
         .QueryParam("ordertype", "market")
         // TODO: std::to_string has default precision of 6 digits, use ostringstream
@@ -136,9 +140,10 @@ public:
   }
 
   // TODO: add expiration time ?
-  virtual Result<Order> LimitOrder(const std::string& symbol, Side side, double qty, double price) override {
+  virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
+    const std::string& symbol_str = GetSymbolString(symbol);
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
-        .QueryParam("pair", symbol)
+        .QueryParam("pair", symbol_str)
         .QueryParam("type", (Side::BID == side ? "buy" : "sell"))
         .QueryParam("ordertype", "limit")
         // TODO: std::to_string has default precision of 6 digits, use ostringstream
@@ -170,16 +175,15 @@ public:
       // TODO: propagate all errors ?
       return Result<AccountBalance>(res.response, response_json["error"][0]);
     }
-    std::unordered_map<std::string, std::string> balances;
+    std::unordered_map<SymbolId, std::string> balances;
     // nlohmann::detail::from_json(response_json["result"], balances);
     for (const auto& el : response_json["result"].items()) {
-      auto key = ASSET_NAME_MAP.count(el.key()) > 0 ? ASSET_NAME_MAP.at(el.key()) : el.key();
-      balances.insert(std::make_pair(key, el.value()));
+      balances.insert(std::make_pair(ASSET_MAP[el.key()], el.value()));
     }
     return Result<AccountBalance>(res.response, AccountBalance(balances));
   }
 
-  virtual Result<std::vector<Order>> GetOpenOrders(const std::string& symbol) override {
+  virtual Result<std::vector<Order>> GetOpenOrders(SymbolPairId symbol) override {
     (void) symbol; // unused
     HttpClient::Result res = m_http_client.post(HOST, PORT, GET_OPEN_ORDERS_PATH)
         .Header("API-Key", g_public_key)
@@ -216,6 +220,14 @@ private:
     request.Header("API-Sign", hmac);
   }
 
+  const std::string& GetSymbolString(SymbolPairId symbol) const {
+    if (SYMBOL_MAP.count(symbol) == 0) {
+      BOOST_LOG_TRIVIAL(error) << "Unknown symbol. Exiting.";
+      std::exit(1);
+    }
+    return SYMBOL_MAP.at(symbol);
+  }
+
 private:
   HttpClient m_http_client;
 };
@@ -223,4 +235,24 @@ private:
 const std::unordered_map<std::string, std::string> KrakenClient::ASSET_NAME_MAP = {
   {"XXBT", "BTC"},
   {"XBT", "BTC"}
+};
+
+std::unordered_map<SymbolPairId, std::string> KrakenClient::SYMBOL_MAP = {
+  {SymbolPairId::ADA_USDT, "ADAUSDT"},
+  {SymbolPairId::BTC_USDT, "BTCUSDT"},
+  {SymbolPairId::ETH_USDT, "ETHUSDT"},
+  {SymbolPairId::EOS_USDT, "EOSUSDT"},
+  {SymbolPairId::ADA_BTC, "ADABTC"},
+  {SymbolPairId::ETH_BTC, "ETHBTC"},
+  {SymbolPairId::EOS_BTC, "EOSBTC"},
+  {SymbolPairId::EOS_ETH, "EOSETH"}
+};
+
+std::unordered_map<std::string, SymbolId> KrakenClient::ASSET_MAP = {
+  {"ADA", SymbolId::ADA},
+  {"XBT", SymbolId::BTC},
+  {"XXBT", SymbolId::BTC},
+  {"ETH", SymbolId::ETH},
+  {"EOS", SymbolId::EOS},
+  {"USDT", SymbolId::USDT}
 };

@@ -61,7 +61,8 @@ public:
       }
       m_balances.insert(std::make_pair(p.first, std::move(res.Get())));
 
-      auto res_orders = p.second->GetOpenOrders("BTCUSDT");
+      // FIXME: support multiple pairs ?
+      auto res_orders = p.second->GetOpenOrders(SymbolPairId::BTC_USDT);
       if (!res_orders) {
         throw std::runtime_error("Failed getting open orders for " + p.first);
       }
@@ -72,9 +73,11 @@ public:
 
   virtual void OnTicker(const Ticker& ticker) override {
     std::unique_lock<std::mutex> scoped_lock(m_mutex);
-    //std::cout << "Ticker." << std::endl << "Bid: " << std::to_string(ticker.m_bid) << std::endl << "Ask: " << std::to_string(ticker.m_ask) << std::endl;
-    m_tickers[ticker.m_exchange] = ticker;
-    auto match_opt = m_matcher.FindMatch(m_tickers);
+    //std::cout << ticker << std::endl;
+    SymbolPair current_symbol_pair = ticker.m_symbol;
+    SymbolPairId current_symbol_id = SymbolPairId(current_symbol_pair);
+    m_tickers[current_symbol_id][ticker.m_exchange] = ticker;
+    auto match_opt = m_matcher.FindMatch(m_tickers[current_symbol_id]);
     if (match_opt.has_value()) {
       auto match = match_opt.value();
       const auto& best_bid_ticker = match.m_best_bid;
@@ -130,20 +133,20 @@ public:
           return;
         }
         // Finally
-        if (!CanSell(best_bid_exchange, vol) || !CanBuy(best_ask_exchange, vol, best_ask_ticker.m_ask)) {
-          BOOST_LOG_TRIVIAL(warning) << "Not enough funds.";
-          UpdateBalances(best_bid_exchange, best_ask_exchange);
-          return;
-        }
-        if (HasOpenOrders(best_bid_exchange) || HasOpenOrders(best_ask_exchange)) {
-          BOOST_LOG_TRIVIAL(warning) << "There are open orders.";
-          UpdateOpenOrders(best_bid_exchange, best_ask_exchange);
-          return;
-        }
+        // if (!CanSell(best_bid_exchange, current_symbol_pair, vol) || !CanBuy(best_ask_exchange, current_symbol_pair, vol, best_ask_ticker.m_ask)) {
+        //   BOOST_LOG_TRIVIAL(warning) << "Not enough funds.";
+        //   UpdateBalances(best_bid_exchange, best_ask_exchange);
+        //   return;
+        // }
+        // if (HasOpenOrders(best_bid_exchange) || HasOpenOrders(best_ask_exchange)) {
+        //   BOOST_LOG_TRIVIAL(warning) << "There are open orders.";
+        //   UpdateOpenOrders(current_symbol_id, best_bid_exchange, best_ask_exchange);
+        //   return;
+        // }
         auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
-            "BTCUSDT", Side::ASK, vol, best_bid_ticker.m_bid);
+            current_symbol_id, Side::ASK, vol, best_bid_ticker.m_bid);
         auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
-            "BTCUSDT", Side::BID, vol, best_ask_ticker.m_ask);
+            current_symbol_id, Side::BID, vol, best_ask_ticker.m_ask);
         m_last_trade_us = now_us;
         auto f1_res = f1.get();
         if (!f1_res) {
@@ -153,10 +156,11 @@ public:
         if (!f2_res) {
           BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
         }
+        BOOST_LOG_TRIVIAL(info) << "Arbitrage match good enough. Order sent!";
         BOOST_LOG_TRIVIAL(info) << match << std::endl << "Response from " << best_bid_exchange << ": " << std::endl << f1_res.GetRawResponse() << std::endl
             << "Response from " << best_ask_exchange << ": " << std::endl << f2_res.GetRawResponse() << std::endl;
         UpdateBalances(best_bid_exchange, best_ask_exchange);
-        UpdateOpenOrders(best_bid_exchange, best_ask_exchange);
+        UpdateOpenOrders(current_symbol_id, best_bid_exchange, best_ask_exchange);
       }
     }
   }
@@ -178,7 +182,7 @@ public:
     ticker.m_arrived_ts = us.count();
     ticker.m_exchange = order_book.GetExchangeName();
     // TODO: hardcoded
-    ticker.m_symbol = "BTCUSDT";
+    ticker.m_symbol = order_book.GetSymbolName();
     //BOOST_LOG_TRIVIAL(info) << "Arrived: " << ticker.m_arrived_ts << ", best ask: " << best_ask.GetTimestamp() << ", best bid: " << best_bid.GetTimestamp() << std::endl;
     //BOOST_LOG_TRIVIAL(info) << ticker << std::endl;
     OnTicker(ticker);
@@ -186,23 +190,26 @@ public:
 
   virtual void OnConnectionClose(const std::string& name) override {
     std::unique_lock<std::mutex> scoped_lock(m_mutex);
-    m_tickers.erase(name);
+    for (auto p : m_tickers) {
+      p.second.erase(name);
+    }
   }
 
 private:
 
-  inline bool CanSell(const std::string& exchange_name, double amount) {
+  inline bool CanSell(const std::string& exchange_name, SymbolPair symbol_pair, double amount) {
+    BOOST_LOG_TRIVIAL(debug) << "CanSell";
     assert(m_balances.count(exchange_name) > 0);
-    // TODO: here we assume BTCUSDT
-    double balance = m_balances.at(exchange_name).GetBalance("BTC");
+    double balance = m_balances.at(exchange_name).GetBalance(symbol_pair.GetBaseAsset());
     double min_balance = amount * (1.0 + m_opts.m_exchange_params.at(exchange_name).m_fee);
     BOOST_LOG_TRIVIAL(debug) << "Minimum required BTC balance on " << exchange_name << " is " << std::to_string(min_balance);
     return balance > min_balance;
   }
 
-  inline bool CanBuy(const std::string& exchange_name, double amount, double price) {
+  inline bool CanBuy(const std::string& exchange_name, SymbolPair symbol_pair, double amount, double price) {
+    BOOST_LOG_TRIVIAL(debug) << "CanBuy";
     assert(m_balances.count(exchange_name) > 0);
-    double balance = m_balances.at(exchange_name).GetBalance("USDT");
+    double balance = m_balances.at(exchange_name).GetBalance(symbol_pair.GetQuoteAsset());
     double min_balance = amount * price * (1.0 + m_opts.m_exchange_params.at(exchange_name).m_fee);
     BOOST_LOG_TRIVIAL(debug) << "Minimum required USDT balance on " << exchange_name << " is " << std::to_string(min_balance);
     return balance > min_balance;
@@ -238,9 +245,10 @@ private:
     return true;
   }
 
-  bool UpdateOpenOrders(const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
-    auto acc_f1 = std::async(std::launch::async, &ExchangeClient::GetOpenOrders, m_account_managers[best_bid_exchange].get(), "BTCUSDT");
-    auto acc_f2 = std::async(std::launch::async, &ExchangeClient::GetOpenOrders, m_account_managers[best_ask_exchange].get(), "BTCUSDT");
+  // TODO: FIXME: here we currently update for one pair and overwirite with another in case of arbitrage for multiple pairs
+  bool UpdateOpenOrders(SymbolPairId symbol_pair, const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
+    auto acc_f1 = std::async(std::launch::async, &ExchangeClient::GetOpenOrders, m_account_managers[best_bid_exchange].get(), symbol_pair);
+    auto acc_f2 = std::async(std::launch::async, &ExchangeClient::GetOpenOrders, m_account_managers[best_ask_exchange].get(), symbol_pair);
     auto res_best_bid = acc_f1.get();
     auto res_best_ask = acc_f2.get();
     if (!res_best_bid) {
@@ -259,7 +267,8 @@ private:
   std::mutex m_mutex;
   ArbitrageStrategyOptions m_opts;
   ArbitrageStrategyMatcher m_matcher;
-  std::map<std::string, Ticker> m_tickers;
+  // symbol -> (exchange -> ticker)
+  std::map<SymbolPairId, std::map<std::string, Ticker>> m_tickers;
   std::unordered_map<std::string, AccountBalance> m_balances;
   std::unordered_map<std::string, std::vector<Order>> m_open_orders;
   int64_t m_last_trade_us;

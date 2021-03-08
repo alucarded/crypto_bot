@@ -80,10 +80,13 @@ private:
 
 class OrderBook {
 public:
-	OrderBook(const std::string& name) : OrderBook(name, 10) {
+  OrderBook() {
+    // null book
+  }
+	OrderBook(const std::string& name, const std::string& symbol) : OrderBook(name, symbol, 10) {
   }
 
-	OrderBook(const std::string& name, size_t depth) : m_exchange_name(name), m_depth(depth) {
+	OrderBook(const std::string& name, const std::string& symbol, size_t depth) : m_exchange_name(name), m_symbol(symbol), m_depth(depth) {
   }
 
 	/**
@@ -168,7 +171,9 @@ public:
     return m_asks.back();
   }
 
-  const std::string& GetExchangeName() const { return m_exchange_name; }
+  inline const std::string& GetExchangeName() const { return m_exchange_name; }
+  inline const std::string& GetSymbolName() const { return m_symbol; }
+
   friend std::ostream& operator<<(std::ostream& os, const OrderBook& ob);
 
 private:
@@ -189,6 +194,7 @@ private:
   // Lowest ask last
 	std::list<PriceLevel> m_asks;
   std::string m_exchange_name;
+  std::string m_symbol;
   size_t m_depth;
 };
 
