@@ -157,8 +157,7 @@ public:
           BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
         }
         BOOST_LOG_TRIVIAL(info) << "Arbitrage match good enough. Order sent!";
-        BOOST_LOG_TRIVIAL(info) << match << std::endl << "Response from " << best_bid_exchange << ": " << std::endl << f1_res.GetRawResponse() << std::endl
-            << "Response from " << best_ask_exchange << ": " << std::endl << f2_res.GetRawResponse() << std::endl;
+        BOOST_LOG_TRIVIAL(info) << match << std::endl;
         UpdateBalances(best_bid_exchange, best_ask_exchange);
         UpdateOpenOrders(current_symbol_id, best_bid_exchange, best_ask_exchange);
       }

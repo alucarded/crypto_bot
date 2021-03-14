@@ -136,6 +136,7 @@ public:
         return Result<Order>(res.response, response_json["error"][0]);
       }
       // TODO: support multiple transaction ids per order ?
+      BOOST_LOG_TRIVIAL(debug) << "MarketOrder response from " << GetExchange() << ": " << std::endl << res.response << std::endl;
       return Result<Order>(res.response, Order(response_json["result"]["txid"][0]));
   }
 
@@ -158,6 +159,7 @@ public:
         return Result<Order>(res.response, response_json["error"][0]);
       }
       // TODO: support multiple transaction ids per order ?
+      BOOST_LOG_TRIVIAL(debug) << "LimitOrder response from " << GetExchange() << ": " << std::endl << res.response << std::endl;
       return Result<Order>(res.response, Order(response_json["result"]["txid"][0]));
   }
 

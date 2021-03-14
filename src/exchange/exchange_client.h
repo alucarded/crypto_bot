@@ -12,6 +12,9 @@ enum Side : int {
   BID = 1
 };
 
+
+// TODO: maybe instead of this class use a simple std::optional
+// We do not need raw response or error message at this point
 template <typename T>
 class Result {
 public:

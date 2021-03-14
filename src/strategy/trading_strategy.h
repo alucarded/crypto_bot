@@ -7,8 +7,8 @@
 
 class TradingStrategy {
 public:
-  void RegisterExchangeClient(const std::string& exchange_name, ExchangeClient* exchange) {
-    m_account_managers.insert(std::make_pair(exchange_name, std::unique_ptr<AccountManager>(new AccountManager(exchange))));
+  void RegisterExchangeClient(const std::string& exchange_name, AccountManager* account_manager) {
+    m_account_managers.insert(std::make_pair(exchange_name, std::unique_ptr<AccountManager>(account_manager)));
   }
 protected:
   // TODO: use enum instead of string for key

@@ -150,6 +150,8 @@ public:
 
   }
 
+
+  // TODO: capitalize all method names!!!
   // TODO: For now it is always https
   HttpClient::Request get(const std::string& host, const std::string& port, const std::string& path) {
     return Request(*this, host, port, path, boost::beast::http::verb::get, m_options.m_user_agent);
@@ -157,6 +159,14 @@ public:
 
   HttpClient::Request post(const std::string& host, const std::string& port, const std::string& path) {
     return Request(*this, host, port, path, boost::beast::http::verb::post, m_options.m_user_agent);
+  }
+
+  HttpClient::Request put(const std::string& host, const std::string& port, const std::string& path) {
+    return Request(*this, host, port, path, boost::beast::http::verb::put, m_options.m_user_agent);
+  }
+
+  HttpClient::Request delete_(const std::string& host, const std::string& port, const std::string& path) {
+    return Request(*this, host, port, path, boost::beast::http::verb::delete_, m_options.m_user_agent);
   }
 
   Result send(Request& request) {
@@ -243,6 +253,7 @@ public:
 
     ssl_stream.shutdown(ec);
 
+    // TODO: add response code!
     return res;
   }
 

@@ -1,3 +1,4 @@
+#pragma once
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
 #include "binapi/api.hpp"
@@ -11,6 +12,7 @@
 #include <openssl/sha.h>
 
 #include <cstdlib>
+#include <optional>
 
 using json = nlohmann::json;
 
@@ -62,6 +64,7 @@ std::string hmac_sha256(const char *key, std::size_t klen, const char *data, std
 
 }
 
+// TODO: This should be rather named BinanceRestClient or BinanceHttpClient
 class BinanceClient : public ExchangeClient {
 public:
   inline static const std::string HOST = "api.binance.com";
@@ -69,6 +72,7 @@ public:
   inline static const std::string ADD_ORDER_PATH = "/api/v3/order";
   inline static const std::string GET_ACCOUNT_BALANCE_PATH = "/api/v3/account";
   inline static const std::string GET_OPEN_ORDERS_PATH = "/api/v3/openOrders";
+  inline static const std::string LISTEN_KEY_PATH = "/api/v3/userDataStream";
 
   static std::unordered_map<SymbolPairId, std::string> SYMBOL_MAP;
   static std::unordered_map<std::string, SymbolId> ASSET_MAP;
@@ -106,6 +110,7 @@ public:
         BOOST_LOG_TRIVIAL(error) << "Binance MarketOrder error: " << res.errmsg << std::endl;
         return Result<Order>(res.reply, res.errmsg);
     }
+    BOOST_LOG_TRIVIAL(debug) << "MarketOrder response from " << GetExchange() << ": " << std::endl << res.reply << std::endl;
     return Result<Order>(res.reply, Order(std::to_string(m_last_order_id)));
   }
 
@@ -118,6 +123,7 @@ public:
         BOOST_LOG_TRIVIAL(error) << "Binance LimitOrder error: " << res.errmsg << std::endl;
         return Result<Order>(res.reply, res.errmsg);
     }
+    BOOST_LOG_TRIVIAL(debug) << "LimitOrder response from " << GetExchange() << ": " << std::endl << res.reply << std::endl;
     return Result<Order>(res.reply, Order(std::to_string(m_last_order_id)));
   }
 
@@ -140,6 +146,7 @@ public:
         .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
         .send();
     json response_json = json::parse(res.response);
+    BOOST_LOG_TRIVIAL(debug) << "[BinanceClient::GetAccountBalance] " + res.response << std::endl;
     if (response_json.contains("code")) {
       return Result<AccountBalance>(res.response, response_json["msg"].get<std::string>());
     }
@@ -168,6 +175,37 @@ public:
     }
     return Result<std::vector<Order>>(res.response, orders);
   }
+
+  // BinanceClient specific API
+  std::optional<std::string> StartUserDataStream() {
+    HttpClient::Result res = m_http_client.post(HOST, PORT, LISTEN_KEY_PATH)
+        .Header("X-MBX-APIKEY", g_api_key)
+        .send();
+
+    json response_json = json::parse(res.response);
+    if (!response_json.contains("listenKey")) {
+      return std::nullopt;
+    }
+    auto ret = response_json["listenKey"].get<std::string>();
+    return std::optional<std::string>(ret);
+  }
+
+  bool KeepaliveUserDataStream(const std::string& listen_key) {
+    HttpClient::Result res = m_http_client.put(HOST, PORT, LISTEN_KEY_PATH)
+        .Header("X-MBX-APIKEY", g_api_key)
+        .QueryParam("listenKey", listen_key)
+        .send();
+    return bool(res);
+  }
+
+  bool CloseUserDataStream(const std::string& listen_key) {
+    HttpClient::Result res = m_http_client.delete_(HOST, PORT, LISTEN_KEY_PATH)
+        .Header("X-MBX-APIKEY", g_api_key)
+        .QueryParam("listenKey", listen_key)
+        .send();
+    return bool(res);
+  }
+
 private:
 
   const std::string& GetSymbolString(SymbolPairId symbol) const {

@@ -9,12 +9,14 @@
 
 using json = nlohmann::json;
 
+// TODO: rename to eg. BinanceBookTickerStream
 // TODO: connection is disconnected after 24 hours - need to re-connect
 class BinanceWebsocketClient : public WebsocketClient {
 public:
   inline static const std::string NAME = "binance";
 
-  BinanceWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://stream.binance.com:9443/ws/bookTicker", NAME), m_exchange_listener(exchange_listener) {
+  BinanceWebsocketClient(ExchangeListener* exchange_listener)
+      : WebsocketClient("wss://stream.binance.com:9443/ws/bookTicker", NAME), m_exchange_listener(exchange_listener) {
   }
 
   void SubscribeTicker(const std::string& symbol) {
@@ -23,7 +25,7 @@ public:
       WebsocketClient::send(message);
   }
 
-    void ListSubscriptions() {
+  void ListSubscriptions() {
       const std::string message = "{\"method\": \"LIST_SUBSCRIPTIONS\",\"id\": " + std::to_string(++s_sub_id) +"}";
       WebsocketClient::send(message);
   }

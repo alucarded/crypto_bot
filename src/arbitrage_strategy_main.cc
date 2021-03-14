@@ -4,6 +4,7 @@
 #include "strategy/multi_arbitrage/arbitrage_strategy.hpp"
 //#include "strategy/ticker_broker.hpp"
 #include "websocket/binance_websocket_client.hpp"
+#include "websocket/binance_user_data_stream.hpp"
 #include "websocket/kraken_websocket_client.hpp"
 
 #include <boost/log/core.hpp>
@@ -25,7 +26,7 @@ void InitLogging() {
   //logging::add_file_log(keywords::file_name = "cryptobot.log", boost::log::keywords::target = "/mnt/e/logs");
   //logging::add_console_log(std::cout, boost::log::keywords::format = ">> %Message%");
   logging::core::get()->set_filter(
-      logging::trivial::severity >= logging::trivial::info);
+      logging::trivial::severity >= logging::trivial::debug);
   logging::add_common_attributes();
 }
 
@@ -48,15 +49,26 @@ int main(int argc, char* argv[]) {
     strategy_opts.m_min_trade_interval_us = 0;
     strategy_opts.m_base_currency_ratio = 0.5;
     strategy_opts.m_allowed_deviation = 0.3;
+
+    BinanceClient* binance_client = new BinanceClient();
+    AccountManager* binance_account_manager = new AccountManager(binance_client);
+    KrakenClient* kraken_client = new KrakenClient();
+    AccountManager* kraken_account_manager = new AccountManager(kraken_client);
+
     ArbitrageStrategy arbitrage_strategy(strategy_opts);
-    arbitrage_strategy.RegisterExchangeClient("binance", new BinanceClient());
-    arbitrage_strategy.RegisterExchangeClient("kraken", new KrakenClient());
+    arbitrage_strategy.RegisterExchangeClient("binance", binance_account_manager);
+    arbitrage_strategy.RegisterExchangeClient("kraken", kraken_account_manager);
     arbitrage_strategy.Initialize();
     //TickerBroker ticker_broker({&arbitrage_strategy});
     BinanceWebsocketClient binance_websocket_client(&arbitrage_strategy);
     //ExchangeListener exchange_listener;
     KrakenWebsocketClient kraken_websocket_client(&arbitrage_strategy);
     //binance_websocket_client.start();
+
+    BinanceUserDataStream binance_stream = BinanceUserDataStream::Create(binance_client);
+    std::promise<void> binance_stream_promise;
+    binance_stream.start(std::move(binance_stream_promise));
+
     std::promise<void> binance_promise;
     std::future<void> binance_future = binance_promise.get_future();
     binance_websocket_client.start(std::move(binance_promise));

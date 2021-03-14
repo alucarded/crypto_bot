@@ -66,6 +66,7 @@ int main(int argc, char* argv[]) {
     kraken_future.wait();
     // Binance
     // TODO: Remember: ALL SYMBOLS FOR STREAMS ARE LOWERCASE!
+    // TODO: Binance: WebSocket connections have a limit of 5 incoming messages per second - add delays!
     binance_websocket_client.SubscribeTicker("btcusdt");
     //binance_websocket_client.SubscribeTicker("eosusdt");
     binance_websocket_client.SubscribeTicker("ethusdt");
