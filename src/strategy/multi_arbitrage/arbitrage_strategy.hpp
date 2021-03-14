@@ -144,9 +144,9 @@ public:
         //   return;
         // }
         auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
-            current_symbol_id, Side::ASK, vol, best_bid_ticker.m_bid);
+            current_symbol_id, Side::SELL, vol, best_bid_ticker.m_bid);
         auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
-            current_symbol_id, Side::BID, vol, best_ask_ticker.m_ask);
+            current_symbol_id, Side::BUY, vol, best_ask_ticker.m_ask);
         m_last_trade_us = now_us;
         auto f1_res = f1.get();
         if (!f1_res) {

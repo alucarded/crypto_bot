@@ -48,7 +48,7 @@ public:
     //std::cout << "Market order " << ((side == 1) ? "BUY" : "SELL") << std::endl;
     // TODO: for now BTCUSD (BTCUSDT) assumed, add enum for symbols, data types (tickers, order book etc ?) and exchanges
     double rate, price;
-    if (side == Side::ASK) { // Selling BTC
+    if (side == Side::SELL) { // Selling BTC
       rate = m_ticker.m_bid;
       if (m_ticker.m_bid_vol && m_ticker.m_bid_vol.value() < qty) {
         qty = m_ticker.m_bid_vol.value();
@@ -61,7 +61,7 @@ public:
       price = qty*(m_ticker.m_bid - m_settings.m_slippage)*(1.0 - m_settings.m_fee);
       m_balances["USDT"] = m_balances["USDT"] + price;
       m_balances["BTC"] = m_balances["BTC"] - qty;
-    } else { // BID, buying BTC
+    } else { // Buying BTC
       rate = m_ticker.m_ask;
       if (m_ticker.m_ask_vol && m_ticker.m_ask_vol.value() < qty) {
         qty = m_ticker.m_ask_vol.value();
@@ -108,7 +108,7 @@ public:
 
   void PrintBalances(Side side, double qty, double rate, double price) {
     m_results_file << std::to_string(m_balances["BTC"]) << "," << std::to_string(m_balances["USDT"])
-        << "," << (side == Side::ASK ? "SELL" : "BUY") << "," << std::to_string(qty)
+        << "," << (side == Side::SELL ? "SELL" : "BUY") << "," << std::to_string(qty)
         << "," << std::to_string(rate) << "," << std::to_string(price) << "\n";
     m_results_file.flush();
   }

@@ -67,13 +67,13 @@ public:
       // Sell
       PrintTickers();
       std::cout << "Bid margin: " << bid_margin << std::endl;
-      m_exchange_client->MarketOrder("BTCUSD", Side::ASK, 0.001);
+      m_exchange_client->MarketOrder("BTCUSD", Side::SELL, 0.001);
     } else if (ask_margin > m_opts.m_buy_profit_margin
         && ex_ticker.m_ask_vol >= m_opts.m_min_qty) {
       // Buy
       PrintTickers();
       std::cout << "Ask margin: " << ask_margin << std::endl;
-      m_exchange_client->MarketOrder("BTCUSD", Side::BID, 0.001);
+      m_exchange_client->MarketOrder("BTCUSD", Side::BUY, 0.001);
     } else {
       std::cout << "No good trade to make" << std::endl;
     }

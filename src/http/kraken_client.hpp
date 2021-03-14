@@ -123,7 +123,7 @@ public:
     const std::string& symbol_str = GetSymbolString(symbol);
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
         .QueryParam("pair", symbol_str)
-        .QueryParam("type", (Side::BID == side ? "buy" : "sell"))
+        .QueryParam("type", (Side::BUY == side ? "buy" : "sell"))
         .QueryParam("ordertype", "market")
         // TODO: std::to_string has default precision of 6 digits, use ostringstream
         .QueryParam("volume", std::to_string(qty))
@@ -145,7 +145,7 @@ public:
     const std::string& symbol_str = GetSymbolString(symbol);
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
         .QueryParam("pair", symbol_str)
-        .QueryParam("type", (Side::BID == side ? "buy" : "sell"))
+        .QueryParam("type", (Side::BUY == side ? "buy" : "sell"))
         .QueryParam("ordertype", "limit")
         // TODO: std::to_string has default precision of 6 digits, use ostringstream
         .QueryParam("price", std::to_string(price))

@@ -103,7 +103,7 @@ public:
 
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
     const std::string& symbol_str = GetSymbolString(symbol);
-    binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol_str, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
+    binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol_str, (Side::BUY == side ? binapi::e_side::buy : binapi::e_side::sell),
         binapi::e_type::market, binapi::e_time::GTC,
         std::to_string(qty), std::string(), std::to_string(++m_last_order_id), std::string(), std::string());
     if ( !res ) {
@@ -116,7 +116,7 @@ public:
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
     const std::string& symbol_str = GetSymbolString(symbol);
-    binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol_str, (Side::BID == side ? binapi::e_side::buy : binapi::e_side::sell),
+    binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol_str, (Side::BUY == side ? binapi::e_side::buy : binapi::e_side::sell),
         binapi::e_type::limit, binapi::e_time::GTC,
         std::to_string(qty), std::to_string(price), std::to_string(++m_last_order_id), std::string(), std::string());
     if ( !res ) {
