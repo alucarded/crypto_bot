@@ -1,7 +1,8 @@
 #pragma once
 
-#include "ticker.h"
+#include "model/ticker.h"
 
+// TODO: Remove
 class TickerSubscriber {
 public:
   virtual void OnTicker(const Ticker& ticker) = 0;

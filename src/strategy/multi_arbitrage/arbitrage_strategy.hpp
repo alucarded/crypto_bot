@@ -3,7 +3,7 @@
 #include "exchange/exchange_client.h"
 #include "exchange/exchange_listener.h"
 #include "consumer/consumer.h"
-#include "options.h"
+#include "model/options.h"
 #include "strategy/trading_strategy.h"
 
 #include <boost/log/trivial.hpp>

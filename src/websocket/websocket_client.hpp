@@ -1,5 +1,5 @@
 #pragma once
-#include "ticker.h"
+#include "model/ticker.h"
 #include "consumer/consumer.h"
 
 #include <boost/log/trivial.hpp>

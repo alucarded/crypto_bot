@@ -1,6 +1,6 @@
 #pragma once
-#include "ticker.h"
-#include "order_book.h"
+#include "model/ticker.h"
+#include "model/order_book.h"
 
 #include <boost/log/trivial.hpp>
 

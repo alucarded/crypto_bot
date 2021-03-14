@@ -1,6 +1,6 @@
 #pragma once
 
-#include "symbol.h"
+#include "model/symbol.h"
 
 #include <iostream>
 #include <string>

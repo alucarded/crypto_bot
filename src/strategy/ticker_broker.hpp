@@ -1,5 +1,5 @@
 #include "consumer/consumer.h"
-#include "ticker.h"
+#include "model/ticker.h"
 #include "ticker_subscriber.h"
 #include "trading_strategy.h"
 
@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+// TODO: Remove
 class TickerBroker : public Consumer<RawTicker> {
 public:
   TickerBroker(std::initializer_list<TickerSubscriber*> subscribers) : m_subscribers(subscribers), m_last_ticker_id(0) {

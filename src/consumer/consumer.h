@@ -1,5 +1,5 @@
 #pragma once
-#include "ticker.h"
+#include "model/ticker.h"
 
 template <typename T>
 class Consumer {

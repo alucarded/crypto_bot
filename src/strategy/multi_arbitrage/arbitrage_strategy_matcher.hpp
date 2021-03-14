@@ -1,5 +1,5 @@
-#include "options.h"
-#include "ticker.h"
+#include "model/options.h"
+#include "model/ticker.h"
 
 #include <cassert>
 #include <optional>

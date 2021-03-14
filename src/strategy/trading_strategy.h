@@ -1,6 +1,6 @@
 #pragma once
 #include "exchange/account_manager.hpp"
-#include "ticker.h"
+#include "model/ticker.h"
 
 #include <map>
 #include <memory>

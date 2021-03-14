@@ -1,4 +1,4 @@
-#include "ticker.h"
+#include "model/ticker.h"
 
 #include <cassert>
 #include <optional>

@@ -1,6 +1,6 @@
 #include "consumer/consumer.h"
 #include "db/mongo_client.hpp"
-#include "ticker.h"
+#include "model/ticker.h"
 
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
