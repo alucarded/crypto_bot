@@ -50,6 +50,7 @@ protected:
         m_endpoint.set_open_handler(bind(&WebsocketClient::on_open,this,::_1));
         m_endpoint.set_close_handler(bind(&WebsocketClient::on_close,this,::_1));
         m_endpoint.set_fail_handler(bind(&WebsocketClient::on_fail,this,::_1));
+        m_endpoint.set_ping_handler(bind(&WebsocketClient::on_ping,this,::_1,::_2));
     }
 
     void start(const std::string& uri) {
@@ -133,9 +134,16 @@ protected:
         }
     }
 
+    virtual bool on_ping(websocketpp::connection_hdl conn, std::string payload) {
+        BOOST_LOG_TRIVIAL(debug) << m_name + " ping control frame payload: " + payload;
+        return OnPing(conn, payload);
+    }
+
     virtual void OnOpen(websocketpp::connection_hdl conn) = 0;
     virtual void OnClose(websocketpp::connection_hdl conn) = 0;
     virtual void OnMessage(websocketpp::connection_hdl conn, client::message_ptr msg) = 0;
+    virtual bool OnPing(websocketpp::connection_hdl conn, std::string payload) {}
+
 protected:
     std::string m_uri;
     std::string m_name;

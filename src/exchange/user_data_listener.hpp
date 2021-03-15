@@ -1,6 +1,7 @@
 #pragma once
 
 #include "model/account_balance.h"
+#include "model/order.h"
 
 #include <boost/log/trivial.hpp>
 
@@ -9,11 +10,11 @@
 class UserDataListener {
 public:
   virtual void OnConnectionOpen(const std::string& name) {
-    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnConnectionOpen";
+    BOOST_LOG_TRIVIAL(info) << "UserDataListener::OnConnectionOpen";
   }
 
   virtual void OnConnectionClose(const std::string& name) {
-    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnConnectionClose";
+    BOOST_LOG_TRIVIAL(info) << "UserDataListener::OnConnectionClose";
   }
 
   /**
@@ -21,10 +22,10 @@ public:
    * 
    */
   virtual void OnAccountBalanceUpdate(const AccountBalance& account_balance) {
-    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnAccountBalanceUpdate";
+    BOOST_LOG_TRIVIAL(info) << "UserDataListener::OnAccountBalanceUpdate";
   }
 
   virtual void OnOrderUpdate(const Order& order) {
-    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnOrderUpdate";
+    BOOST_LOG_TRIVIAL(info) << "UserDataListener::OnOrderUpdate";
   }
 };
