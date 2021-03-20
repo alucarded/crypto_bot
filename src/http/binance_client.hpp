@@ -2,6 +2,7 @@
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
 #include "binapi/api.hpp"
+#include "model/binance.h"
 
 #include "json/json.hpp"
 
@@ -75,7 +76,6 @@ public:
   inline static const std::string LISTEN_KEY_PATH = "/api/v3/userDataStream";
 
   static std::unordered_map<SymbolPairId, std::string> SYMBOL_MAP;
-  static std::unordered_map<std::string, SymbolId> ASSET_MAP;
 
   BinanceClient()
       : m_last_order_id(0), m_ioctx(), m_api(
@@ -152,7 +152,7 @@ public:
     }
     std::unordered_map<SymbolId, std::string> balances;
     for (const auto& b : response_json["balances"]) {
-      balances.insert(std::make_pair(ASSET_MAP[b["asset"]], b["free"]));
+      balances.insert(std::make_pair(BINANCE_ASSET_MAP.at(b["asset"]), b["free"]));
     }
     
     return Result<AccountBalance>(res.response, AccountBalance(balances));
@@ -258,12 +258,4 @@ std::unordered_map<SymbolPairId, std::string> BinanceClient::SYMBOL_MAP = {
   {SymbolPairId::ETH_BTC, "ETHBTC"},
   {SymbolPairId::EOS_BTC, "EOSBTC"},
   {SymbolPairId::EOS_ETH, "EOSETH"}
-};
-
-std::unordered_map<std::string, SymbolId> BinanceClient::ASSET_MAP = {
-  {"ADA", SymbolId::ADA},
-  {"BTC", SymbolId::BTC},
-  {"ETH", SymbolId::ETH},
-  {"EOS", SymbolId::EOS},
-  {"USDT", SymbolId::USDT}
 };

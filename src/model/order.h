@@ -10,7 +10,30 @@ enum Side : int {
   BUY = 1
 };
 
-struct Order {
+class Order {
+public:
+
+  class Builder {
+  public:
+    Builder() {
+
+    }
+
+    Builder& Id(const std::string& id) {
+      m_id = id;
+    }
+
+    Order Build() {
+      return Order(std::move(m_id));
+    }
+  private:
+    std::string m_id;
+  };
+
+  static Builder Builder() {
+    return Builder();
+  }
+
   Order() {
 
   }
@@ -19,9 +42,14 @@ struct Order {
 
   }
 
+  Order(std::string&& id) : m_id(id) {
+
+  }
+
   inline const std::string& GetId() const { return m_id; }
 
 
+private:
   std::string m_id;
   std::string m_client_id;
   SymbolId m_symbol_id;

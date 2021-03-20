@@ -1,5 +1,6 @@
 #include "exchange/user_data_listener.hpp"
 #include "http/binance_client.hpp"
+#include "model/binance.h"
 #include "websocket_client.hpp"
 
 #include <boost/log/trivial.hpp>
@@ -57,6 +58,31 @@ private:
     auto msg_json = json::parse(msg->get_payload());
     BOOST_LOG_TRIVIAL(info) << msg_json << std::endl;
     // TODO: parse and pass to user data listener
+    const auto& event_type = msg_json["e"].get<std::string>();
+    auto event_ms = msg_json["E"].get<uint64_t>();
+    using namespace std::chrono;
+    auto now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+    BOOST_LOG_TRIVIAL(info) << "Event " + event_type + " happened at " + std::to_string(event_ms) + ", received at " + std::to_string(now_ms); 
+    if (event_type == "outboundAccountPosition") {
+      std::unordered_map<SymbolId, double> balances;
+      for (const json& b : msg_json["B"]) {
+        balances.insert({ BINANCE_ASSET_MAP.at(b["a"].get<std::string>()), std::stod(b["f"].get<std::string>()) });
+        // b["l"] - locked amount
+      }
+      m_user_data_listener->OnAccountBalanceUpdate(AccountBalance(std::move(balances)));
+    } else if (event_type == "balanceUpdate") {
+      BOOST_LOG_TRIVIAL(warning) << "User data stream event " + event_type + " is not supported";
+    } else if (event_type == "executionReport") {
+      Order order = Order::Builder()
+        .Id(std::to_string(msg_json["i"].get<uint64_t>()))
+        // TODO: set more
+        .Build();
+      m_user_data_listener->OnOrderUpdate(order);
+    } else if (event_type == "listStatus") {
+      BOOST_LOG_TRIVIAL(warning) << "User data stream event " + event_type + " is not supported";
+    } else {
+      BOOST_LOG_TRIVIAL(error) << "Unexpected user data stream event: " + event_type;
+    }
   }
 private:
   std::string m_listen_key;
