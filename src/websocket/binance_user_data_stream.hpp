@@ -1,6 +1,7 @@
 #include "exchange/user_data_listener.hpp"
 #include "http/binance_client.hpp"
 #include "model/binance.h"
+#include "model/symbol.h"
 #include "websocket_client.hpp"
 
 #include <boost/log/trivial.hpp>
@@ -73,17 +74,32 @@ private:
     } else if (event_type == "balanceUpdate") {
       BOOST_LOG_TRIVIAL(warning) << "User data stream event " + event_type + " is not supported";
     } else if (event_type == "executionReport") {
-      Order order = Order::Builder()
-        .Id(std::to_string(msg_json["i"].get<uint64_t>()))
-        // TODO: set more
-        .Build();
-      m_user_data_listener->OnOrderUpdate(order);
+      HandleExecutionReport(msg_json);
     } else if (event_type == "listStatus") {
       BOOST_LOG_TRIVIAL(warning) << "User data stream event " + event_type + " is not supported";
     } else {
       BOOST_LOG_TRIVIAL(error) << "Unexpected user data stream event: " + event_type;
     }
   }
+
+private:
+
+  void HandleExecutionReport(const json& msg_json) {
+    Order order = Order::Builder()
+      .Id(std::to_string(msg_json["i"].get<uint64_t>()))
+      .ClientId(msg_json["c"].get<std::string>())
+      .Symbol(SymbolPair(msg_json["s"].get<std::string>())())
+      .Side_(msg_json["S"].get<std::string>() == "BUY" ? Side::BUY : Side::SELL)
+      .OrderType_(Order::GetType(msg_json["o"].get<std::string>()))
+      .Quantity(std::stod(msg_json["q"].get<std::string>()))
+      .Price(std::stod(msg_json["p"].get<std::string>()))
+      .ExecutionType_(Order::GetExecutionType(msg_json["x"].get<std::string>()))
+      .OrderStatus_(Order::GetStatus(msg_json["X"].get<std::string>()))
+      // TODO: more ?
+      .Build();
+    m_user_data_listener->OnOrderUpdate(order);
+  }
+
 private:
   std::string m_listen_key;
   BinanceClient* m_binance_client;

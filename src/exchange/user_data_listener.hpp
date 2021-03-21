@@ -10,11 +10,11 @@
 class UserDataListener {
 public:
   virtual void OnConnectionOpen(const std::string& name) {
-    BOOST_LOG_TRIVIAL(info) << "UserDataListener::OnConnectionOpen";
+    BOOST_LOG_TRIVIAL(info) << "UserDataListener::OnConnectionOpen, name=" + name;
   }
 
   virtual void OnConnectionClose(const std::string& name) {
-    BOOST_LOG_TRIVIAL(info) << "UserDataListener::OnConnectionClose";
+    BOOST_LOG_TRIVIAL(info) << "UserDataListener::OnConnectionClose, name=" + name;
   }
 
   /**
@@ -22,10 +22,10 @@ public:
    * 
    */
   virtual void OnAccountBalanceUpdate(const AccountBalance& account_balance) {
-    BOOST_LOG_TRIVIAL(info) << "UserDataListener::OnAccountBalanceUpdate";
+    BOOST_LOG_TRIVIAL(info) << "UserDataListener::OnAccountBalanceUpdate, account_balance=" << account_balance;
   }
 
   virtual void OnOrderUpdate(const Order& order) {
-    BOOST_LOG_TRIVIAL(info) << "UserDataListener::OnOrderUpdate";
+    BOOST_LOG_TRIVIAL(info) << "UserDataListener::OnOrderUpdate, order=" << order;
   }
 };
