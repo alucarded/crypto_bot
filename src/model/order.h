@@ -2,6 +2,8 @@
 
 #include "symbol.h"
 
+#include <boost/log/trivial.hpp>
+
 #include <iostream>
 #include <string>
 

@@ -19,12 +19,14 @@ int main() {
     BOOST_LOG_TRIVIAL(error) << balance.GetErrorMsg();
   }
   BOOST_LOG_TRIVIAL(info) << "GetOpenOrders";
-  auto orders = kraken_client.GetOpenOrders("BTCUSDT");
+  auto orders = kraken_client.GetOpenOrders(SymbolPairId::BTC_USDT);
   BOOST_LOG_TRIVIAL(info) << orders.GetRawResponse();
   for (const auto& order : orders.Get()) {
-    BOOST_LOG_TRIVIAL(info) << "Order: " << order.m_id;
+    BOOST_LOG_TRIVIAL(info) << "Order: " << order.GetId();
   }
   if (!orders) {
     BOOST_LOG_TRIVIAL(error) << orders.GetErrorMsg();
   }
+  auto token = kraken_client.GetWebSocketsToken();
+  BOOST_LOG_TRIVIAL(info) << "Token: " << token;
 }

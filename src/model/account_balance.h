@@ -1,5 +1,7 @@
 #pragma once
 
+#include "symbol.h"
+
 #include <iostream>
 #include <string>
 #include <unordered_map>

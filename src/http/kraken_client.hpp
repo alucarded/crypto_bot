@@ -1,7 +1,9 @@
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
 
+#include <boost/log/trivial.hpp>
 #include "json/json.hpp"
+
 
 #include <array>
 #include <functional>
@@ -104,6 +106,7 @@ public:
   inline static const std::string ADD_ORDER_PATH = "/0/private/AddOrder";
   inline static const std::string GET_ACCOUNT_BALANCE_PATH = "/0/private/Balance";
   inline static const std::string GET_OPEN_ORDERS_PATH = "/0/private/OpenOrders";
+  inline static const std::string GET_WEB_SOCKETS_TOKEN_PATH = "/0/private/GetWebSocketsToken";
 
   static std::unordered_map<SymbolPairId, std::string> SYMBOL_MAP;
   static std::unordered_map<std::string, SymbolId> ASSET_MAP;
@@ -200,6 +203,19 @@ public:
       orders.push_back(Order(o.key()));
     }
     return Result<std::vector<Order>>(res.response, orders);
+  }
+
+  std::string GetWebSocketsToken() {
+    HttpClient::Result res = m_http_client.post(HOST, PORT, GET_WEB_SOCKETS_TOKEN_PATH)
+        .Header("API-Key", g_public_key)
+        .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
+        .send();
+    json response_json = json::parse(res.response);
+    if (response_json["error"].size() > 0) {
+      BOOST_LOG_TRIVIAL(error) << "Error getting WebSocket token: " << response_json["error"][0];
+      return std::string();
+    }
+    return response_json["result"]["token"].get<std::string>();
   }
 
 private:
