@@ -3,6 +3,7 @@
 #include "exchange_client.h"
 #include "user_data_listener.hpp"
 
+#include <atomic>
 #include <memory>
 #include <unordered_set>
 
@@ -13,6 +14,15 @@ public:
   }
 
   virtual ~AccountManager() {
+  }
+
+  void Initialize() {
+    auto res = m_client->GetAccountBalance();
+    if (!res) {
+      throw std::runtime_error("Failed getting account balance for " + GetExchange());
+    }
+    m_account_balance = std::move(res.Get());
+    m_is_up_to_date.store(true, std::memory_order_relaxed);
   }
 
   virtual std::string GetExchange() override {
@@ -43,9 +53,8 @@ public:
   }
 
   virtual void CancelAllOrders() override {
-    // TODO: we should make sure cancellation succeeded
-    m_orders.clear();
     m_client->CancelAllOrders();
+    // We should receive status update for all orders with calls to OnOrderUpdate()
   }
 
   virtual Result<std::vector<Order>> GetOpenOrders(SymbolPairId symbol) override {
@@ -66,12 +75,44 @@ public:
 
   virtual void OnAccountBalanceUpdate(const AccountBalance& account_balance) override {
     BOOST_LOG_TRIVIAL(info) << "AccountManager::OnAccountBalanceUpdate " + GetExchange();
-    BOOST_LOG_TRIVIAL(info) << account_balance << std::endl;
+    BOOST_LOG_TRIVIAL(info) << "Account balance: " << account_balance << std::endl;
   }
 
-  virtual void OnOrderUpdate(const Order& order) override {
-    BOOST_LOG_TRIVIAL(info) << "AccountManager::OnOrderUpdate " + GetExchange();
-    BOOST_LOG_TRIVIAL(info) << order << std::endl;
+  virtual void OnOrderUpdate(const Order& order_update) override {
+    BOOST_LOG_TRIVIAL(debug) << "AccountManager::OnOrderUpdate " + GetExchange();
+    BOOST_LOG_TRIVIAL(debug) << "Order: " << order_update;
+    auto it = m_orders.find(order_update.GetId());
+    if (it == m_orders.end()) {
+      BOOST_LOG_TRIVIAL(info) << "Update for order, which did not originate from current program run";
+      return;
+    }
+    Order& order = it->second;
+    switch (order.GetStatus()) {
+      case OrderStatus::NEW:
+        // Just add order
+        break;
+      case OrderStatus::PARTIALLY_FILLED:
+        // Here we should update executed amount
+        break;
+      case OrderStatus::FILLED:
+        // Update balance and remove order
+        break;
+      case OrderStatus::CANCELED:
+        // Part of the order could have been executed
+        // Update balance and remove order
+        break;
+      case OrderStatus::PENDING_CANCEL:
+        // Do nothing ?
+        break;
+      case OrderStatus::REJECTED:
+        // Log and remove order
+        break;
+      case OrderStatus::EXPIRED:
+        // Log and remove order
+        break;
+      default:
+        BOOST_LOG_TRIVIAL(error) << "Unsupported order status";
+    }
   }
 
   virtual bool HasOpenOrders(SymbolPairId symbol) {
@@ -90,6 +131,9 @@ public:
   }
 
 protected:
+// TODO: this class should probably not own client
   std::unique_ptr<ExchangeClient> m_client;
   std::unordered_map<std::string, Order> m_orders;
+  AccountBalance m_account_balance;
+  std::atomic<bool> m_is_up_to_date;
 };

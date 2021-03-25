@@ -203,24 +203,51 @@ public:
   Order(std::string&& id, std::string&& client_id, SymbolPairId symbol_id, Side side,
       OrderType order_type, double quantity, double price, ExecutionType execution_type, OrderStatus order_status)
     : m_id(std::move(id)), m_client_id(std::move(client_id)), m_symbol_id(symbol_id), m_side(side), m_order_type(order_type),
-      m_quantity(quantity), m_price(price), m_execution_type(execution_type), m_status(order_status) {
+      m_quantity(quantity), m_price(price), m_execution_type(execution_type), m_status(order_status),
+      m_executed_quantity(0), m_total_cost(0) {
   }
 
+  // Getters
   inline const std::string& GetId() const { return m_id; }
+  inline const std::string& GetClientId() const { return m_client_id; }
+  inline SymbolPairId GetSymbolId() const { return m_symbol_id; }
+  inline Side GetSide() const { return m_side; }
+  inline OrderType GetType() const { return m_order_type; }
+  inline double GetQuantity() const { return m_quantity; }
+  inline double GetPrice() const { return m_price; }
+  inline OrderStatus GetStatus() const { return m_status; }
+  inline double GetExecutedQuantity() const { return m_executed_quantity; }
+  inline double GetTotalCost() const { return m_total_cost; }
+
+  // Setters
+  inline void SetStatus(OrderStatus status) {
+    m_status = status;
+  }
+  inline void SetExecutedQuantity(double executed_quantity) {
+    m_executed_quantity = executed_quantity;
+  }
+  inline void SetTotalCost(double total_cost) {
+    m_total_cost = total_cost;
+  }
 
   friend std::ostream &operator<<(std::ostream &os, const Order &res);
 
 private:
-  std::string m_id;
-  std::string m_client_id;
-  SymbolPairId m_symbol_id;
-  Side m_side;
-  OrderType m_order_type;
+  // TODO: clean constructors and make relevant fields constant
+  /*const*/ std::string m_id;
+  /*const*/ std::string m_client_id;
+  /*const*/ SymbolPairId m_symbol_id;
+  /*const*/ Side m_side;
+  /*const*/ OrderType m_order_type;
   double m_quantity;
   double m_price;
   ExecutionType m_execution_type;
   OrderStatus m_status;
-  // TODO: more
+  // Total executed quantity (base currency)
+  double m_executed_quantity;
+  // Total executed cost (in quote currency)
+  double m_total_cost;
+  // TODO: more ?
 };
 
 std::ostream &operator<<(std::ostream &os, const Order &res) {

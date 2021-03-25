@@ -55,18 +55,20 @@ public:
 
   void Initialize() {
     for (const auto& p : m_account_managers) {
-      auto res = p.second->GetAccountBalance();
-      if (!res) {
-        throw std::runtime_error("Failed getting account balance for " + p.first);
-      }
-      m_balances.insert(std::make_pair(p.first, std::move(res.Get())));
+      p.second->Initialize();
+      // TODO: FIXME: adapt code to the changes
 
-      // FIXME: support multiple pairs ?
-      auto res_orders = p.second->GetOpenOrders(SymbolPairId::BTC_USDT);
-      if (!res_orders) {
-        throw std::runtime_error("Failed getting open orders for " + p.first);
-      }
-      m_open_orders.insert(std::make_pair(p.first, std::move(res_orders.Get())));
+      // if (!res) {
+      //   throw std::runtime_error("Failed getting account balance for " + p.first);
+      // }
+      // m_balances.insert(std::make_pair(p.first, std::move(res.Get())));
+
+      // // FIXME: support multiple pairs ?
+      // auto res_orders = p.second->GetOpenOrders(SymbolPairId::BTC_USDT);
+      // if (!res_orders) {
+      //   throw std::runtime_error("Failed getting open orders for " + p.first);
+      // }
+      // m_open_orders.insert(std::make_pair(p.first, std::move(res_orders.Get())));
     }
     m_is_up_to_date = true;
   }
