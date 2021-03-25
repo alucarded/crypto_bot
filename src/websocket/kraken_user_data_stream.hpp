@@ -77,8 +77,14 @@ private:
           if (order_val.contains("status")) {
             const auto& status_str = order_val["status"].get<std::string>();
             OrderStatus status = OrderStatus::UNKNOWN;
-            if (status_str == "open") {
+            if (status_str == "open" || status_str == "pending") {
               status = OrderStatus::NEW;
+            } else if (status_str == "closed") {
+              status = OrderStatus::FILLED;
+            } else if (status_str == "canceled") {
+              status = OrderStatus::CANCELED;
+            } else if (status_str == "expired") {
+              status = OrderStatus::EXPIRED;
             }
             order_builder.OrderStatus_(status);
           }
