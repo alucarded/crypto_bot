@@ -1,3 +1,5 @@
+#pragma once
+
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
 
@@ -176,6 +178,7 @@ public:
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
         .send();
     json response_json = json::parse(res.response);
+    BOOST_LOG_TRIVIAL(debug) << "GetAccountBalance() response: " << response_json;
     if (response_json["error"].size() > 0) {
       // TODO: propagate all errors ?
       return Result<AccountBalance>(res.response, response_json["error"][0]);
@@ -183,7 +186,12 @@ public:
     std::unordered_map<SymbolId, std::string> balances;
     // nlohmann::detail::from_json(response_json["result"], balances);
     for (const auto& el : response_json["result"].items()) {
-      balances.insert(std::make_pair(ASSET_MAP[el.key()], el.value()));
+      const auto& asset_str = el.key();
+      if (ASSET_MAP.count(asset_str) == 0) {
+        BOOST_LOG_TRIVIAL(warning) << "[KrakenClient::GetAccountBalance] Skipping unsupported asset: " << asset_str;
+        continue;
+      }
+      balances.insert(std::make_pair(ASSET_MAP[asset_str], el.value()));
     }
     return Result<AccountBalance>(res.response, AccountBalance(balances));
   }

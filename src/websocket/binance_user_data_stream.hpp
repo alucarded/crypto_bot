@@ -57,8 +57,10 @@ private:
 
   virtual void OnMessage(websocketpp::connection_hdl, client::message_ptr msg) override {
     auto msg_json = json::parse(msg->get_payload());
-    BOOST_LOG_TRIVIAL(info) << msg_json << std::endl;
-    // TODO: parse and pass to user data listener
+    if (!msg_json.contains("e")) {
+      BOOST_LOG_TRIVIAL(debug) << "Not an interesting event: " << msg_json;
+      return;
+    }
     const auto& event_type = msg_json["e"].get<std::string>();
     auto event_ms = msg_json["E"].get<uint64_t>();
     using namespace std::chrono;
@@ -85,7 +87,7 @@ private:
 private:
 
   void HandleExecutionReport(const json& msg_json) {
-    Order order = Order::Builder()
+    Order order = Order::CreateBuilder()
       .Id(std::to_string(msg_json["i"].get<uint64_t>()))
       .ClientId(msg_json["c"].get<std::string>())
       .Symbol(SymbolPair(msg_json["s"].get<std::string>())())

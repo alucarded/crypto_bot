@@ -36,7 +36,7 @@ public:
   inline static const size_t VOLUME_SENT_PRECISION = 8;
   inline static const size_t TIMESTAMP_SENT_PRECISION = 6;
 
-  KrakenWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://beta-ws.kraken.com", NAME), m_exchange_listener(exchange_listener) {
+  KrakenWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://ws.kraken.com", NAME), m_exchange_listener(exchange_listener) {
   }
 
   void SubscribeTicker(const std::string& symbol) {

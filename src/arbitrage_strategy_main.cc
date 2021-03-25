@@ -5,6 +5,7 @@
 //#include "strategy/ticker_broker.hpp"
 #include "websocket/binance_websocket_client.hpp"
 #include "websocket/binance_user_data_stream.hpp"
+#include "websocket/kraken_user_data_stream.hpp"
 #include "websocket/kraken_websocket_client.hpp"
 
 #include <boost/log/core.hpp>
@@ -60,15 +61,19 @@ int main(int argc, char* argv[]) {
     arbitrage_strategy.RegisterExchangeClient("kraken", kraken_account_manager);
     arbitrage_strategy.Initialize();
     //TickerBroker ticker_broker({&arbitrage_strategy});
-    BinanceWebsocketClient binance_websocket_client(&arbitrage_strategy);
-    //ExchangeListener exchange_listener;
-    KrakenWebsocketClient kraken_websocket_client(&arbitrage_strategy);
-    //binance_websocket_client.start();
+    // BinanceWebsocketClient binance_websocket_client(&arbitrage_strategy);
+    // //ExchangeListener exchange_listener;
+    // KrakenWebsocketClient kraken_websocket_client(&arbitrage_strategy);
+    // binance_websocket_client.start();
 
     BinanceUserDataStream binance_stream = BinanceUserDataStream::Create(binance_client, binance_account_manager);
     std::promise<void> binance_stream_promise;
     binance_stream.start(std::move(binance_stream_promise));
 
+    KrakenUserDataStream kraken_stream(kraken_client, kraken_account_manager);
+    std::promise<void> kraken_stream_promise;
+    kraken_stream.start(std::move(kraken_stream_promise));
+  
     // std::promise<void> binance_promise;
     // std::future<void> binance_future = binance_promise.get_future();
     // binance_websocket_client.start(std::move(binance_promise));
@@ -79,11 +84,12 @@ int main(int argc, char* argv[]) {
     // kraken_future.wait();
     // binance_websocket_client.SubscribeTicker("btcusdt");
     // kraken_websocket_client.SubscribeTicker("XBT/USDT");
+
     std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
   } catch (websocketpp::exception const & e) {
-      std::cout << e.what() << std::endl;
+      std::cout << "websocketpp exception: " << e.what() << std::endl;
   } catch (std::exception const & e) {
-      std::cout << e.what() << std::endl;
+      std::cout << "exception: " << e.what() << std::endl;
   } catch (...) {
       std::cout << "other exception" << std::endl;
   }

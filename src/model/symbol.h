@@ -5,7 +5,7 @@
 #include <unordered_map>
 
 enum SymbolPairId : int {
-  ADA_USDT,
+  ADA_USDT = 0,
   BTC_USDT,
   ETH_USDT,
   EOS_USDT,
@@ -26,12 +26,12 @@ std::ostream& operator<< (std::ostream& os, SymbolPairId spid) {
     case SymbolPairId::ETH_BTC: return os << "ETH_BTC";
     case SymbolPairId::EOS_BTC: return os << "EOS_BTC";
     case SymbolPairId::EOS_ETH: return os << "EOS_ETH";
-    default: return os << "SymbolPairId{" << spid << "}";
+    default: return os << "SymbolPairId{" << std::to_string(int(spid)) << "}";
   }
 }
 
 enum SymbolId : int {
-  ADA,
+  ADA = 0,
   BTC,
   ETH,
   EOS,

@@ -146,13 +146,18 @@ public:
         .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
         .send();
     json response_json = json::parse(res.response);
-    BOOST_LOG_TRIVIAL(debug) << "[BinanceClient::GetAccountBalance] " + res.response << std::endl;
+    BOOST_LOG_TRIVIAL(debug) << "[BinanceClient::GetAccountBalance] " << res.response << std::endl;
     if (response_json.contains("code")) {
       return Result<AccountBalance>(res.response, response_json["msg"].get<std::string>());
     }
     std::unordered_map<SymbolId, std::string> balances;
     for (const auto& b : response_json["balances"]) {
-      balances.insert(std::make_pair(BINANCE_ASSET_MAP.at(b["asset"]), b["free"]));
+      auto asset_str = b["asset"];
+      if (BINANCE_ASSET_MAP.count(asset_str) == 0) {
+        BOOST_LOG_TRIVIAL(warning) << "[BinanceClient::GetAccountBalance] Skipping unsupported asset: " << asset_str;
+        continue;
+      }
+      balances.insert(std::make_pair(BINANCE_ASSET_MAP.at(asset_str), b["free"]));
     }
     
     return Result<AccountBalance>(res.response, AccountBalance(balances));
@@ -166,6 +171,7 @@ public:
         .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
         .send();
     json response_json = json::parse(res.response);
+    BOOST_LOG_TRIVIAL(debug) << "[BinanceClient::GetOpenOrders] " << response_json;
     if (response_json.contains("code")) {
       return Result<std::vector<Order>>(res.response, response_json["msg"].get<std::string>());
     }

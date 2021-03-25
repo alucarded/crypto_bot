@@ -4,6 +4,7 @@
 
 #include <boost/log/trivial.hpp>
 
+#include <cstring>
 #include <iostream>
 #include <string>
 
@@ -17,6 +18,15 @@ enum class OrderType : int {
   LIMIT,
   UNKNOWN
 };
+
+std::ostream& operator<< (std::ostream& os, OrderType type) {
+  switch (type) {
+    case OrderType::MARKET: return os << "MARKET";
+    case OrderType::LIMIT: return os << "LIMIT";
+    case OrderType::UNKNOWN: return os << "UNKNOWN";
+    default: return os << "OrderType{" << std::to_string(int(type)) << "}";
+  }
+}
 
 enum class ExecutionType : int {
   NEW,
@@ -39,6 +49,20 @@ enum class OrderStatus : int {
   UNKNOWN
 };
 
+std::ostream& operator<< (std::ostream& os, OrderStatus status) {
+  switch (status) {
+    case OrderStatus::NEW: return os << "NEW";
+    case OrderStatus::PARTIALLY_FILLED: return os << "PARTIALLY_FILLED";
+    case OrderStatus::FILLED: return os << "FILLED";
+    case OrderStatus::CANCELED: return os << "CANCELED";
+    case OrderStatus::PENDING_CANCEL: return os << "PENDING_CANCEL";
+    case OrderStatus::REJECTED: return os << "REJECTED";
+    case OrderStatus::EXPIRED: return os << "EXPIRED";
+    case OrderStatus::UNKNOWN: return os << "UNKNOWN";
+    default: return os << "OrderStatus{" << std::to_string(int(status)) << "}";
+  }
+}
+
 class Order {
 public:
 
@@ -47,11 +71,15 @@ public:
       {"MARKET", OrderType::MARKET},
       {"LIMIT", OrderType::LIMIT}
     };
-    auto it = s_order_type_map.find(type_str);
+    std::string type_str_upper(type_str);
+    std::for_each(type_str_upper.begin(), type_str_upper.end(), [](char & c){
+      c = ::toupper(c);
+    });
+    auto it = s_order_type_map.find(type_str_upper);
     if (it != s_order_type_map.end()) {
       return it->second;
     }
-    BOOST_LOG_TRIVIAL(warning) << "Unknown order type " << type_str;
+    BOOST_LOG_TRIVIAL(warning) << "Unknown order type " << type_str_upper;
     return OrderType::UNKNOWN;
   }
 
@@ -93,7 +121,11 @@ public:
   class Builder {
   public:
     Builder() {
+      BOOST_LOG_TRIVIAL(trace) << "Order::Builder()";
+    }
 
+    ~Builder() {
+      BOOST_LOG_TRIVIAL(trace) << "~Order::Builder()";
     }
 
     Builder& Id(const std::string& id) {
@@ -137,12 +169,12 @@ public:
     }
 
     Builder& OrderStatus_(OrderStatus order_status) {
-      m_order_status = order_status;
+      m_status = order_status;
       return *this;
     }
 
     Order Build() {
-      return Order(std::move(m_id), std::move(m_client_id), m_symbol_id, m_side, m_order_type, m_quantity, m_price, m_execution_type, m_order_status);
+      return Order(std::move(m_id), std::move(m_client_id), m_symbol_id, m_side, m_order_type, m_quantity, m_price, m_execution_type, m_status);
     }
   private:
     std::string m_id;
@@ -153,10 +185,10 @@ public:
     double m_quantity;
     double m_price;
     ExecutionType m_execution_type;
-    OrderStatus m_order_status;
+    OrderStatus m_status;
   };
 
-  static Builder Builder() {
+  static Builder CreateBuilder() {
     return Builder();
   }
 
@@ -170,13 +202,13 @@ public:
 
   Order(std::string&& id, std::string&& client_id, SymbolPairId symbol_id, Side side,
       OrderType order_type, double quantity, double price, ExecutionType execution_type, OrderStatus order_status)
-    : m_id(id), m_client_id(client_id), m_symbol_id(symbol_id), m_side(side), m_order_type(order_type),
-      m_quantity(quantity), m_price(price), m_execution_type(execution_type), m_order_status(order_status) {
-
+    : m_id(std::move(id)), m_client_id(std::move(client_id)), m_symbol_id(symbol_id), m_side(side), m_order_type(order_type),
+      m_quantity(quantity), m_price(price), m_execution_type(execution_type), m_status(order_status) {
   }
 
   inline const std::string& GetId() const { return m_id; }
 
+  friend std::ostream &operator<<(std::ostream &os, const Order &res);
 
 private:
   std::string m_id;
@@ -187,13 +219,18 @@ private:
   double m_quantity;
   double m_price;
   ExecutionType m_execution_type;
-  OrderStatus m_order_status;
+  OrderStatus m_status;
   // TODO: more
-
-  friend std::ostream &operator<<(std::ostream &os, const Order &res);
 };
 
 std::ostream &operator<<(std::ostream &os, const Order &res) {
-  os << res.m_id;
+  os << "{\"id\": \"" << res.m_id
+    << "\", \"symbol_id\": \"" << res.m_symbol_id
+    << "\", \"side\": \"" << (res.m_side == Side::BUY ? "BUY" : "SELL")
+    << "\", \"order_type\": \"" << res.m_order_type
+    << "\", \"quantity\": \"" << std::to_string(res.m_quantity)
+    << "\", \"price\": \"" << std::to_string(res.m_price)
+    << "\", \"status\": \"" << res.m_status
+    << "\"}";
   return os;
 }
