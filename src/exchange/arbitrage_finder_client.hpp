@@ -19,7 +19,7 @@ public:
 
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
     
-    return Result<Order>("", Order());
+    return Result<Order>("", "");
   }
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
@@ -27,7 +27,7 @@ public:
       m_counters.insert(std::make_pair(symbol, 0));
     }
     BOOST_LOG_TRIVIAL(warning) << "Arbitrage on " << symbol << ", count: " << ++m_counters[symbol];
-    return Result<Order>("", Order());
+    return Result<Order>("", Order(std::to_string(m_counters[symbol]), std::to_string(m_counters[symbol]), symbol, side, OrderType::LIMIT, qty));
   }
 
   virtual void CancelAllOrders() override {

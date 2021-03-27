@@ -200,6 +200,11 @@ public:
 
   }
 
+  Order(const std::string& id, const std::string& client_id, SymbolPairId symbol_id, Side side, OrderType order_type, double quantity)
+    : m_id(id), m_client_id(client_id), m_symbol_id(symbol_id), m_side(side), m_order_type(order_type),
+      m_quantity(quantity), m_execution_type(ExecutionType::UNKNOWN), m_status(OrderStatus::UNKNOWN), m_executed_quantity(0), m_total_cost(0) {
+  }
+
   Order(std::string&& id, std::string&& client_id, SymbolPairId symbol_id, Side side,
       OrderType order_type, double quantity, double price, ExecutionType execution_type, OrderStatus order_status)
     : m_id(std::move(id)), m_client_id(std::move(client_id)), m_symbol_id(symbol_id), m_side(side), m_order_type(order_type),

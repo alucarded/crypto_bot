@@ -103,28 +103,47 @@ public:
 
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
     const std::string& symbol_str = GetSymbolString(symbol);
-    binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol_str, (Side::BUY == side ? binapi::e_side::buy : binapi::e_side::sell),
-        binapi::e_type::market, binapi::e_time::GTC,
-        std::to_string(qty), std::string(), std::to_string(++m_last_order_id), std::string(), std::string());
-    if ( !res ) {
-        BOOST_LOG_TRIVIAL(error) << "Binance MarketOrder error: " << res.errmsg << std::endl;
-        return Result<Order>(res.reply, res.errmsg);
+    HttpClient::Result res = m_http_client.get(HOST, PORT, ADD_ORDER_PATH)
+      .Header("X-MBX-APIKEY", g_api_key)
+      .QueryParam("symbol", symbol_str)
+      .QueryParam("side", (side == Side::BUY ? "BUY" : "SELL"))
+      .QueryParam("type", "MARKET")
+      // TODO: make sure precision is always fine
+      .QueryParam("quantity", std::to_string(qty))
+      .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
+      .send();
+    if (!res) {
+      BOOST_LOG_TRIVIAL(error) << "Error making market order request for " << GetExchange() << ": " << res.errmsg;
+      return Result<Order>(res.response, res.errmsg);
     }
-    BOOST_LOG_TRIVIAL(debug) << "MarketOrder response from " << GetExchange() << ": " << std::endl << res.reply << std::endl;
-    return Result<Order>(res.reply, Order(std::to_string(m_last_order_id)));
+    json res_json = json::parse(res.response);
+    const auto& order_id = res_json["orderId"].get<int64_t>();
+    const auto& client_order_id = res_json["clientOrderId"].get<std::string>();
+    return Result<Order>(res.response, Order(std::to_string(order_id), client_order_id, symbol, side, OrderType::MARKET, qty));
   }
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
     const std::string& symbol_str = GetSymbolString(symbol);
-    binapi::rest::api::result<binapi::rest::new_order_resp_type> res = m_api.new_order(symbol_str, (Side::BUY == side ? binapi::e_side::buy : binapi::e_side::sell),
-        binapi::e_type::limit, binapi::e_time::GTC,
-        std::to_string(qty), std::to_string(price), std::to_string(++m_last_order_id), std::string(), std::string());
-    if ( !res ) {
-        BOOST_LOG_TRIVIAL(error) << "Binance LimitOrder error: " << res.errmsg << std::endl;
-        return Result<Order>(res.reply, res.errmsg);
+    HttpClient::Result res = m_http_client.get(HOST, PORT, ADD_ORDER_PATH)
+      .Header("X-MBX-APIKEY", g_api_key)
+      .QueryParam("symbol", symbol_str)
+      .QueryParam("side", (side == Side::BUY ? "BUY" : "SELL"))
+      .QueryParam("type", "LIMIT")
+      // TODO: make sure precision is always fine
+      .QueryParam("quantity", std::to_string(qty))
+      .QueryParam("price", std::to_string(price))
+      // TODO: for now always GTC
+      .QueryParam("timeInForce", "GTC")
+      .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
+      .send();
+    if (!res) {
+      BOOST_LOG_TRIVIAL(error) << "Error making limit order request for " << GetExchange() << ": " << res.errmsg;
+      return Result<Order>(res.response, res.errmsg);
     }
-    BOOST_LOG_TRIVIAL(debug) << "LimitOrder response from " << GetExchange() << ": " << std::endl << res.reply << std::endl;
-    return Result<Order>(res.reply, Order(std::to_string(m_last_order_id)));
+    json res_json = json::parse(res.response);
+    const auto& order_id = res_json["orderId"].get<int64_t>();
+    const auto& client_order_id = res_json["clientOrderId"].get<std::string>();
+    return Result<Order>(res.response, Order(std::to_string(order_id), client_order_id, symbol, side, OrderType::LIMIT, qty));
   }
 
   virtual void CancelAllOrders() override {
@@ -177,7 +196,18 @@ public:
     }
     std::vector<Order> orders;
     for (const auto& order : response_json) {
-      orders.push_back(Order(order["clientOrderId"].get<std::string>()));
+      const auto& id_str = std::to_string(order["orderId"].get<std::int64_t>());
+      const auto& client_id_str = order["clientOrderId"].get<std::string>();
+      const auto& symbol_str = order["symbol"].get<std::string>();
+      const auto& side_str = order["side"].get<std::string>();
+      const auto& order_type_str = order["type"].get<std::string>();
+      const auto& orig_qty_str = order["origQty"].get<std::string>();
+      orders.push_back(Order(id_str, client_id_str,
+        SymbolPair(order["symbol"].get<std::string>()),
+        (side_str == "BUY" ? Side::BUY : Side::SELL),
+        // TODO: support more order types
+        (order_type_str == "MARKET" ? OrderType::MARKET : OrderType::LIMIT),
+        std::stod(orig_qty_str)));
     }
     return Result<std::vector<Order>>(res.response, orders);
   }

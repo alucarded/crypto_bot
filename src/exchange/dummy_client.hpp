@@ -18,11 +18,11 @@ public:
   }
 
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
-    return Result<Order>("", Order());
+    return Result<Order>("", "");
   }
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
-    return Result<Order>("", Order());
+    return Result<Order>("", "");
   }
 
   virtual void CancelAllOrders() override {

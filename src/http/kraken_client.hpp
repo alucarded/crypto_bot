@@ -142,7 +142,8 @@ public:
       }
       // TODO: support multiple transaction ids per order ?
       BOOST_LOG_TRIVIAL(debug) << "MarketOrder response from " << GetExchange() << ": " << std::endl << res.response << std::endl;
-      return Result<Order>(res.response, Order(response_json["result"]["txid"][0]));
+      auto order_id = response_json["result"]["txid"][0].get<std::string>();
+      return Result<Order>(res.response, Order(order_id, order_id, symbol, side, OrderType::MARKET, qty));
   }
 
   // TODO: add expiration time ?
@@ -165,7 +166,8 @@ public:
       }
       // TODO: support multiple transaction ids per order ?
       BOOST_LOG_TRIVIAL(debug) << "LimitOrder response from " << GetExchange() << ": " << std::endl << res.response << std::endl;
-      return Result<Order>(res.response, Order(response_json["result"]["txid"][0]));
+      auto order_id = response_json["result"]["txid"][0].get<std::string>();
+      return Result<Order>(res.response, Order(order_id, order_id, symbol, side, OrderType::LIMIT, qty));
   }
 
   virtual void CancelAllOrders() override {
