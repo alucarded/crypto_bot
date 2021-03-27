@@ -192,14 +192,6 @@ public:
     return Builder();
   }
 
-  Order() {
-
-  }
-
-  Order(const std::string& id) : m_id(id) {
-
-  }
-
   Order(const std::string& id, const std::string& client_id, SymbolPairId symbol_id, Side side, OrderType order_type, double quantity)
     : m_id(id), m_client_id(client_id), m_symbol_id(symbol_id), m_side(side), m_order_type(order_type),
       m_quantity(quantity), m_execution_type(ExecutionType::UNKNOWN), m_status(OrderStatus::UNKNOWN), m_executed_quantity(0), m_total_cost(0) {

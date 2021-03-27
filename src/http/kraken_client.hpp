@@ -210,7 +210,16 @@ public:
     }
     std::vector<Order> orders;
     for (auto& o : response_json["result"]["open"].items()) {
-      orders.push_back(Order(o.key()));
+      const std::string& key_str = o.key();
+      const json& val = o.value();
+      const auto& descr = val["descr"];
+      const auto& side_str = descr["type"].get<std::string>();
+      const auto& ordertype_str = descr["ordertype"].get<std::string>();
+      const auto& vol_str = val["vol"].get<std::string>();
+      orders.push_back(Order(key_str, key_str, symbol,
+          (side_str == "buy" ? Side::BUY : Side::SELL),
+          (ordertype_str == "market" ? OrderType::MARKET : OrderType::LIMIT),
+          std::stod(vol_str)));
     }
     return Result<std::vector<Order>>(res.response, orders);
   }

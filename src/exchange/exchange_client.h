@@ -5,6 +5,7 @@
 #include "model/symbol.h"
 
 #include <iostream>
+#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -37,12 +38,12 @@ public:
 
   inline const std::string& GetRawResponse() const { return m_raw_response; }
 
-  inline const T& Get() const { return m_result_object; };
-  inline T& Get() { return m_result_object; };
+  inline const T& Get() const { return m_result_object.value(); };
+  inline T& Get() { return m_result_object.value(); };
 private:
   std::string m_raw_response;
   std::string m_error_msg;
-  T m_result_object;
+  std::optional<T> m_result_object;
 };
 
 class ExchangeClient {
