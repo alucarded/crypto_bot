@@ -1,7 +1,6 @@
 #pragma once
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
-#include "binapi/api.hpp"
 #include "model/binance.h"
 
 #include "json/json.hpp"
@@ -78,17 +77,7 @@ public:
   static std::unordered_map<SymbolPairId, std::string> SYMBOL_MAP;
 
   BinanceClient()
-      : m_last_order_id(0), m_ioctx(), m_api(
-        m_ioctx
-        ,"api.binance.com"
-        ,"443"
-        ,g_api_key // can be empty for non USER_DATA reqs
-        ,g_secret // can be empty for non USER_DATA reqs
-        // From docs: "An additional parameter, recvWindow, may be sent
-        // to specify the number of milliseconds after timestamp the request is valid for."
-        ,1000 // recvWindow
-        ,"cryptobot-1.0.0"
-        ),
+      : m_last_order_id(0),
         m_http_client(HttpClient::Options("cryptobot-1.0.0")),
         m_timeout(1000) {
   }
@@ -279,8 +268,6 @@ private:
 
 private:
   uint64_t m_last_order_id;
-  boost::asio::io_context m_ioctx;
-  binapi::rest::api m_api;
   HttpClient m_http_client;
   int m_timeout;
 };
