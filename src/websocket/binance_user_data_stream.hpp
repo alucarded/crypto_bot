@@ -69,8 +69,17 @@ private:
     if (event_type == "outboundAccountPosition") {
       std::unordered_map<SymbolId, double> balances;
       for (const json& b : msg_json["B"]) {
-        balances.insert({ BINANCE_ASSET_MAP.at(b["a"].get<std::string>()), std::stod(b["f"].get<std::string>()) });
+        const auto& asset_str = b["a"].get<std::string>();
+        auto it = BINANCE_ASSET_MAP.find(asset_str);
+        if (it == BINANCE_ASSET_MAP.end()) {
+          BOOST_LOG_TRIVIAL(warning) << "Unsupported asset: " << asset_str;
+          continue;
+        }
+        double free_balance = std::stod(b["f"].get<std::string>());
+        double locked_balance = std::stod(b["l"].get<std::string>());
+        balances.emplace(BINANCE_ASSET_MAP.at(b["a"].get<std::string>()), free_balance + locked_balance);
         // b["l"] - locked amount
+        // TODO: add locked amount too
       }
       m_user_data_listener->OnAccountBalanceUpdate(AccountBalance(std::move(balances)));
     } else if (event_type == "balanceUpdate") {
@@ -95,7 +104,6 @@ private:
       .OrderType_(Order::GetType(msg_json["o"].get<std::string>()))
       .Quantity(std::stod(msg_json["q"].get<std::string>()))
       .Price(std::stod(msg_json["p"].get<std::string>()))
-      .ExecutionType_(Order::GetExecutionType(msg_json["x"].get<std::string>()))
       .OrderStatus_(Order::GetStatus(msg_json["X"].get<std::string>()))
       // TODO: more ?
       .Build();

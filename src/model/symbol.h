@@ -26,6 +26,7 @@ std::ostream& operator<< (std::ostream& os, SymbolPairId spid) {
     case SymbolPairId::ETH_BTC: return os << "ETH_BTC";
     case SymbolPairId::EOS_BTC: return os << "EOS_BTC";
     case SymbolPairId::EOS_ETH: return os << "EOS_ETH";
+    case SymbolPairId::UNKNOWN: return os << "UNKNOWN";
     default: return os << "SymbolPairId{" << std::to_string(int(spid)) << "}";
   }
 }
@@ -35,8 +36,21 @@ enum SymbolId : int {
   BTC,
   ETH,
   EOS,
-  USDT
+  USDT,
+  UNKNOWN_ASSET
 };
+
+std::ostream& operator<< (std::ostream& os, SymbolId sid) {
+  switch (sid) {
+    case SymbolId::ADA: return os << "ADA";
+    case SymbolId::BTC: return os << "BTC";
+    case SymbolId::ETH: return os << "ETH";
+    case SymbolId::EOS: return os << "EOS";
+    case SymbolId::USDT: return os << "USDT";
+    case SymbolId::UNKNOWN_ASSET: return os << "UNKNOWN_ASSET";
+    default: return os << "SymbolPairId{" << std::to_string(int(sid)) << "}";
+  }
+}
 
 class SymbolPair {
 public:
@@ -80,7 +94,7 @@ private:
   static SymbolPairId GetSymbol(const std::string& s) {
     auto it = getSymbols().find(s);
     if (it == getSymbols().end()) {
-      throw std::invalid_argument(s + " has no associated SymbolPairId value");
+      return SymbolPairId::UNKNOWN;
     }
     return it->second;
   }
@@ -90,6 +104,7 @@ private:
     // TODO: source-specific strings should be in source-specific classes
     static const SymbolPairMap ret{
       {"XBT/USDT", SymbolPairId::BTC_USDT},
+      {"XBTUSDT", SymbolPairId::BTC_USDT},
       {"BTCUSDT", SymbolPairId::BTC_USDT},
       {"ETH/USDT", SymbolPairId::ETH_USDT},
       {"ETHUSDT", SymbolPairId::ETH_USDT},
@@ -98,10 +113,13 @@ private:
       {"EOS/USDT", SymbolPairId::EOS_USDT},
       {"EOSUSDT", SymbolPairId::EOS_USDT},
       {"ETH/XBT", SymbolPairId::ETH_BTC},
+      {"ETHXBT", SymbolPairId::ETH_BTC},
       {"ETHBTC", SymbolPairId::ETH_BTC},
       {"ADA/XBT", SymbolPairId::ADA_BTC},
+      {"ADAXBT", SymbolPairId::ADA_BTC},
       {"ADABTC", SymbolPairId::ADA_BTC},
       {"EOS/XBT", SymbolPairId::EOS_BTC},
+      {"EOSXBT", SymbolPairId::EOS_BTC},
       {"EOSBTC", SymbolPairId::EOS_BTC},
       {"EOS/ETH", SymbolPairId::EOS_ETH},
       {"EOSETH", SymbolPairId::EOS_ETH}

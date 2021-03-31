@@ -1,5 +1,7 @@
 #include <atomic>
 
+namespace cryptobot {
+
 // Source: https://rigtorp.se/spinlock/
 struct spinlock {
   std::atomic<bool> lock_ = {0};
@@ -30,3 +32,5 @@ struct spinlock {
     lock_.store(false, std::memory_order_release);
   }
 };
+
+}

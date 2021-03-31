@@ -16,11 +16,8 @@ unit_tests:
 	#g++ -pipe src/strategy/multi_arbitrage/arbitrage_strategy_unittest.cc -o arbitrage_strategy_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 	g++ -pipe src/order_book_unittest.cc -o order_book_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
-binapi_test:
-	g++ -pipe src/http/binapi_test.cc src/http/binapi/* -o binapi_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-
 integration_tests:
-	g++ -pipe src/http/binance_client_test.cc src/http/binapi/* -o binance_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe src/http/binance_client_test.cc -o binance_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 	g++ -pipe src/http/kraken_client_test.cc -o kraken_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 arbitrage_main:

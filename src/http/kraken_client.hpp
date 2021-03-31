@@ -185,7 +185,7 @@ public:
       // TODO: propagate all errors ?
       return Result<AccountBalance>(res.response, response_json["error"][0]);
     }
-    std::unordered_map<SymbolId, std::string> balances;
+    std::unordered_map<SymbolId, double> balances;
     // nlohmann::detail::from_json(response_json["result"], balances);
     for (const auto& el : response_json["result"].items()) {
       const auto& asset_str = el.key();
@@ -193,13 +193,13 @@ public:
         BOOST_LOG_TRIVIAL(warning) << "[KrakenClient::GetAccountBalance] Skipping unsupported asset: " << asset_str;
         continue;
       }
-      balances.insert(std::make_pair(ASSET_MAP[asset_str], el.value()));
+      const auto& val_str = el.value().get<std::string>();
+      balances.insert(std::make_pair(ASSET_MAP[asset_str], std::stod(val_str)));
     }
-    return Result<AccountBalance>(res.response, AccountBalance(balances));
+    return Result<AccountBalance>(res.response, AccountBalance(std::move(balances)));
   }
 
-  virtual Result<std::vector<Order>> GetOpenOrders(SymbolPairId symbol) override {
-    (void) symbol; // unused
+  virtual Result<std::vector<Order>> GetOpenOrders() override {
     HttpClient::Result res = m_http_client.post(HOST, PORT, GET_OPEN_ORDERS_PATH)
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
@@ -210,16 +210,26 @@ public:
     }
     std::vector<Order> orders;
     for (auto& o : response_json["result"]["open"].items()) {
-      const std::string& key_str = o.key();
+      std::string key_str = o.key();
       const json& val = o.value();
       const auto& descr = val["descr"];
       const auto& side_str = descr["type"].get<std::string>();
       const auto& ordertype_str = descr["ordertype"].get<std::string>();
+      const auto& pair_str = descr["pair"].get<std::string>();
       const auto& vol_str = val["vol"].get<std::string>();
-      orders.push_back(Order(key_str, key_str, symbol,
+      const auto& price_str = descr["price"].get<std::string>();
+      const auto& status_str = val["status"].get<std::string>();
+      SymbolPairId sp_id = SymbolPair(pair_str);
+      if (sp_id == SymbolPairId::UNKNOWN) {
+        BOOST_LOG_TRIVIAL(warning) << "Unsupported pair: " << pair_str;
+        // Add as unknown, so that client knows there are some unsupported orders
+      }
+      orders.push_back(Order(std::move(key_str), std::move(key_str), sp_id,
           (side_str == "buy" ? Side::BUY : Side::SELL),
           (ordertype_str == "market" ? OrderType::MARKET : OrderType::LIMIT),
-          std::stod(vol_str)));
+          std::stod(vol_str),
+          std::stod(price_str),
+          Order::GetStatus(status_str)));
     }
     return Result<std::vector<Order>>(res.response, orders);
   }
@@ -290,6 +300,7 @@ std::unordered_map<std::string, SymbolId> KrakenClient::ASSET_MAP = {
   {"XBT", SymbolId::BTC},
   {"XXBT", SymbolId::BTC},
   {"ETH", SymbolId::ETH},
+  {"XETH", SymbolId::ETH},
   {"EOS", SymbolId::EOS},
   {"USDT", SymbolId::USDT}
 };

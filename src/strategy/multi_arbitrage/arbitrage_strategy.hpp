@@ -56,21 +56,7 @@ public:
   void Initialize() {
     for (const auto& p : m_account_managers) {
       p.second->Initialize();
-      // TODO: FIXME: adapt code to the changes
-
-      // if (!res) {
-      //   throw std::runtime_error("Failed getting account balance for " + p.first);
-      // }
-      // m_balances.insert(std::make_pair(p.first, std::move(res.Get())));
-
-      // // FIXME: support multiple pairs ?
-      // auto res_orders = p.second->GetOpenOrders(SymbolPairId::BTC_USDT);
-      // if (!res_orders) {
-      //   throw std::runtime_error("Failed getting open orders for " + p.first);
-      // }
-      // m_open_orders.insert(std::make_pair(p.first, std::move(res_orders.Get())));
     }
-    m_is_up_to_date = true;
   }
 
   virtual void OnTicker(const Ticker& ticker) override {
@@ -134,17 +120,14 @@ public:
           BOOST_LOG_TRIVIAL(warning) << "Order amount below minimum.";
           return;
         }
-        // Finally
-        // if (!CanSell(best_bid_exchange, current_symbol_pair, vol) || !CanBuy(best_ask_exchange, current_symbol_pair, vol, best_ask_ticker.m_ask)) {
-        //   BOOST_LOG_TRIVIAL(warning) << "Not enough funds.";
-        //   UpdateBalances(best_bid_exchange, best_ask_exchange);
-        //   return;
-        // }
-        // if (HasOpenOrders(best_bid_exchange) || HasOpenOrders(best_ask_exchange)) {
-        //   BOOST_LOG_TRIVIAL(warning) << "There are open orders.";
-        //   UpdateOpenOrders(current_symbol_id, best_bid_exchange, best_ask_exchange);
-        //   return;
-        // }
+        if (!CanSell(best_bid_exchange, current_symbol_pair, vol) || !CanBuy(best_ask_exchange, current_symbol_pair, vol, best_ask_ticker.m_ask)) {
+          BOOST_LOG_TRIVIAL(warning) << "Not enough funds.";
+          return;
+        }
+        if (HasOpenOrders(best_bid_exchange) || HasOpenOrders(best_ask_exchange)) {
+          BOOST_LOG_TRIVIAL(warning) << "There are open orders.";
+          return;
+        }
         auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
             current_symbol_id, Side::SELL, vol, best_bid_ticker.m_bid);
         auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
@@ -160,8 +143,6 @@ public:
         }
         BOOST_LOG_TRIVIAL(info) << "Arbitrage match good enough. Order sent!";
         BOOST_LOG_TRIVIAL(info) << match << std::endl;
-        UpdateBalances(best_bid_exchange, best_ask_exchange);
-        UpdateOpenOrders(current_symbol_id, best_bid_exchange, best_ask_exchange);
       }
     }
   }
@@ -199,79 +180,27 @@ public:
 private:
 
   inline bool CanSell(const std::string& exchange_name, SymbolPair symbol_pair, double amount) {
-    BOOST_LOG_TRIVIAL(debug) << "CanSell";
-    assert(m_balances.count(exchange_name) > 0);
-    double balance = m_balances.at(exchange_name).GetBalance(symbol_pair.GetBaseAsset());
-    double min_balance = amount * (1.0 + m_opts.m_exchange_params.at(exchange_name).m_fee);
-    BOOST_LOG_TRIVIAL(debug) << "Minimum required BTC balance on " << exchange_name << " is " << std::to_string(min_balance);
-    return balance > min_balance;
+    SymbolId symbol_id = symbol_pair.GetBaseAsset();
+    double balance = m_account_managers[exchange_name]->GetBalance(symbol_id);
+    return balance > amount;
   }
 
   inline bool CanBuy(const std::string& exchange_name, SymbolPair symbol_pair, double amount, double price) {
-    BOOST_LOG_TRIVIAL(debug) << "CanBuy";
-    assert(m_balances.count(exchange_name) > 0);
-    double balance = m_balances.at(exchange_name).GetBalance(symbol_pair.GetQuoteAsset());
-    double min_balance = amount * price * (1.0 + m_opts.m_exchange_params.at(exchange_name).m_fee);
-    BOOST_LOG_TRIVIAL(debug) << "Minimum required USDT balance on " << exchange_name << " is " << std::to_string(min_balance);
-    return balance > min_balance;
+    SymbolId symbol_id = symbol_pair.GetQuoteAsset();
+    double balance = m_account_managers[exchange_name]->GetBalance(symbol_id);
+    return balance > price * amount;
   }
 
   inline bool HasOpenOrders(const std::string& exchange_name) {
-    if (m_open_orders.count(exchange_name) > 0) {
-      const auto& orders = m_open_orders.at(exchange_name);
-      if (orders.size() > 0) {
-        return true;
-      }
-      return false;
-    }
-    // No information, so better to assume there are open orders
-    return true;
+    return m_account_managers[exchange_name]->HasOpenOrders();
   }
 
-  bool UpdateBalances(const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
-    auto acc_f1 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_account_managers[best_bid_exchange].get());
-    auto acc_f2 = std::async(std::launch::async, &ExchangeClient::GetAccountBalance, m_account_managers[best_ask_exchange].get());
-    auto res_best_bid = acc_f1.get();
-    auto res_best_ask = acc_f2.get();
-    if (!res_best_bid) {
-      BOOST_LOG_TRIVIAL(warning) << "Could not get account balance for " << best_bid_exchange;
-      return false;
-    }
-    m_balances.insert_or_assign(best_bid_exchange, std::move(res_best_bid.Get()));
-    if (!res_best_ask) {
-      BOOST_LOG_TRIVIAL(warning) << "Could not get account balance for " << best_ask_exchange;
-      return false;
-    }
-    m_balances.insert_or_assign(best_ask_exchange, std::move(res_best_ask.Get()));
-    return true;
-  }
-
-  // TODO: FIXME: here we currently update for one pair and overwirite with another in case of arbitrage for multiple pairs
-  bool UpdateOpenOrders(SymbolPairId symbol_pair, const std::string& best_bid_exchange, const std::string& best_ask_exchange) {
-    auto acc_f1 = std::async(std::launch::async, &ExchangeClient::GetOpenOrders, m_account_managers[best_bid_exchange].get(), symbol_pair);
-    auto acc_f2 = std::async(std::launch::async, &ExchangeClient::GetOpenOrders, m_account_managers[best_ask_exchange].get(), symbol_pair);
-    auto res_best_bid = acc_f1.get();
-    auto res_best_ask = acc_f2.get();
-    if (!res_best_bid) {
-      BOOST_LOG_TRIVIAL(warning) << "Could not get open orders for " << best_bid_exchange;
-      return false;
-    }
-    m_open_orders.insert_or_assign(best_bid_exchange, std::move(res_best_bid.Get()));
-    if (!res_best_ask) {
-      BOOST_LOG_TRIVIAL(warning) << "Could not get open orders for " << best_ask_exchange;
-      return false;
-    }
-    m_open_orders.insert_or_assign(best_ask_exchange, std::move(res_best_ask.Get()));
-    return true;
-  }
 private:
   std::mutex m_mutex;
   ArbitrageStrategyOptions m_opts;
   ArbitrageStrategyMatcher m_matcher;
   // symbol -> (exchange -> ticker)
   std::map<SymbolPairId, std::map<std::string, Ticker>> m_tickers;
-  std::unordered_map<std::string, AccountBalance> m_balances;
-  std::unordered_map<std::string, std::vector<Order>> m_open_orders;
   int64_t m_last_trade_us;
   bool m_is_up_to_date;
 };

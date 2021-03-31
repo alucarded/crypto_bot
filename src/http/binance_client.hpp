@@ -92,7 +92,7 @@ public:
 
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
     const std::string& symbol_str = GetSymbolString(symbol);
-    HttpClient::Result res = m_http_client.get(HOST, PORT, ADD_ORDER_PATH)
+    HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
       .Header("X-MBX-APIKEY", g_api_key)
       .QueryParam("symbol", symbol_str)
       .QueryParam("side", (side == Side::BUY ? "BUY" : "SELL"))
@@ -113,7 +113,7 @@ public:
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
     const std::string& symbol_str = GetSymbolString(symbol);
-    HttpClient::Result res = m_http_client.get(HOST, PORT, ADD_ORDER_PATH)
+    HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
       .Header("X-MBX-APIKEY", g_api_key)
       .QueryParam("symbol", symbol_str)
       .QueryParam("side", (side == Side::BUY ? "BUY" : "SELL"))
@@ -158,24 +158,24 @@ public:
     if (response_json.contains("code")) {
       return Result<AccountBalance>(res.response, response_json["msg"].get<std::string>());
     }
-    std::unordered_map<SymbolId, std::string> balances;
+    std::unordered_map<SymbolId, double> balances;
     for (const auto& b : response_json["balances"]) {
       auto asset_str = b["asset"];
       if (BINANCE_ASSET_MAP.count(asset_str) == 0) {
         BOOST_LOG_TRIVIAL(warning) << "[BinanceClient::GetAccountBalance] Skipping unsupported asset: " << asset_str;
         continue;
       }
-      balances.insert(std::make_pair(BINANCE_ASSET_MAP.at(asset_str), b["free"]));
+      const auto& free_str  = b["free"].get<std::string>();
+      const auto& locked_str = b["locked"].get<std::string>();
+      balances.insert(std::make_pair(BINANCE_ASSET_MAP.at(asset_str), std::stod(free_str) + std::stod(locked_str)));
     }
-    
-    return Result<AccountBalance>(res.response, AccountBalance(balances));
+
+    return Result<AccountBalance>(res.response, AccountBalance(std::move(balances)));
   }
 
-  virtual Result<std::vector<Order>> GetOpenOrders(SymbolPairId symbol) override {
-    const std::string& symbol_str = GetSymbolString(symbol);
+  virtual Result<std::vector<Order>> GetOpenOrders() override {
     HttpClient::Result res = m_http_client.get(HOST, PORT, GET_OPEN_ORDERS_PATH)
         .Header("X-MBX-APIKEY", g_api_key)
-        .QueryParam("symbol", symbol_str)
         .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
         .send();
     json response_json = json::parse(res.response);
@@ -185,18 +185,23 @@ public:
     }
     std::vector<Order> orders;
     for (const auto& order : response_json) {
-      const auto& id_str = std::to_string(order["orderId"].get<std::int64_t>());
-      const auto& client_id_str = order["clientOrderId"].get<std::string>();
+      auto id_str = std::to_string(order["orderId"].get<std::int64_t>());
+      auto client_id_str = order["clientOrderId"].get<std::string>();
       const auto& symbol_str = order["symbol"].get<std::string>();
       const auto& side_str = order["side"].get<std::string>();
       const auto& order_type_str = order["type"].get<std::string>();
       const auto& orig_qty_str = order["origQty"].get<std::string>();
-      orders.push_back(Order(id_str, client_id_str,
-        SymbolPair(order["symbol"].get<std::string>()),
+      const auto& price = order["price"].get<std::string>();
+      const auto& status = order["status"].get<std::string>();
+      SymbolPairId symbol_id = SymbolPair(symbol_str);
+      orders.push_back(Order(std::move(id_str), std::move(client_id_str),
+        symbol_id,
         (side_str == "BUY" ? Side::BUY : Side::SELL),
         // TODO: support more order types
         (order_type_str == "MARKET" ? OrderType::MARKET : OrderType::LIMIT),
-        std::stod(orig_qty_str)));
+        std::stod(orig_qty_str),
+        std::stod(price),
+        Order::GetStatus(status)));
     }
     return Result<std::vector<Order>>(res.response, orders);
   }
