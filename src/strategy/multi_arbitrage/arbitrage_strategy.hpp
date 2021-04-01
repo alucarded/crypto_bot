@@ -21,8 +21,8 @@
 
 struct ArbitrageStrategyOptions {
   std::unordered_map<std::string, ExchangeParams> m_exchange_params;
-  double m_default_amount;
-  double m_min_amount;
+  std::unordered_map<SymbolId, double> m_default_amount;
+  std::unordered_map<SymbolId, double> m_min_amount;
   int64_t m_max_ticker_age_us;
   int64_t m_max_ticker_delay_us;
   int64_t m_min_trade_interval_us;
@@ -38,8 +38,10 @@ public:
         if (m_opts.m_exchange_params.size() < 2) {
           throw std::invalid_argument("Parameters for at least 2 exchanges required");
         }
-        if (m_opts.m_default_amount < 0.0 || m_opts.m_default_amount > 0.1) {
-          throw std::invalid_argument("Invalid order amount, please check configuration or change hardcoded limits");
+        for (const auto& p : m_opts.m_default_amount) {
+          if (p.second < 0.0) {
+            throw std::invalid_argument("Invalid order amount, please check configuration or change hardcoded limits");
+          }
         }
   }
 
@@ -108,7 +110,7 @@ public:
       if (m_account_managers.count(best_bid_exchange) > 0
         && m_account_managers.count(best_ask_exchange) > 0) {
         // Set trade amount to minimum across best bid, best ask and default amount
-        double vol = m_opts.m_default_amount;
+        double vol = m_opts.m_default_amount[current_symbol_pair.GetBaseAsset()];
         if (best_bid_ticker.m_bid_vol.has_value()) {
           vol = std::min(best_bid_ticker.m_bid_vol.value(), vol);
         }
@@ -116,7 +118,7 @@ public:
           vol = std::min(best_ask_ticker.m_ask_vol.value(), vol);
         }
         // Make sure the amount is above minimum
-        if (vol < m_opts.m_min_amount) {
+        if (vol < m_opts.m_min_amount[current_symbol_pair.GetBaseAsset()]) {
           BOOST_LOG_TRIVIAL(warning) << "Order amount below minimum.";
           return;
         }
