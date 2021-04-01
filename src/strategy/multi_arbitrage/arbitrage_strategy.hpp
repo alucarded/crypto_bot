@@ -84,12 +84,15 @@ public:
       // Check tickers arrival timestamp
       auto best_bid_ticker_age = now_us - best_bid_ticker.m_arrived_ts;
       auto best_ask_ticker_age = now_us - best_ask_ticker.m_arrived_ts;
-      BOOST_LOG_TRIVIAL(info) << "Best bid ticker age (" << best_bid_exchange
+      BOOST_LOG_TRIVIAL(debug) << "Best bid ticker age (" << best_bid_exchange
             << "): " << std::to_string(best_bid_ticker_age) << ", best ask ticker age (" << best_ask_exchange
             << "): " << std::to_string(best_ask_ticker_age);
-      if (best_bid_ticker_age > m_opts.m_max_ticker_age_us
-        || best_ask_ticker_age > m_opts.m_max_ticker_age_us) {
-        BOOST_LOG_TRIVIAL(warning) << "Ticker is too old";
+      if (best_bid_ticker_age > m_opts.m_max_ticker_age_us) {
+        BOOST_LOG_TRIVIAL(debug) << "Ticker " << best_bid_ticker.m_exchange << " " << best_bid_ticker.m_symbol << " is too old";
+        return;
+      }
+      if (best_ask_ticker_age > m_opts.m_max_ticker_age_us) {
+        BOOST_LOG_TRIVIAL(debug) << "Ticker " << best_ask_ticker.m_exchange << " " << best_ask_ticker.m_symbol << " is too old";
         return;
       }
       // Check tickers source timestamp, if present
