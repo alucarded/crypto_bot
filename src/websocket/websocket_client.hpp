@@ -105,6 +105,8 @@ protected:
         std::cout << con->get_remote_close_code() << std::endl;
         std::cout << con->get_remote_close_reason() << std::endl;
         std::cout << con->get_ec() << " - " << con->get_ec().message() << std::endl;
+
+        reconnect();
     }
 
     virtual void on_open(websocketpp::connection_hdl conn) {
@@ -117,6 +119,10 @@ protected:
         BOOST_LOG_TRIVIAL(debug) << m_name + ": Connection closed" << std::endl;
         OnClose(conn);
         m_start_promise = std::move(std::promise<void>());
+        reconnect();
+    }
+
+    void reconnect() {
         // Reconnect
         if (m_do_reconnect) {
             // TODO: do we need to delay here ?
