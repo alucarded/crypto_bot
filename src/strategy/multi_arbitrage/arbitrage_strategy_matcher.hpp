@@ -77,17 +77,17 @@ public:
     const Ticker& best_ask_ticker = tickers.at(best_ask_ex);
     double profit = CalculateProfit(best_bid_ticker, best_ask_ticker);
     auto best_match = ArbitrageStrategyMatch(best_bid_ticker, best_ask_ticker, profit);
-    auto bit = m_best_matches.find(symbol);
-    if (bit == m_best_matches.end()) {
-      m_best_matches.emplace(symbol, best_match);
-    } else {
-      const auto& prev_match = m_best_matches.at(symbol);
-      if (prev_match.m_profit < best_match.m_profit) {
-        bit->second = best_match;
-        BOOST_LOG_TRIVIAL(debug) << "Best match for " << symbol << " updated";
-        BOOST_LOG_TRIVIAL(debug) << best_match;
-      }
-    }
+    // auto bit = m_best_matches.find(symbol);
+    // if (bit == m_best_matches.end()) {
+    //   m_best_matches.emplace(symbol, best_match);
+    // } else {
+    //   const auto& prev_match = m_best_matches.at(symbol);
+    //   if (prev_match.m_profit < best_match.m_profit) {
+    //     bit->second = best_match;
+    //     BOOST_LOG_TRIVIAL(debug) << "Best match for " << symbol << " updated";
+    //     BOOST_LOG_TRIVIAL(debug) << best_match;
+    //   }
+    // }
     if (profit >= 0) {
       return std::optional<ArbitrageStrategyMatch>{best_match};
     }
@@ -108,5 +108,5 @@ private:
   }
 
   std::unordered_map<std::string, ExchangeParams> m_exchange_params;
-  std::unordered_map<SymbolPairId, ArbitrageStrategyMatch> m_best_matches;
+  //std::unordered_map<SymbolPairId, ArbitrageStrategyMatch> m_best_matches;
 };
