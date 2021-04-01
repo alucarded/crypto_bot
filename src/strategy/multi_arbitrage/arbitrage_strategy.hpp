@@ -137,11 +137,13 @@ public:
         m_last_trade_us = now_us;
         auto f1_res = f1.get();
         if (!f1_res) {
-          BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();;
+          BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
+          std::exit(1);
         }
         auto f2_res = f2.get();
         if (!f2_res) {
           BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
+          std::exit(1);
         }
         BOOST_LOG_TRIVIAL(info) << "Arbitrage match good enough. Order sent!";
         BOOST_LOG_TRIVIAL(info) << match << std::endl;
