@@ -74,6 +74,7 @@ public:
       {SymbolPairId::ADA_BTC, SymbolId::ADA},
       {SymbolPairId::EOS_BTC, SymbolId::EOS},
       {SymbolPairId::EOS_ETH, SymbolId::EOS},
+      {SymbolPairId::ETH_BTC, SymbolId::ETH},
     };
     return s_base_map.at(m_symbol_id);
   }
@@ -87,6 +88,7 @@ public:
       {SymbolPairId::ADA_BTC, SymbolId::BTC},
       {SymbolPairId::EOS_BTC, SymbolId::BTC},
       {SymbolPairId::EOS_ETH, SymbolId::ETH},
+      {SymbolPairId::ETH_BTC, SymbolId::BTC},
     };
     return s_quote_map.at(m_symbol_id);
   }

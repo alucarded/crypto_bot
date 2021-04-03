@@ -5,6 +5,8 @@
 #include "consumer/consumer.h"
 #include "model/options.h"
 #include "strategy/trading_strategy.h"
+#include "utils/math.hpp"
+#include "utils/spinlock.hpp"
 
 #include <boost/log/trivial.hpp>
 
@@ -62,12 +64,13 @@ public:
   }
 
   virtual void OnTicker(const Ticker& ticker) override {
-    std::unique_lock<std::mutex> scoped_lock(m_mutex);
     //std::cout << ticker << std::endl;
     SymbolPair current_symbol_pair = ticker.m_symbol;
     SymbolPairId current_symbol_id = SymbolPairId(current_symbol_pair);
+    m_tickers_lock.lock();
     m_tickers[current_symbol_id][ticker.m_exchange] = ticker;
     auto match_opt = m_matcher.FindMatch(m_tickers[current_symbol_id]);
+    m_tickers_lock.unlock();
     if (match_opt.has_value()) {
       auto match = match_opt.value();
       const auto& best_bid_ticker = match.m_best_bid;
@@ -157,11 +160,11 @@ public:
   virtual void OnOrderBookUpdate(const OrderBook& order_book) {
     const auto& best_ask = order_book.GetBestAsk();
     const auto& best_bid = order_book.GetBestBid();
+    const auto& precision_settings = order_book.GetPrecisionSettings();
     Ticker ticker;
-    // TODO: get precision form order book object
-    ticker.m_ask = double(best_ask.GetPrice())/100000.0;
+    ticker.m_ask = double(best_ask.GetPrice())/quick_pow10(precision_settings.m_price_precision);
     ticker.m_ask_vol = std::optional<double>(best_ask.GetVolume());
-    ticker.m_bid = double(best_bid.GetPrice())/100000.0;
+    ticker.m_bid = double(best_bid.GetPrice())/quick_pow10(precision_settings.m_price_precision);
     ticker.m_bid_vol = std::optional<double>(best_bid.GetVolume());
     ticker.m_source_ts = std::optional<int64_t>(std::min(best_ask.GetTimestamp(), best_bid.GetTimestamp()));
     using namespace std::chrono;
@@ -171,17 +174,18 @@ public:
     ticker.m_arrived_ts = us.count();
     ticker.m_exchange = order_book.GetExchangeName();
     // TODO: hardcoded
-    ticker.m_symbol = order_book.GetSymbolName();
+    ticker.m_symbol = order_book.GetSymbolPairId();
     //BOOST_LOG_TRIVIAL(info) << "Arrived: " << ticker.m_arrived_ts << ", best ask: " << best_ask.GetTimestamp() << ", best bid: " << best_bid.GetTimestamp() << std::endl;
     //BOOST_LOG_TRIVIAL(info) << ticker << std::endl;
     OnTicker(ticker);
   }
 
   virtual void OnConnectionClose(const std::string& name) override {
-    std::unique_lock<std::mutex> scoped_lock(m_mutex);
+    m_tickers_lock.lock();
     for (auto p : m_tickers) {
       p.second.erase(name);
     }
+    m_tickers_lock.unlock();
   }
 
 private:
@@ -203,11 +207,11 @@ private:
   }
 
 private:
-  std::mutex m_mutex;
   ArbitrageStrategyOptions m_opts;
   ArbitrageStrategyMatcher m_matcher;
   // symbol -> (exchange -> ticker)
   std::map<SymbolPairId, std::map<std::string, Ticker>> m_tickers;
+  cryptobot::spinlock m_tickers_lock;
   int64_t m_last_trade_us;
   bool m_is_up_to_date;
 };

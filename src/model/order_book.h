@@ -78,15 +78,23 @@ private:
   uint64_t m_timestamp;
 };
 
+struct PrecisionSettings {
+  PrecisionSettings(size_t pp, size_t vp, size_t tp) : m_price_precision(pp), m_volume_precision(vp), m_timestamp_precision(tp) {}
+
+  const size_t m_price_precision;
+  const size_t m_volume_precision;
+  const size_t m_timestamp_precision;
+};
+
 class OrderBook {
 public:
-  OrderBook() {
-    // null book
-  }
-	OrderBook(const std::string& name, const std::string& symbol) : OrderBook(name, symbol, 10) {
+
+	OrderBook(const std::string& name, SymbolPairId symbol, PrecisionSettings precision_settings)
+      : OrderBook(name, symbol, 10, precision_settings) {
   }
 
-	OrderBook(const std::string& name, const std::string& symbol, size_t depth) : m_exchange_name(name), m_symbol(symbol), m_depth(depth) {
+	OrderBook(const std::string& name, SymbolPairId symbol, size_t depth, PrecisionSettings precision_settings)
+      : m_exchange_name(name), m_symbol(symbol), m_depth(depth), m_precision_settings(precision_settings) {
   }
 
 	/**
@@ -172,7 +180,9 @@ public:
   }
 
   inline const std::string& GetExchangeName() const { return m_exchange_name; }
-  inline const std::string& GetSymbolName() const { return m_symbol; }
+  inline SymbolPairId GetSymbolPairId() const { return m_symbol; }
+  inline size_t GetDepth() const { return m_depth; }
+  inline const PrecisionSettings& GetPrecisionSettings() const { return m_precision_settings; }
 
   friend std::ostream& operator<<(std::ostream& os, const OrderBook& ob);
 
@@ -193,9 +203,10 @@ private:
 	std::list<PriceLevel> m_bids;
   // Lowest ask last
 	std::list<PriceLevel> m_asks;
-  std::string m_exchange_name;
-  std::string m_symbol;
-  size_t m_depth;
+  const std::string m_exchange_name;
+  const SymbolPairId m_symbol;
+  const size_t m_depth;
+  const PrecisionSettings m_precision_settings;
 };
 
 std::ostream& operator<<(std::ostream& os, const PriceLevel& pl) {
