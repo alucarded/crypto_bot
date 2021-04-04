@@ -10,6 +10,7 @@
 
 #include <boost/log/trivial.hpp>
 
+#include <atomic>
 #include <chrono>
 #include <future>
 #include <string>
@@ -20,6 +21,7 @@
 #include <unordered_map>
 #include <utility>
 
+using namespace std::chrono;
 
 struct ArbitrageStrategyOptions {
   std::unordered_map<std::string, ExchangeParams> m_exchange_params;
@@ -77,14 +79,8 @@ public:
       const auto& best_ask_ticker = match.m_best_ask;
       const auto& best_bid_exchange = best_bid_ticker.m_exchange;
       const auto& best_ask_exchange = best_ask_ticker.m_exchange;
-      // Limit trades rate
-      using namespace std::chrono;
-      auto now_us = duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
-      if (now_us - m_last_trade_us < m_opts.m_min_trade_interval_us) {
-        BOOST_LOG_TRIVIAL(info) << "Rate limiting trades";
-        return;
-      }
       // Check tickers arrival timestamp
+      auto now_us = duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
       auto best_bid_ticker_age = now_us - best_bid_ticker.m_arrived_ts;
       auto best_ask_ticker_age = now_us - best_ask_ticker.m_arrived_ts;
       BOOST_LOG_TRIVIAL(debug) << "Best bid ticker age (" << best_bid_exchange
@@ -136,11 +132,17 @@ public:
           BOOST_LOG_TRIVIAL(warning) << "There are open orders.";
           return;
         }
+        // Limit trades rate
+        auto now_us = duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+        int64_t last_trade_snap = m_last_trade_us.exchange(now_us);
+        if (now_us - last_trade_snap < m_opts.m_min_trade_interval_us) {
+          BOOST_LOG_TRIVIAL(info) << "Rate limiting trades";
+          return;
+        }
         auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
             current_symbol_id, Side::SELL, vol, best_bid_ticker.m_bid);
         auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
             current_symbol_id, Side::BUY, vol, best_ask_ticker.m_ask);
-        m_last_trade_us = now_us;
         auto f1_res = f1.get();
         if (!f1_res) {
           BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
@@ -212,6 +214,5 @@ private:
   // symbol -> (exchange -> ticker)
   std::map<SymbolPairId, std::map<std::string, Ticker>> m_tickers;
   cryptobot::spinlock m_tickers_lock;
-  int64_t m_last_trade_us;
-  bool m_is_up_to_date;
+  std::atomic<int64_t> m_last_trade_us;
 };
