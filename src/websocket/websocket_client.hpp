@@ -38,6 +38,10 @@ public:
 protected:
     WebsocketClient(const std::string& uri, const std::string& name) :  m_uri(uri), m_name(name),
             m_do_reconnect(true), m_reconnect_delay(100ms) {
+        init_endpoint();
+    }
+
+    void init_endpoint() {
         m_endpoint.set_access_channels(websocketpp::log::alevel::none);
         m_endpoint.set_error_channels(websocketpp::log::elevel::warn);
 
@@ -125,6 +129,7 @@ protected:
     void reconnect() {
         // Reconnect
         if (m_do_reconnect) {
+            m_endpoint.reset();
             // TODO: do we need to delay here ?
             std::this_thread::sleep_for(m_reconnect_delay);
             connect(m_uri);
