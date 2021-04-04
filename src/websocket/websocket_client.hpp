@@ -36,50 +36,50 @@ public:
     }
 
 protected:
-    WebsocketClient(const std::string& uri, const std::string& name) :  m_uri(uri), m_name(name),
+    WebsocketClient(const std::string& uri, const std::string& name) :  m_uri(uri), m_name(name), m_endpoint(new client()),
             m_do_reconnect(true), m_reconnect_delay(100ms) {
         init_endpoint();
     }
 
     void init_endpoint() {
-        m_endpoint.set_access_channels(websocketpp::log::alevel::none);
-        m_endpoint.set_error_channels(websocketpp::log::elevel::warn);
+        m_endpoint->set_access_channels(websocketpp::log::alevel::none);
+        m_endpoint->set_error_channels(websocketpp::log::elevel::warn);
 
-        m_endpoint.init_asio();
-        m_endpoint.start_perpetual();
+        m_endpoint->init_asio();
+        m_endpoint->start_perpetual();
 
         //m_endpoint.set_socket_init_handler(bind(&WebsocketClient::on_socket_init,this,::_1));
-        m_endpoint.set_tls_init_handler(bind(&WebsocketClient::on_tls_init,this,::_1));
-        m_endpoint.set_message_handler(bind(&WebsocketClient::on_message,this,::_1,::_2));
-        m_endpoint.set_open_handler(bind(&WebsocketClient::on_open,this,::_1));
-        m_endpoint.set_close_handler(bind(&WebsocketClient::on_close,this,::_1));
-        m_endpoint.set_fail_handler(bind(&WebsocketClient::on_fail,this,::_1));
-        m_endpoint.set_ping_handler(bind(&WebsocketClient::on_ping,this,::_1,::_2));
+        m_endpoint->set_tls_init_handler(bind(&WebsocketClient::on_tls_init,this,::_1));
+        m_endpoint->set_message_handler(bind(&WebsocketClient::on_message,this,::_1,::_2));
+        m_endpoint->set_open_handler(bind(&WebsocketClient::on_open,this,::_1));
+        m_endpoint->set_close_handler(bind(&WebsocketClient::on_close,this,::_1));
+        m_endpoint->set_fail_handler(bind(&WebsocketClient::on_fail,this,::_1));
+        m_endpoint->set_ping_handler(bind(&WebsocketClient::on_ping,this,::_1,::_2));
     }
 
     void start(const std::string& uri) {
         connect(uri);
-        m_thread = std::make_shared<std::thread>(&client::run, &m_endpoint);
+        m_thread = std::make_shared<std::thread>(&client::run, m_endpoint.get());
     }
 
     void connect(const std::string& uri) {
         websocketpp::lib::error_code ec;
-        m_con = m_endpoint.get_connection(uri, ec);
+        m_con = m_endpoint->get_connection(uri, ec);
 
         if (ec) {
-            m_endpoint.get_alog().write(websocketpp::log::alevel::app, ec.message());
+            m_endpoint->get_alog().write(websocketpp::log::alevel::app, ec.message());
             return;
         }
 
-        m_endpoint.connect(m_con);
+        m_endpoint->connect(m_con);
     }
 
     virtual void send(const std::string& message) {
         BOOST_LOG_TRIVIAL(debug) << m_name + ": Sending" << std::endl;
         websocketpp::lib::error_code ec;
-        m_endpoint.send(m_con->get_handle(), message, websocketpp::frame::opcode::text, ec);
+        m_endpoint->send(m_con->get_handle(), message, websocketpp::frame::opcode::text, ec);
         if (ec) {
-            m_endpoint.get_alog().write(websocketpp::log::alevel::app, ec.message());
+            m_endpoint->get_alog().write(websocketpp::log::alevel::app, ec.message());
         }
     }
 
@@ -100,7 +100,7 @@ protected:
     }
 
     virtual void on_fail(websocketpp::connection_hdl hdl) {
-        client::connection_ptr con = m_endpoint.get_con_from_hdl(hdl);
+        client::connection_ptr con = m_endpoint->get_con_from_hdl(hdl);
         
         std::cout << m_name + ": Fail handler" << std::endl;
         std::cout << con->get_state() << std::endl;
@@ -129,7 +129,8 @@ protected:
     void reconnect() {
         // Reconnect
         if (m_do_reconnect) {
-            m_endpoint.reset();
+            m_endpoint.reset(new client());
+            init_endpoint();
             // TODO: do we need to delay here ?
             std::this_thread::sleep_for(m_reconnect_delay);
             connect(m_uri);
@@ -158,7 +159,7 @@ protected:
 protected:
     std::string m_uri;
     std::string m_name;
-    client m_endpoint;
+    std::unique_ptr<client> m_endpoint;
     client::connection_ptr m_con;
     std::shared_ptr<std::thread> m_thread;
     bool m_do_reconnect;
