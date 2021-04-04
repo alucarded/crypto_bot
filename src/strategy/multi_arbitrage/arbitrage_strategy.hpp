@@ -139,22 +139,27 @@ public:
           BOOST_LOG_TRIVIAL(info) << "Rate limiting trades";
           return;
         }
-        auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
-            current_symbol_id, Side::SELL, vol, best_bid_ticker.m_bid);
-        auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
-            current_symbol_id, Side::BUY, vol, best_ask_ticker.m_ask);
-        auto f1_res = f1.get();
-        if (!f1_res) {
-          BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
-          std::exit(1);
+        // Only one thread can send orders at any given point,
+        // skip if another thread is currently sending orders.
+        if (m_orders_mutex.try_lock() ) {
+          auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
+              current_symbol_id, Side::SELL, vol, best_bid_ticker.m_bid);
+          auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
+              current_symbol_id, Side::BUY, vol, best_ask_ticker.m_ask);
+          auto f1_res = f1.get();
+          if (!f1_res) {
+            BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
+            std::exit(1);
+          }
+          auto f2_res = f2.get();
+          if (!f2_res) {
+            BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
+            std::exit(1);
+          }
+          BOOST_LOG_TRIVIAL(info) << "Arbitrage match good enough. Order sent!";
+          BOOST_LOG_TRIVIAL(info) << match << std::endl;
+          m_orders_mutex.unlock();
         }
-        auto f2_res = f2.get();
-        if (!f2_res) {
-          BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
-          std::exit(1);
-        }
-        BOOST_LOG_TRIVIAL(info) << "Arbitrage match good enough. Order sent!";
-        BOOST_LOG_TRIVIAL(info) << match << std::endl;
       }
     }
   }
@@ -213,6 +218,7 @@ private:
   ArbitrageStrategyMatcher m_matcher;
   // symbol -> (exchange -> ticker)
   std::map<SymbolPairId, std::map<std::string, Ticker>> m_tickers;
+  std::mutex m_orders_mutex;
   cryptobot::spinlock m_tickers_lock;
   std::atomic<int64_t> m_last_trade_us;
 };
