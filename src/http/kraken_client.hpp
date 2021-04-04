@@ -2,6 +2,7 @@
 
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
+#include "utils/string.hpp"
 
 #include <boost/log/trivial.hpp>
 #include "json/json.hpp"
@@ -154,7 +155,8 @@ public:
         .QueryParam("type", (Side::BUY == side ? "buy" : "sell"))
         .QueryParam("ordertype", "limit")
         // TODO: std::to_string has default precision of 6 digits, use ostringstream
-        .QueryParam("price", std::to_string(price))
+        // FIXME: get precision
+        .QueryParam("price", cryptobot::to_string(price, 8))
         .QueryParam("volume", std::to_string(qty))
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))

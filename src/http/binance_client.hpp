@@ -2,6 +2,7 @@
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
 #include "model/binance.h"
+#include "utils/string.hpp"
 
 #include "json/json.hpp"
 
@@ -119,8 +120,9 @@ public:
       .QueryParam("side", (side == Side::BUY ? "BUY" : "SELL"))
       .QueryParam("type", "LIMIT")
       // TODO: make sure precision is always fine
+      // FIXME
       .QueryParam("quantity", std::to_string(qty))
-      .QueryParam("price", std::to_string(price))
+      .QueryParam("price", cryptobot::to_string(price, 8))
       // TODO: for now always GTC
       .QueryParam("timeInForce", "GTC")
       .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
