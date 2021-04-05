@@ -122,7 +122,6 @@ protected:
     virtual void on_close(websocketpp::connection_hdl conn) {
         BOOST_LOG_TRIVIAL(debug) << m_name + ": Connection closed" << std::endl;
         OnClose(conn);
-        m_start_promise = std::move(std::promise<void>());
         reconnect();
     }
 
@@ -133,7 +132,7 @@ protected:
             init_endpoint();
             // TODO: do we need to delay here ?
             std::this_thread::sleep_for(m_reconnect_delay);
-            connect(m_uri);
+            start(std::move(std::promise<void>()));
         }
     }
 
