@@ -5,6 +5,7 @@
 #include "websocket/websocket_client.hpp"
 #include "utils/math.hpp"
 #include "utils/spinlock.hpp"
+#include "utils/string.hpp"
 
 #include <boost/crc.hpp>
 #include <boost/log/trivial.hpp>

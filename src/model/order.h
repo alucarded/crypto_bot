@@ -168,7 +168,7 @@ public:
 
   Order(const std::string& id, const std::string& client_id, SymbolPairId symbol_id, Side side, OrderType order_type, double quantity)
     : m_id(id), m_client_id(client_id), m_symbol_id(symbol_id), m_side(side), m_order_type(order_type),
-      m_quantity(quantity), m_status(OrderStatus::UNKNOWN), m_executed_quantity(0), m_total_cost(0) {
+      m_quantity(quantity), m_price(0), m_status(OrderStatus::UNKNOWN), m_executed_quantity(0), m_total_cost(0) {
   }
 
   Order(std::string&& id, std::string&& client_id, SymbolPairId symbol_id, Side side,
@@ -233,6 +233,9 @@ public:
   inline double GetTotalCost() const { return m_total_cost; }
 
   // Setters
+  inline void SetPrice(double price) {
+    m_price = price;
+  }
   inline void SetStatus(OrderStatus status) {
     m_status = status;
   }
@@ -246,7 +249,6 @@ public:
   friend std::ostream &operator<<(std::ostream &os, const Order &res);
 
 private:
-  // TODO: clean constructors and make relevant fields constant
   std::string m_id;
   std::string m_client_id;
   SymbolPairId m_symbol_id;

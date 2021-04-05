@@ -6,7 +6,7 @@
 using namespace testing;
 
 TEST(OrderBookTest, BidOrderTest) { 
-  OrderBook ob;
+  OrderBook ob{"test", SymbolPairId::BTC_USDT, PrecisionSettings{8, 8, 8}};
   PriceLevel pl1(price_t(473832), 0.234, 1);
   ob.UpsertBid(pl1);
   PriceLevel pl2(price_t(473821), 0.1, 2);
@@ -25,7 +25,7 @@ TEST(OrderBookTest, BidOrderTest) {
 }
 
 TEST(OrderBookTest, AskOrderTest) { 
-  OrderBook ob;
+  OrderBook ob{"test", SymbolPairId::BTC_USDT, PrecisionSettings{8, 8, 8}};
   PriceLevel pl1(price_t(473832), 0.234, 1);
   ob.UpsertAsk(pl1);
   PriceLevel pl2(price_t(473821), 0.1, 2);

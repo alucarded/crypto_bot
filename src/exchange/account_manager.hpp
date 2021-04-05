@@ -55,6 +55,7 @@ public:
       auto& order = res.Get();
       m_our_orders.insert_or_assign(order.GetId(), std::move(order));
       AddLockedBalance(order);
+      BOOST_LOG_TRIVIAL(trace) << "Account balance after placing market order: " << m_account_balance;
     }
     return res;
   }
@@ -63,8 +64,10 @@ public:
     auto res = m_client->LimitOrder(symbol, side, qty, price);
     if (res) {
       auto& order = res.Get();
+      order.SetPrice(price);
       m_our_orders.insert_or_assign(order.GetId(), std::move(order));
       AddLockedBalance(order);
+      BOOST_LOG_TRIVIAL(trace) << "Account balance after placing limit order: " << m_account_balance;
     }
     return res;
   }
@@ -116,6 +119,7 @@ public:
       return;
     }
     Order& order = it->second;
+    BOOST_LOG_TRIVIAL(trace) << "AccountManager::UpdateOurOrder";
     UpdateOurOrder(order_update, order);
     BOOST_LOG_TRIVIAL(debug) << "Account balance after order update: " << m_account_balance;
     m_our_orders_lock.unlock();
@@ -128,16 +132,25 @@ public:
     return ret;
   }
 
-  double GetBalance(SymbolId symbol_id) {
+  double GetFreeBalance(SymbolId symbol_id) {
     m_account_balance_lock.lock();
     double ret = m_account_balance.GetFreeBalance(symbol_id);
     m_account_balance_lock.unlock();
     return ret;
   }
 
+  double GetTotalBalance(SymbolId symbol_id) {
+    m_account_balance_lock.lock();
+    double ret = m_account_balance.GetTotalBalance(symbol_id);
+    m_account_balance_lock.unlock();
+    return ret;
+  }
 protected:
   // m_our_orders_lock should be locked
   void UpdateOurOrder(const Order& order_update, Order& order) {
+
+    order.SetStatus(order_update.GetStatus());
+
     switch (order_update.GetStatus()) {
       case OrderStatus::NEW:
         // Replace order with updated one
@@ -149,25 +162,28 @@ protected:
         // TODO: here we could adjust total balance
         break;
       case OrderStatus::FILLED:
-        AdjustBalanceClosedOrder(order_update);
-        m_our_orders.erase(order_update.GetId());
+        order.SetExecutedQuantity(order.GetQuantity());
+        // TODO: take into account fee and fee currency
+        order.SetTotalCost(order.GetQuantity() * order.GetPrice());
+        AdjustBalanceClosedOrder(order);
+        m_our_orders.erase(order.GetId());
         break;
       case OrderStatus::CANCELED:
-        AdjustBalanceClosedOrder(order_update);
-        m_our_orders.erase(order_update.GetId());
+        AdjustBalanceClosedOrder(order);
+        m_our_orders.erase(order.GetId());
         break;
       case OrderStatus::PENDING_CANCEL:
         // Do nothing ?
-        BOOST_LOG_TRIVIAL(info) << "Order pending cancel " << order_update;
+        BOOST_LOG_TRIVIAL(info) << "Order pending cancel " << order;
         break;
       case OrderStatus::REJECTED:
-        BOOST_LOG_TRIVIAL(error) << "Unexpected order status for " << order_update;
+        BOOST_LOG_TRIVIAL(error) << "Unexpected order status for " << order;
         break;
       case OrderStatus::EXPIRED:
         // Log and remove order
-        BOOST_LOG_TRIVIAL(info) << "Order expired " << order_update;
-        SubtractLockedBalance(order_update);
-        m_our_orders.erase(order_update.GetId());
+        BOOST_LOG_TRIVIAL(info) << "Order expired " << order;
+        SubtractLockedBalance(order);
+        m_our_orders.erase(order.GetId());
         break;
       default:
         BOOST_LOG_TRIVIAL(error) << "Unsupported order status";
@@ -205,9 +221,8 @@ protected:
             BOOST_LOG_TRIVIAL(warning) << "Order not present: " << order.GetId();
             return;
           }
-          m_external_orders_lock.unlock();
-          AdjustBalanceClosedOrder(order);
-          m_external_orders_lock.lock();
+          it->second.SetStatus(order.GetStatus());
+          AdjustBalanceClosedOrder(it->second);
           m_external_orders.erase(it);
           m_external_orders_lock.unlock();
         }
@@ -270,13 +285,11 @@ protected:
   }
 
 protected:
-// TODO: this class should probably not own client
-  std::unique_ptr<ExchangeClient> m_client;
+  ExchangeClient* m_client;
   std::unordered_map<std::string, Order> m_external_orders;
   cryptobot::spinlock m_external_orders_lock;
   std::unordered_map<std::string, Order> m_our_orders;
   cryptobot::spinlock m_our_orders_lock;
   AccountBalance m_account_balance;
   cryptobot::spinlock m_account_balance_lock;
-  //std::atomic<bool> m_is_up_to_date;
 };

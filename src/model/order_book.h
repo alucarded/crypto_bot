@@ -1,4 +1,7 @@
 #pragma once
+
+#include "symbol.h"
+
 #include <algorithm>
 #include <cassert>
 #include <cstdint>

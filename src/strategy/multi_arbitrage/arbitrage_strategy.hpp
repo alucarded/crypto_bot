@@ -199,13 +199,13 @@ private:
 
   inline bool CanSell(const std::string& exchange_name, SymbolPair symbol_pair, double amount) {
     SymbolId symbol_id = symbol_pair.GetBaseAsset();
-    double balance = m_account_managers[exchange_name]->GetBalance(symbol_id);
+    double balance = m_account_managers[exchange_name]->GetFreeBalance(symbol_id);
     return balance > amount;
   }
 
   inline bool CanBuy(const std::string& exchange_name, SymbolPair symbol_pair, double amount, double price) {
     SymbolId symbol_id = symbol_pair.GetQuoteAsset();
-    double balance = m_account_managers[exchange_name]->GetBalance(symbol_id);
+    double balance = m_account_managers[exchange_name]->GetFreeBalance(symbol_id);
     return balance > price * amount;
   }
 

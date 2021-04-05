@@ -1,6 +1,8 @@
 #include "model/options.h"
 #include "model/ticker.h"
 
+#include <boost/log/trivial.hpp>
+
 #include <cassert>
 #include <optional>
 #include <map>
