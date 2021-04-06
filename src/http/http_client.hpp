@@ -114,7 +114,7 @@ public:
         req.insert(kv.first, kv.second);
       }
 
-      BOOST_LOG_TRIVIAL(debug) << req << std::endl;
+      BOOST_LOG_TRIVIAL(debug) << "Built boost::beast::http::request object: " << req;
       return req;
     }
 
@@ -147,7 +147,6 @@ public:
   }
   
   ~HttpClient() {
-
   }
 
 
@@ -169,9 +168,6 @@ public:
     return Request(*this, host, port, path, boost::beast::http::verb::delete_, m_options.m_user_agent);
   }
 
-  Result send(Request& request) {
-    Result res;
-
 #define __STRINGIZE_I(x) #x
 #define __STRINGIZE(x) __STRINGIZE_I(x)
 
@@ -183,83 +179,113 @@ public:
     res.errmsg += ": "; \
     res.errmsg += msg;
 
-    boost::asio::ssl::stream<boost::asio::ip::tcp::socket> ssl_stream(m_ioctx, m_ssl_ctx);
+  Result send(Request& request) {
+    Result res;
 
-    cryptobot::Timer timer;
-    timer.start();
-    if( !SSL_set_tlsext_host_name(ssl_stream.native_handle(), request.m_host.c_str()) ) {
-      boost::system::error_code ec{static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category()};
-      BOOST_LOG_TRIVIAL(error) << "msg=" << ec.message() << std::endl;
-
-      __MAKE_ERRMSG(res, ec.message());
-      return res;
+    BOOST_LOG_TRIVIAL(debug) << "Starting HTTP request";
+    m_timer.start();
+    if (!m_ssl_stream_opt || !m_ssl_stream_opt.value().next_layer().is_open()) {
+      BOOST_LOG_TRIVIAL(info) << "Establishing HTTPS connection to " << request.m_host << ":" << request.m_port;
+      if (!OpenConnection(request.m_host, request.m_port, res)) {
+        return res;
+      }
+      BOOST_LOG_TRIVIAL(debug) << "Open connection milliseconds: " << m_timer.checkpoint();
     }
 
     boost::system::error_code ec;
-    // Resolve hostname
-    auto const results = m_resolver.resolve(request.m_host, request.m_port, ec);
-    if ( ec ) {
-      BOOST_LOG_TRIVIAL(error) << "msg=" << ec.message() << std::endl;
-
-      __MAKE_ERRMSG(res, ec.message());
-      return res;
-    }
-
-    // TODO: support keep-alive
-    boost::asio::connect(ssl_stream.next_layer(), results.begin(), results.end(), ec);
-    if ( ec ) {
-      BOOST_LOG_TRIVIAL(error) << "msg=" << ec.message() << std::endl;
-
-      __MAKE_ERRMSG(res, ec.message());
-      return res;
-    }
-
-    ssl_stream.handshake(boost::asio::ssl::stream_base::client, ec);
-    if ( ec ) {
-      BOOST_LOG_TRIVIAL(error) << "msg=" << ec.message() << std::endl;
-
-      __MAKE_ERRMSG(res, ec.message());
-      return res;
-    }
-    BOOST_LOG_TRIVIAL(debug) << "Up to handshake milliseconds: " << timer.elapsedMilliseconds() << std::endl;
-
-    boost::beast::http::request<boost::beast::http::string_body> req = request.build();
-
-    boost::beast::http::write(ssl_stream, req, ec);
-    if ( ec ) {
-        BOOST_LOG_TRIVIAL(error) << "msg=" << ec.message() << std::endl;
-
-        __MAKE_ERRMSG(res, ec.message());
+    boost::beast::http::response<boost::beast::http::string_body> bres = SendImpl(request, ec);
+    if (ec == boost::beast::http::error::end_of_stream) {
+      // Reconnect and try again
+      if (!OpenConnection(request.m_host, request.m_port, res)) {
         return res;
+      }
+      BOOST_LOG_TRIVIAL(debug) << "Open connection again milliseconds: " << m_timer.checkpoint();
+      bres = SendImpl(request, ec);
     }
-    BOOST_LOG_TRIVIAL(debug) << "HTTP write milliseconds: " << timer.elapsedMilliseconds() << std::endl;
-
-    boost::beast::flat_buffer buffer;
-    boost::beast::http::response<boost::beast::http::string_body> bres;
-
-    boost::beast::http::read(ssl_stream, buffer, bres, ec);
     if ( ec ) {
-        BOOST_LOG_TRIVIAL(error) << "msg=" << ec.message() << std::endl;
-
-        __MAKE_ERRMSG(res, ec.message());
-        return res;
+      __MAKE_ERRMSG(res, ec.message());
+      return res;
     }
-    timer.stop();
-    BOOST_LOG_TRIVIAL(debug) << "HTTP response read milliseconds: " << timer.elapsedMilliseconds() << std::endl;
-
     // TODO: perhaps add parsing in this move assignment (response class implementing move assignment with parsing)
     res.response = std::move(bres.body());
-    BOOST_LOG_TRIVIAL(debug) << request.m_path << " REPLY:\n" << res.response << std::endl << std::endl;
+    m_timer.stop();
+    BOOST_LOG_TRIVIAL(debug) << "HTTP request-response total: " << m_timer.elapsedMilliseconds();
 
-    ssl_stream.shutdown(ec);
+    // if (!bres.keep_alive()) {
+    //   m_ssl_stream.shutdown(ec);
+    // }
 
     // TODO: add response code!
     return res;
   }
+private:
+  bool OpenConnection(const std::string& host, const std::string& port, Result& res) {
+    m_ssl_stream_opt.emplace(m_ioctx, m_ssl_ctx);
+    auto& ssl_stream = m_ssl_stream_opt.value();
 
+    if( !SSL_set_tlsext_host_name(ssl_stream.native_handle(), host.c_str()) ) {
+      boost::system::error_code ec{static_cast<int>(::ERR_get_error()), boost::asio::error::get_ssl_category()};
+      BOOST_LOG_TRIVIAL(error) << "SSL error: " << ec.message();
+
+      __MAKE_ERRMSG(res, ec.message());
+      return false;
+    }
+
+    boost::system::error_code ec;
+    // Resolve hostname
+    auto const results = m_resolver.resolve(host, port, ec);
+    if ( ec ) {
+      BOOST_LOG_TRIVIAL(error) << "Error resolving hostname: " << ec.message();
+
+      __MAKE_ERRMSG(res, ec.message());
+      return false;
+    }
+
+    boost::asio::connect(ssl_stream.next_layer(), results.begin(), results.end(), ec);
+    if ( ec ) {
+      BOOST_LOG_TRIVIAL(error) << "Error connecting: " << ec.message();
+
+      __MAKE_ERRMSG(res, ec.message());
+      return false;
+    }
+
+    ssl_stream.handshake(boost::asio::ssl::stream_base::client, ec);
+    if ( ec ) {
+      BOOST_LOG_TRIVIAL(error) << "Handshake error: " << ec.message();
+
+      __MAKE_ERRMSG(res, ec.message());
+      return false;
+    }
+
+    return true;
+  }
+
+  boost::beast::http::response<boost::beast::http::string_body> SendImpl(Request& request, boost::system::error_code& ec) {
+    auto& ssl_stream = m_ssl_stream_opt.value();
+    boost::beast::http::request<boost::beast::http::string_body> req = request.build();
+    boost::beast::http::response<boost::beast::http::string_body> bres;
+
+    boost::beast::http::write(ssl_stream, req, ec);
+    if ( ec ) {
+        BOOST_LOG_TRIVIAL(error) << "Error writing to stream: " << ec.message();
+        return bres;
+    }
+    BOOST_LOG_TRIVIAL(debug) << "HTTP write milliseconds: " << m_timer.checkpoint();
+
+    boost::beast::flat_buffer buffer;
+    boost::beast::http::read(ssl_stream, buffer, bres, ec);
+    if ( ec) {
+        BOOST_LOG_TRIVIAL(error) << "Error reading from stream: " << ec.message();
+        return bres;
+    }
+    BOOST_LOG_TRIVIAL(debug) << "HTTP response read milliseconds: " << m_timer.checkpoint();
+    return bres;
+  }
 private:
   boost::asio::io_context m_ioctx;
   Options m_options;
   boost::asio::ssl::context m_ssl_ctx;
   boost::asio::ip::tcp::resolver m_resolver;
+  std::optional<boost::asio::ssl::stream<boost::asio::ip::tcp::socket>> m_ssl_stream_opt;
+  cryptobot::Timer m_timer;
 };
