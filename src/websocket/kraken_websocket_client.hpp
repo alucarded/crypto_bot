@@ -24,7 +24,8 @@ public:
 
   static const std::unordered_map<SymbolPairId, PrecisionSettings> SENT_PRECISIONS;
 
-  KrakenWebsocketClient(ExchangeListener* exchange_listener) : WebsocketClient("wss://ws.kraken.com", NAME), m_exchange_listener(exchange_listener), m_tickers_watcher(NAME) {
+  KrakenWebsocketClient(ExchangeListener* exchange_listener)
+      : WebsocketClient("wss://ws.kraken.com", NAME), m_exchange_listener(exchange_listener), m_tickers_watcher(NAME), m_order_book_handler(false) {
     m_tickers_watcher.Start();
   }
 
@@ -39,7 +40,7 @@ public:
     m_subscription_msg.push_back(message);
     SymbolPair sp{symbol};
     SymbolPairId spid = SymbolPairId(sp);
-    m_order_books.emplace(spid, OrderBook(NAME, spid, SENT_PRECISIONS.at(spid)));
+    m_order_books.emplace(spid, OrderBook(NAME, spid, 1, SENT_PRECISIONS.at(spid)));
     WebsocketClient::send(message);
   }
 
@@ -67,7 +68,7 @@ private:
 
   virtual void OnMessage(websocketpp::connection_hdl, client::message_ptr msg) override {
     auto msg_json = json::parse(msg->get_payload());
-    //std::cout << msg_json << std::endl;
+    BOOST_LOG_TRIVIAL(trace) << "Kraken websocket message: " << msg_json;
     if (!msg_json.is_array()) {
       // It is most probably a publication or response
       // TODO:
@@ -92,7 +93,6 @@ private:
         m_tickers_watcher.Set(ob.GetSymbolPairId(), us.count());
         m_exchange_listener->OnOrderBookUpdate(ob);
       } else {
-        ob.clear();
         // TODO: implement state machine, with subscription class objects in a vector as a state,
         // with which subscriptions can be re-created upon receiving unsubscribed publication
         WebsocketClient::send(OrderBookSubscribeMsg(symbol));

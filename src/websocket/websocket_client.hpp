@@ -42,8 +42,8 @@ protected:
     }
 
     void init_endpoint() {
-        m_endpoint->set_access_channels(websocketpp::log::alevel::none);
-        m_endpoint->set_error_channels(websocketpp::log::elevel::warn);
+        m_endpoint->set_access_channels(websocketpp::log::alevel::all);
+        m_endpoint->set_error_channels(websocketpp::log::elevel::all);
 
         m_endpoint->init_asio();
         m_endpoint->start_perpetual();

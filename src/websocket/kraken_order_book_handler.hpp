@@ -12,6 +12,10 @@
 
 class KrakenOrderBookHandler {
 public:
+  KrakenOrderBookHandler(bool validate_checksum) : m_with_checksum_validation(validate_checksum) {
+
+  }
+
   bool OnOrderBookMessage(const json& msg_json, OrderBook& ob) {
     bool is_valid = false;
     auto book_obj = msg_json[1];
@@ -33,6 +37,8 @@ private:
 
   void OnOrderBookSnapshot(OrderBook& ob, const json& snapshot_obj) {
     BOOST_LOG_TRIVIAL(debug) << "Received order book snapshot";
+    // Clear order book first
+    ob.clear();
     const auto& precision_settings = ob.GetPrecisionSettings();
     for (const json& lvl : snapshot_obj["as"]) {
       // Upsert price level
@@ -70,10 +76,10 @@ private:
         }
       }
     }
-    //std::cout << m_order_book << std::endl;
-    if (update_obj.contains("c")) {
+    BOOST_LOG_TRIVIAL(trace) << "Order book: " << ob;
+    if (m_with_checksum_validation && update_obj.contains("c")) {
       std::string crc32_in = CalculateChecksumInput(ob);
-      //std::cout << crc32_in << std::endl;
+      BOOST_LOG_TRIVIAL(trace) << "Checksum: " << crc32_in;
       boost::crc_32_type crc;
       crc.process_bytes(crc32_in.c_str(), crc32_in.size());
       if (crc.checksum() != std::stoul(update_obj["c"].get<std::string>())) {
@@ -124,4 +130,7 @@ private:
     for (const auto &piece : partial_input) res += piece;
     return res;
   }
+
+private:
+  bool m_with_checksum_validation;
 };

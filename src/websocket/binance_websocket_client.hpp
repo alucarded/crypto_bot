@@ -50,8 +50,8 @@ private:
   }
 
   virtual void OnMessage(websocketpp::connection_hdl, client::message_ptr msg) override {
-      //std::cout << msg->get_payload() << std::endl;
       auto msg_json = json::parse(msg->get_payload());
+      BOOST_LOG_TRIVIAL(trace) << "Binance websocket message: " << msg_json;
       // TODO: Perhaps do not do schema validation for every message in production
       if (!msg_json.is_object()
           || !utils::check_message(msg_json, {"u", "s", "b", "B", "a", "A"})) {
