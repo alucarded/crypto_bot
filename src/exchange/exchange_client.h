@@ -49,6 +49,9 @@ private:
 class ExchangeClient {
 public:
   virtual std::string GetExchange() = 0;
+  // TODO: use it to refresh connection (have connection ready)
+  // TODO: only one thread can use client now
+  //virtual Result<bool> Ping() = 0;
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) = 0;
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) = 0;
   virtual Result<AccountBalance> GetAccountBalance() = 0;

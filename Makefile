@@ -28,6 +28,9 @@ arbitrage_main:
 arbitrage_finder:
 	g++ -pipe src/arbitrage_finder_main.cc -o arbitrage_finder_main $(CFLAGS) $(LDFLAGS)
 
+kraken_order_book_main:
+	g++ -pipe src/kraken_order_book_main.cc -o kraken_order_book_main $(CFLAGS) $(LDFLAGS)
+
 clean:
 	if [ -f collector ]; then rm collector; fi; \
 	if [ -f basic_backtest ]; then rm basic_backtest; fi; \

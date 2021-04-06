@@ -50,6 +50,7 @@ private:
 
   virtual void OnMessage(websocketpp::connection_hdl, client::message_ptr msg) override {
     auto msg_json = json::parse(msg->get_payload());
+    BOOST_LOG_TRIVIAL(trace) << msg_json;
     if (!msg_json.is_array()) {
       BOOST_LOG_TRIVIAL(trace) << msg_json << std::endl;
       return;

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utils/spinlock.hpp"
+
 #include <chrono>
 #include <string>
 #include <thread>
