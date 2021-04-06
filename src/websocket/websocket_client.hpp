@@ -60,6 +60,7 @@ protected:
     void start(const std::string& uri) {
         connect(uri);
         m_thread = std::make_shared<std::thread>(&client::run, m_endpoint.get());
+        m_thread->detach();
     }
 
     void connect(const std::string& uri) {
@@ -110,7 +111,7 @@ protected:
         std::cout << con->get_remote_close_reason() << std::endl;
         std::cout << con->get_ec() << " - " << con->get_ec().message() << std::endl;
 
-        reconnect();
+        reconnect(hdl);
     }
 
     virtual void on_open(websocketpp::connection_hdl conn) {
@@ -120,16 +121,18 @@ protected:
     }
 
     virtual void on_close(websocketpp::connection_hdl conn) {
-        BOOST_LOG_TRIVIAL(debug) << m_name + ": Connection closed" << std::endl;
+        BOOST_LOG_TRIVIAL(debug) << m_name + ": Connection closed";
         OnClose(conn);
-        reconnect();
+        reconnect(conn);
     }
 
-    void reconnect() {
+    void reconnect(websocketpp::connection_hdl conn) {
         // Reconnect
         if (m_do_reconnect) {
-            m_endpoint.reset(new client());
-            init_endpoint();
+            m_endpoint->stop();
+            m_endpoint->reset();
+            // m_endpoint.reset(new client());
+            // init_endpoint();
             // TODO: do we need to delay here ?
             std::this_thread::sleep_for(m_reconnect_delay);
             start(std::move(std::promise<void>()));
@@ -137,6 +140,8 @@ protected:
     }
 
     virtual void on_message(websocketpp::connection_hdl conn, client::message_ptr msg) {
+        // For testing reconnecting:
+        // m_endpoint->close(conn, websocketpp::close::status::normal, "");
         try {
             OnMessage(conn, msg);
         } catch (std::exception const & e) {
@@ -158,7 +163,7 @@ protected:
 protected:
     std::string m_uri;
     std::string m_name;
-    std::unique_ptr<client> m_endpoint;
+    std::shared_ptr<client> m_endpoint;
     client::connection_ptr m_con;
     std::shared_ptr<std::thread> m_thread;
     bool m_do_reconnect;

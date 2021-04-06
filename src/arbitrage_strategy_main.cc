@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
       {SymbolId::EOS, 4},
     };
     strategy_opts.m_max_ticker_age_us = 1000000; // 1s
-    strategy_opts.m_max_ticker_delay_us = 1000000; // 500 ms
+    strategy_opts.m_max_ticker_delay_us = 1000000; // 1s
     strategy_opts.m_min_trade_interval_us = 0;
     strategy_opts.m_base_currency_ratio = 0.5;
     strategy_opts.m_allowed_deviation = 0.3;
@@ -96,37 +96,38 @@ int main(int argc, char* argv[]) {
     binance_future.wait();
     kraken_future.wait();
   
+    auto wait_time = 400ms;
     binance_websocket_client.SubscribeTicker("btcusdt");
-    std::this_thread::sleep_for(300ms);
+    std::this_thread::sleep_for(wait_time);
     binance_websocket_client.SubscribeTicker("adausdt");
-    std::this_thread::sleep_for(300ms);
+    std::this_thread::sleep_for(wait_time);
     binance_websocket_client.SubscribeTicker("eosusdt");
-    std::this_thread::sleep_for(300ms);
+    std::this_thread::sleep_for(wait_time);
     binance_websocket_client.SubscribeTicker("ethusdt");
-    std::this_thread::sleep_for(300ms);
+    std::this_thread::sleep_for(wait_time);
     binance_websocket_client.SubscribeTicker("adabtc");
-    std::this_thread::sleep_for(300ms);
+    std::this_thread::sleep_for(wait_time);
     binance_websocket_client.SubscribeTicker("eosbtc");
-    std::this_thread::sleep_for(300ms);
+    std::this_thread::sleep_for(wait_time);
     binance_websocket_client.SubscribeTicker("eoseth");
-    std::this_thread::sleep_for(300ms);
+    std::this_thread::sleep_for(wait_time);
     binance_websocket_client.SubscribeTicker("ethbtc");
   
-    kraken_websocket_client.SubscribeTicker("XBT/USDT");
-    std::this_thread::sleep_for(300ms);
-    kraken_websocket_client.SubscribeTicker("ADA/USDT");
-    std::this_thread::sleep_for(300ms);
-    kraken_websocket_client.SubscribeTicker("EOS/USDT");
-    std::this_thread::sleep_for(300ms);
-    kraken_websocket_client.SubscribeTicker("ETH/USDT");
-    std::this_thread::sleep_for(300ms);
-    kraken_websocket_client.SubscribeTicker("ADA/XBT");
-    std::this_thread::sleep_for(300ms);
-    kraken_websocket_client.SubscribeTicker("EOS/XBT");
-    std::this_thread::sleep_for(300ms);
-    kraken_websocket_client.SubscribeTicker("EOS/ETH");
-    std::this_thread::sleep_for(300ms);
-    kraken_websocket_client.SubscribeTicker("ETH/XBT");
+    kraken_websocket_client.SubscribeOrderBook("XBT/USDT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("ADA/USDT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("EOS/USDT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("ETH/USDT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("ADA/XBT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("EOS/XBT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("EOS/ETH");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("ETH/XBT");
 
     std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
   } catch (websocketpp::exception const & e) {

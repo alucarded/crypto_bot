@@ -58,6 +58,7 @@ private:
   virtual void OnOpen(websocketpp::connection_hdl conn) override {
     for (const auto& msg : m_subscription_msg) {
       WebsocketClient::send(msg);
+      std::this_thread::sleep_for(400ms);
     }
     m_exchange_listener->OnConnectionOpen(NAME);
   }
