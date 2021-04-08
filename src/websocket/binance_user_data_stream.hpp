@@ -40,8 +40,9 @@ private:
     m_user_data_listener->OnConnectionClose("binance");
 
     auto res = m_binance_client->StartUserDataStream();
-    if (!res.has_value()) {
-      BOOST_LOG_TRIVIAL(error) << "Error getting user data stream listen key";
+    while (!res.has_value()) {
+      BOOST_LOG_TRIVIAL(error) << "Error getting user data stream listen key. Retrying...";
+      res = m_binance_client->StartUserDataStream();
     }
     m_uri = "wss://stream.binance.com:9443/ws/" + res.value();
   }

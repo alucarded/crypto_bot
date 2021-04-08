@@ -32,6 +32,9 @@ public:
     if (!open_orders_res) {
       throw std::runtime_error("Failed getting orders for " + GetExchange());
     }
+    m_external_orders_lock.lock();
+    m_external_orders.clear();
+    m_external_orders_lock.unlock();
     auto& orders = open_orders_res.Get();
     for (auto& o : orders) {
       if (o.GetSymbolId() == SymbolPairId::UNKNOWN) {
@@ -90,6 +93,7 @@ public:
   virtual void OnConnectionOpen(const std::string& name) override {
     assert(name == GetExchange());
     BOOST_LOG_TRIVIAL(info) << "AccountManager::OnConnectionOpen " + GetExchange();
+    Initialize();
   }
 
   virtual void OnConnectionClose(const std::string& name) override {
