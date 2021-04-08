@@ -136,6 +136,10 @@ public:
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
         .send();
+      if (!res) {
+        BOOST_LOG_TRIVIAL(error) << "Error making market order request for " << GetExchange() << ": " << res.errmsg;
+        return Result<Order>(res.response, res.errmsg);
+      }
       json response_json = json::parse(res.response);
       if (response_json["error"].size() > 0) {
         // TODO: propagate all errors ?
@@ -161,6 +165,10 @@ public:
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
         .send();
+      if (!res) {
+        BOOST_LOG_TRIVIAL(error) << "Error making limit order request for " << GetExchange() << ": " << res.errmsg;
+        return Result<Order>(res.response, res.errmsg);
+      }
       json response_json = json::parse(res.response);
       if (response_json["error"].size() > 0) {
         // TODO: propagate all errors ?
@@ -181,6 +189,10 @@ public:
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
         .send();
+    if (!res) {
+      BOOST_LOG_TRIVIAL(error) << "Error getting account balance for " << GetExchange() << ": " << res.errmsg;
+      return Result<AccountBalance>(res.response, res.errmsg);
+    }
     json response_json = json::parse(res.response);
     BOOST_LOG_TRIVIAL(debug) << "GetAccountBalance() response: " << response_json;
     if (response_json["error"].size() > 0) {
@@ -206,6 +218,10 @@ public:
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
         .send();
+    if (!res) {
+      BOOST_LOG_TRIVIAL(error) << "Error getting open orders for " << GetExchange() << ": " << res.errmsg;
+      return Result<std::vector<Order>>(res.response, res.errmsg);
+    }
     json response_json = json::parse(res.response);
     if (response_json["error"].size() > 0) {
       return Result<std::vector<Order>>(res.response, response_json["error"][0]);
@@ -241,6 +257,10 @@ public:
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))
         .send();
+    if (!res) {
+      BOOST_LOG_TRIVIAL(error) << "Error getting websockets token for " << GetExchange() << ": " << res.errmsg;
+      return std::string();
+    }
     json response_json = json::parse(res.response);
     if (response_json["error"].size() > 0) {
       BOOST_LOG_TRIVIAL(error) << "Error getting WebSocket token: " << response_json["error"][0];

@@ -155,6 +155,10 @@ public:
         .Header("X-MBX-APIKEY", g_api_key)
         .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
         .send();
+    if (!res) {
+      BOOST_LOG_TRIVIAL(error) << "Error getting account balance for " << GetExchange() << ": " << res.errmsg;
+      return Result<AccountBalance>(res.response, res.errmsg);
+    }
     json response_json = json::parse(res.response);
     BOOST_LOG_TRIVIAL(debug) << "[BinanceClient::GetAccountBalance] " << res.response << std::endl;
     if (response_json.contains("code")) {
@@ -180,6 +184,10 @@ public:
         .Header("X-MBX-APIKEY", g_api_key)
         .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
         .send();
+    if (!res) {
+      BOOST_LOG_TRIVIAL(error) << "Error getting open orders for " << GetExchange() << ": " << res.errmsg;
+      return Result<std::vector<Order>>(res.response, res.errmsg);
+    }
     json response_json = json::parse(res.response);
     BOOST_LOG_TRIVIAL(debug) << "[BinanceClient::GetOpenOrders] " << response_json;
     if (response_json.contains("code")) {
@@ -213,7 +221,10 @@ public:
     HttpClient::Result res = m_http_client.post(HOST, PORT, LISTEN_KEY_PATH)
         .Header("X-MBX-APIKEY", g_api_key)
         .send();
-
+    if (!res) {
+      BOOST_LOG_TRIVIAL(error) << "Error starting user data stream for " << GetExchange() << ": " << res.errmsg;
+      return std::nullopt;
+    }
     json response_json = json::parse(res.response);
     if (!response_json.contains("listenKey")) {
       return std::nullopt;
