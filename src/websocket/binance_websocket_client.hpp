@@ -21,7 +21,7 @@ public:
   inline static const std::string NAME = "binance";
 
   BinanceWebsocketClient(ExchangeListener* exchange_listener)
-      : WebsocketClient("wss://stream.binance.com:9443/ws/bookTicker", NAME), m_exchange_listener(exchange_listener), m_tickers_watcher(NAME) {
+      : WebsocketClient("wss://stream.binance.com:9443/ws/bookTicker", NAME), m_exchange_listener(exchange_listener), m_tickers_watcher(NAME, 30000, this) {
         m_tickers_watcher.Start();
   }
 

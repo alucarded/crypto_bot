@@ -35,6 +35,9 @@ public:
         start(m_uri);
     }
 
+    void close() {
+        m_endpoint->close(m_con, websocketpp::close::status::normal, "");
+    }
 protected:
     WebsocketClient(const std::string& uri, const std::string& name) :  m_uri(uri), m_name(name), m_endpoint(new client()),
             m_do_reconnect(true), m_reconnect_delay(100ms) {
@@ -141,7 +144,7 @@ protected:
 
     virtual void on_message(websocketpp::connection_hdl conn, client::message_ptr msg) {
         // For testing reconnecting:
-        // m_endpoint->close(conn, websocketpp::close::status::normal, "");
+        // close();
         try {
             OnMessage(conn, msg);
         } catch (std::exception const & e) {
