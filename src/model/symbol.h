@@ -27,6 +27,7 @@ std::ostream& operator<< (std::ostream& os, SymbolPairId spid) {
     case SymbolPairId::ETH_USDT: return os << "ETH_USDT";
     case SymbolPairId::EOS_USDT: return os << "EOS_USDT";
     case SymbolPairId::ADA_BTC: return os << "ADA_BTC";
+    case SymbolPairId::DOT_BTC: return os << "DOT_BTC";
     case SymbolPairId::ETH_BTC: return os << "ETH_BTC";
     case SymbolPairId::EOS_BTC: return os << "EOS_BTC";
     case SymbolPairId::EOS_ETH: return os << "EOS_ETH";

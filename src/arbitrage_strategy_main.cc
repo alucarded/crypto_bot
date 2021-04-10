@@ -38,116 +38,109 @@ int main(int argc, char* argv[]) {
 
   InitLogging();
   BOOST_LOG_TRIVIAL(info) << "Boost logging configured";
-  try {
-    ArbitrageStrategyOptions strategy_opts;
-    strategy_opts.m_exchange_params = {
-      { "binance", ExchangeParams("binance", 0.0, 0.00075) },
-      { "kraken", ExchangeParams("kraken", 0.0, 0.0026) }
-    };
-    strategy_opts.m_default_amount = {
-      {SymbolId::BTC, 0.001},
-      {SymbolId::ADA, 50},
-      {SymbolId::ETH, 0.03},
-      {SymbolId::EOS, 12},
-    };
-    strategy_opts.m_min_amount = {
-      {SymbolId::BTC, 0.0002},
-      {SymbolId::ADA, 20},
-      {SymbolId::ETH, 0.01},
-      {SymbolId::EOS, 4},
-    };
-    strategy_opts.m_max_ticker_age_us = 1000000; // 1s
-    strategy_opts.m_max_ticker_delay_us = 1000000; // 1s
-    strategy_opts.m_min_trade_interval_us = 0;
-    strategy_opts.m_base_currency_ratio = 0.5;
-    strategy_opts.m_allowed_deviation = 0.3;
 
-    BinanceClient* binance_client = new BinanceClient();
-    AccountManager* binance_account_manager = new AccountManager(binance_client);
-    KrakenClient* kraken_client = new KrakenClient();
-    AccountManager* kraken_account_manager = new AccountManager(kraken_client);
+  ArbitrageStrategyOptions strategy_opts;
+  strategy_opts.m_exchange_params = {
+    { "binance", ExchangeParams("binance", 0.0, 0.00075) },
+    { "kraken", ExchangeParams("kraken", 0.0, 0.0026) }
+  };
+  strategy_opts.m_default_amount = {
+    {SymbolId::BTC, 0.001},
+    {SymbolId::ADA, 50},
+    {SymbolId::ETH, 0.03},
+    {SymbolId::EOS, 12},
+  };
+  strategy_opts.m_min_amount = {
+    {SymbolId::BTC, 0.0002},
+    {SymbolId::ADA, 20},
+    {SymbolId::ETH, 0.01},
+    {SymbolId::EOS, 4},
+  };
+  strategy_opts.m_max_ticker_age_us = 1000000; // 1s
+  strategy_opts.m_max_ticker_delay_us = 1000000; // 1s
+  strategy_opts.m_min_trade_interval_us = 0;
+  strategy_opts.m_base_currency_ratio = 0.5;
+  strategy_opts.m_allowed_deviation = 0.3;
 
-    BinanceUserDataStream binance_stream = BinanceUserDataStream::Create(binance_client, binance_account_manager);
-    std::promise<void> binance_stream_promise;
-    std::future<void> binance_user_future = binance_stream_promise.get_future();
-    binance_stream.start(std::move(binance_stream_promise));
-    binance_user_future.wait();
+  BinanceClient* binance_client = new BinanceClient();
+  AccountManager* binance_account_manager = new AccountManager(binance_client);
+  KrakenClient* kraken_client = new KrakenClient();
+  AccountManager* kraken_account_manager = new AccountManager(kraken_client);
 
-    KrakenUserDataStream kraken_stream(kraken_client, kraken_account_manager);
-    std::promise<void> kraken_stream_promise;
-    std::future<void> kraken_user_future = kraken_stream_promise.get_future();
-    kraken_stream.start(std::move(kraken_stream_promise));
-    kraken_user_future.wait();
-  
-    ArbitrageStrategy arbitrage_strategy(strategy_opts);
-    arbitrage_strategy.RegisterExchangeClient("binance", binance_account_manager);
-    arbitrage_strategy.RegisterExchangeClient("kraken", kraken_account_manager);
-    // Initialization is done when user data stream connection is opened
-    // arbitrage_strategy.Initialize();
-  
-    BinanceWebsocketClient binance_websocket_client(&arbitrage_strategy);
-    KrakenWebsocketClient kraken_websocket_client(&arbitrage_strategy);
+  BinanceUserDataStream binance_stream = BinanceUserDataStream::Create(binance_client, binance_account_manager);
+  std::promise<void> binance_stream_promise;
+  std::future<void> binance_user_future = binance_stream_promise.get_future();
+  binance_stream.start(std::move(binance_stream_promise));
+  binance_user_future.wait();
 
-    std::promise<void> binance_promise;
-    std::future<void> binance_future = binance_promise.get_future();
-    binance_websocket_client.start(std::move(binance_promise));
-    std::promise<void> kraken_promise;
-    std::future<void> kraken_future = kraken_promise.get_future();
-    kraken_websocket_client.start(std::move(kraken_promise));
-    binance_future.wait();
-    kraken_future.wait();
-  
-    auto wait_time = 400ms;
-    binance_websocket_client.SubscribeTicker("btcusdt");
-    std::this_thread::sleep_for(wait_time);
-    binance_websocket_client.SubscribeTicker("adausdt");
-    std::this_thread::sleep_for(wait_time);
-    binance_websocket_client.SubscribeTicker("dotusdt");
-    std::this_thread::sleep_for(wait_time);
-    binance_websocket_client.SubscribeTicker("eosusdt");
-    std::this_thread::sleep_for(wait_time);
-    binance_websocket_client.SubscribeTicker("ethusdt");
-    std::this_thread::sleep_for(wait_time);
-    binance_websocket_client.SubscribeTicker("adabtc");
-    std::this_thread::sleep_for(wait_time);
-    binance_websocket_client.SubscribeTicker("dotbtc");
-    std::this_thread::sleep_for(wait_time);
-    binance_websocket_client.SubscribeTicker("eosbtc");
-    std::this_thread::sleep_for(wait_time);
-    binance_websocket_client.SubscribeTicker("eoseth");
-    std::this_thread::sleep_for(wait_time);
-    binance_websocket_client.SubscribeTicker("ethbtc");
-    std::this_thread::sleep_for(wait_time);
-    binance_websocket_client.SubscribeTicker("xlmbtc");
-  
-    kraken_websocket_client.SubscribeOrderBook("XBT/USDT");
-    std::this_thread::sleep_for(wait_time);
-    kraken_websocket_client.SubscribeOrderBook("ADA/USDT");
-    std::this_thread::sleep_for(wait_time);
-    kraken_websocket_client.SubscribeOrderBook("DOT/USDT");
-    std::this_thread::sleep_for(wait_time);
-    kraken_websocket_client.SubscribeOrderBook("EOS/USDT");
-    std::this_thread::sleep_for(wait_time);
-    kraken_websocket_client.SubscribeOrderBook("ETH/USDT");
-    std::this_thread::sleep_for(wait_time);
-    kraken_websocket_client.SubscribeOrderBook("ADA/XBT");
-    std::this_thread::sleep_for(wait_time);
-    kraken_websocket_client.SubscribeOrderBook("DOT/XBT");
-    std::this_thread::sleep_for(wait_time);
-    kraken_websocket_client.SubscribeOrderBook("EOS/XBT");
-    std::this_thread::sleep_for(wait_time);
-    kraken_websocket_client.SubscribeOrderBook("EOS/ETH");
-    std::this_thread::sleep_for(wait_time);
-    kraken_websocket_client.SubscribeOrderBook("ETH/XBT");
-    std::this_thread::sleep_for(wait_time);
-    kraken_websocket_client.SubscribeOrderBook("XLM/XBT");
+  KrakenUserDataStream kraken_stream(kraken_client, kraken_account_manager);
+  std::promise<void> kraken_stream_promise;
+  std::future<void> kraken_user_future = kraken_stream_promise.get_future();
+  kraken_stream.start(std::move(kraken_stream_promise));
+  kraken_user_future.wait();
 
-    std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
-  } catch (websocketpp::exception const & e) {
-      std::cout << "websocketpp exception: " << e.what() << std::endl;
-  } catch (std::exception const & e) {
-      std::cout << "exception: " << e.what() << std::endl;
-  } catch (...) {
-      std::cout << "other exception" << std::endl;
-  }
+  ArbitrageStrategy arbitrage_strategy(strategy_opts);
+  arbitrage_strategy.RegisterExchangeClient("binance", binance_account_manager);
+  arbitrage_strategy.RegisterExchangeClient("kraken", kraken_account_manager);
+  // Initialization is done when user data stream connection is opened
+  // arbitrage_strategy.Initialize();
+
+  BinanceWebsocketClient binance_websocket_client(&arbitrage_strategy);
+  KrakenWebsocketClient kraken_websocket_client(&arbitrage_strategy);
+
+  std::promise<void> binance_promise;
+  std::future<void> binance_future = binance_promise.get_future();
+  binance_websocket_client.start(std::move(binance_promise));
+  std::promise<void> kraken_promise;
+  std::future<void> kraken_future = kraken_promise.get_future();
+  kraken_websocket_client.start(std::move(kraken_promise));
+  binance_future.wait();
+  kraken_future.wait();
+
+  auto wait_time = 400ms;
+  binance_websocket_client.SubscribeTicker("btcusdt");
+  std::this_thread::sleep_for(wait_time);
+  binance_websocket_client.SubscribeTicker("adausdt");
+  std::this_thread::sleep_for(wait_time);
+  binance_websocket_client.SubscribeTicker("dotusdt");
+  std::this_thread::sleep_for(wait_time);
+  binance_websocket_client.SubscribeTicker("eosusdt");
+  std::this_thread::sleep_for(wait_time);
+  binance_websocket_client.SubscribeTicker("ethusdt");
+  std::this_thread::sleep_for(wait_time);
+  binance_websocket_client.SubscribeTicker("adabtc");
+  std::this_thread::sleep_for(wait_time);
+  binance_websocket_client.SubscribeTicker("dotbtc");
+  std::this_thread::sleep_for(wait_time);
+  binance_websocket_client.SubscribeTicker("eosbtc");
+  std::this_thread::sleep_for(wait_time);
+  binance_websocket_client.SubscribeTicker("eoseth");
+  std::this_thread::sleep_for(wait_time);
+  binance_websocket_client.SubscribeTicker("ethbtc");
+  std::this_thread::sleep_for(wait_time);
+  binance_websocket_client.SubscribeTicker("xlmbtc");
+
+  kraken_websocket_client.SubscribeOrderBook("XBT/USDT");
+  std::this_thread::sleep_for(wait_time);
+  kraken_websocket_client.SubscribeOrderBook("ADA/USDT");
+  std::this_thread::sleep_for(wait_time);
+  kraken_websocket_client.SubscribeOrderBook("DOT/USDT");
+  std::this_thread::sleep_for(wait_time);
+  kraken_websocket_client.SubscribeOrderBook("EOS/USDT");
+  std::this_thread::sleep_for(wait_time);
+  kraken_websocket_client.SubscribeOrderBook("ETH/USDT");
+  std::this_thread::sleep_for(wait_time);
+  kraken_websocket_client.SubscribeOrderBook("ADA/XBT");
+  std::this_thread::sleep_for(wait_time);
+  kraken_websocket_client.SubscribeOrderBook("DOT/XBT");
+  std::this_thread::sleep_for(wait_time);
+  kraken_websocket_client.SubscribeOrderBook("EOS/XBT");
+  std::this_thread::sleep_for(wait_time);
+  kraken_websocket_client.SubscribeOrderBook("EOS/ETH");
+  std::this_thread::sleep_for(wait_time);
+  kraken_websocket_client.SubscribeOrderBook("ETH/XBT");
+  std::this_thread::sleep_for(wait_time);
+  kraken_websocket_client.SubscribeOrderBook("XLM/XBT");
+
+  std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
 }
