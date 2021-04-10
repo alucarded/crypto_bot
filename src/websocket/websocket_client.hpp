@@ -36,7 +36,11 @@ public:
     }
 
     void close() {
-        m_endpoint->close(m_con, websocketpp::close::status::normal, "");
+        try {
+            m_endpoint->close(m_con, websocketpp::close::status::normal, "");
+        } catch (const websocketpp::exception &e) {
+            BOOST_LOG_TRIVIAL(error) << "Exception when closing websocketpp endpoint: " << e.what();
+        }
     }
 protected:
     WebsocketClient(const std::string& uri, const std::string& name) :  m_uri(uri), m_name(name), m_endpoint(new client()),
