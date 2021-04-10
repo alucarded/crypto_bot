@@ -71,7 +71,7 @@ private:
       microseconds us = duration_cast<microseconds>(tp);
       ticker.m_arrived_ts = us.count();
       ticker.m_exchange = NAME;
-      ticker.m_symbol = msg_json["s"].get<std::string>();
+      ticker.m_symbol = SymbolPair::FromBinanceString(msg_json["s"].get<std::string>());
       // TODO: should be unique across exchange
       ticker.m_id = 1;
       // TODO: reconnect/resubscribe all websocket clients when they are inactive for too long

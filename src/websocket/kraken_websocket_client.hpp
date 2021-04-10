@@ -38,7 +38,7 @@ public:
   void SubscribeOrderBook(const std::string& symbol) {
     std::string message = OrderBookSubscribeMsg(symbol);
     m_subscription_msg.push_back(message);
-    SymbolPair sp{symbol};
+    SymbolPair sp = SymbolPair::FromKrakenString(symbol);;
     SymbolPairId spid = SymbolPairId(sp);
     m_order_books.emplace(spid, OrderBook(NAME, spid, 1, SENT_PRECISIONS.at(spid)));
     WebsocketClient::send(message);
@@ -80,7 +80,7 @@ private:
     if (channel_name == "ticker") {
       m_exchange_listener->OnTicker(ParseTicker(msg_json[1], symbol));
     } else if (channel_name.get<std::string>().find("book") != std::string::npos) {
-      SymbolPair symbol_pair{symbol};
+      SymbolPair symbol_pair = SymbolPair::FromKrakenString(symbol);
       SymbolPairId pair_id = SymbolPairId(symbol_pair);
       if (m_order_books.count(pair_id) < 1) {
         throw std::runtime_error("Order book update for an unexpected symbol pair");
@@ -116,8 +116,7 @@ private:
       ticker.m_exchange = NAME;
       static uint64_t last_ticker_id = 0;
       ticker.m_id = last_ticker_id++;
-      // TODO: use enum
-      ticker.m_symbol = symbol;
+      ticker.m_symbol = SymbolPair::FromKrakenString(symbol);
       m_tickers_watcher.Set(SymbolPair(ticker.m_symbol), ticker.m_arrived_ts);
       return ticker;
   }

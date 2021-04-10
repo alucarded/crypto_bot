@@ -67,7 +67,7 @@ private:
           order_builder.Id(oid);
           if (order_val.contains("descr")) {
             auto descr = order_val["descr"];
-            order_builder.Symbol(SymbolPair(descr["pair"].get<std::string>()));
+            order_builder.Symbol(SymbolPair::FromKrakenString(descr["pair"].get<std::string>()));
             order_builder.Side_(descr["type"].get<std::string>() == "buy" ? Side::BUY : Side::SELL);
             order_builder.Price(std::stod(descr["price"].get<std::string>()));
             order_builder.OrderType_(Order::GetType(descr["ordertype"].get<std::string>()));

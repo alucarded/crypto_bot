@@ -43,14 +43,14 @@ protected:
         max_age = std::max<double>(max_age, ms_since_last);
         BOOST_LOG_TRIVIAL(info) << m_exchange << ": " << p.first << " arrived " << std::to_string(ms_since_last) << " ms ago";
       }
+      m_last_arrived_lock.unlock();
       if (max_age > m_interval_ms) {
         // Close connection if there were no messages for any pairs for too long
         // Websocket client should automatically reconnect
-        // TODO: is it thread-safe?
+        // TODO: ideally we should take advantage of heartbeat messages if possible
         BOOST_LOG_TRIVIAL(warning) << m_exchange << ": " << "No " << max_age_pair << " data for over " << m_interval_ms << " ms. Closing connection.";
         m_client->close();
       }
-      m_last_arrived_lock.unlock();
       std::this_thread::sleep_for(std::chrono::milliseconds(m_interval_ms));
     }
   }

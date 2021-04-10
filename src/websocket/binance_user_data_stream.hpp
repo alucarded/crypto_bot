@@ -1,6 +1,5 @@
 #include "exchange/user_data_listener.hpp"
 #include "http/binance_client.hpp"
-#include "model/binance.h"
 #include "model/symbol.h"
 #include "websocket_client.hpp"
 
@@ -101,7 +100,7 @@ private:
     Order order = Order::CreateBuilder()
       .Id(std::to_string(msg_json["i"].get<uint64_t>()))
       .ClientId(msg_json["c"].get<std::string>())
-      .Symbol(SymbolPair(msg_json["s"].get<std::string>())())
+      .Symbol(SymbolPair::FromBinanceString(msg_json["s"].get<std::string>()))
       .Side_(msg_json["S"].get<std::string>() == "BUY" ? Side::BUY : Side::SELL)
       .OrderType_(Order::GetType(msg_json["o"].get<std::string>()))
       .Quantity(std::stod(msg_json["q"].get<std::string>()))

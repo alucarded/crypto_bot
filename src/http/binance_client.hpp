@@ -1,7 +1,7 @@
 #pragma once
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
-#include "model/binance.h"
+#include "model/symbol.h"
 #include "utils/string.hpp"
 
 #include "json/json.hpp"
@@ -74,8 +74,6 @@ public:
   inline static const std::string GET_ACCOUNT_BALANCE_PATH = "/api/v3/account";
   inline static const std::string GET_OPEN_ORDERS_PATH = "/api/v3/openOrders";
   inline static const std::string LISTEN_KEY_PATH = "/api/v3/userDataStream";
-
-  static std::unordered_map<SymbolPairId, std::string> SYMBOL_MAP;
 
   BinanceClient()
       : m_last_order_id(0),
@@ -203,7 +201,7 @@ public:
       const auto& orig_qty_str = order["origQty"].get<std::string>();
       const auto& price = order["price"].get<std::string>();
       const auto& status = order["status"].get<std::string>();
-      SymbolPairId symbol_id = SymbolPair(symbol_str);
+      SymbolPairId symbol_id = SymbolPair::FromBinanceString(symbol_str);
       orders.push_back(Order(std::move(id_str), std::move(client_id_str),
         symbol_id,
         (side_str == "BUY" ? Side::BUY : Side::SELL),
@@ -252,11 +250,11 @@ public:
 private:
 
   const std::string& GetSymbolString(SymbolPairId symbol) const {
-    if (SYMBOL_MAP.count(symbol) == 0) {
+    if (BINANCE_SYMBOL_TO_STRING_MAP.count(symbol) == 0) {
       BOOST_LOG_TRIVIAL(error) << "Unknown symbol. Exiting.";
       std::exit(1);
     }
-    return SYMBOL_MAP.at(symbol);
+    return BINANCE_SYMBOL_TO_STRING_MAP.at(symbol);
   }
 
   void SignData(HttpClient::Request& request, std::string& data) {
@@ -288,15 +286,4 @@ private:
   uint64_t m_last_order_id;
   HttpClient m_http_client;
   int m_timeout;
-};
-
-std::unordered_map<SymbolPairId, std::string> BinanceClient::SYMBOL_MAP = {
-  {SymbolPairId::ADA_USDT, "ADAUSDT"},
-  {SymbolPairId::BTC_USDT, "BTCUSDT"},
-  {SymbolPairId::ETH_USDT, "ETHUSDT"},
-  {SymbolPairId::EOS_USDT, "EOSUSDT"},
-  {SymbolPairId::ADA_BTC, "ADABTC"},
-  {SymbolPairId::ETH_BTC, "ETHBTC"},
-  {SymbolPairId::EOS_BTC, "EOSBTC"},
-  {SymbolPairId::EOS_ETH, "EOSETH"}
 };

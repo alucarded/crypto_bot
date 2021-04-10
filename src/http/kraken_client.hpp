@@ -2,6 +2,7 @@
 
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
+#include "model/symbol.h"
 #include "utils/string.hpp"
 
 #include <boost/log/trivial.hpp>
@@ -111,12 +112,6 @@ public:
   inline static const std::string GET_OPEN_ORDERS_PATH = "/0/private/OpenOrders";
   inline static const std::string GET_WEB_SOCKETS_TOKEN_PATH = "/0/private/GetWebSocketsToken";
 
-  static std::unordered_map<SymbolPairId, std::string> SYMBOL_MAP;
-  static std::unordered_map<std::string, SymbolId> ASSET_MAP;
-
-  // Maps Kraken asset names to our names
-  static const std::unordered_map<std::string, std::string> ASSET_NAME_MAP;
-
   KrakenClient() : m_http_client(HttpClient::Options("cryptobot-1.0.0")) {
 
   }
@@ -203,12 +198,12 @@ public:
     // nlohmann::detail::from_json(response_json["result"], balances);
     for (const auto& el : response_json["result"].items()) {
       const auto& asset_str = el.key();
-      if (ASSET_MAP.count(asset_str) == 0) {
+      if (KRAKEN_ASSET_MAP.count(asset_str) == 0) {
         BOOST_LOG_TRIVIAL(warning) << "[KrakenClient::GetAccountBalance] Skipping unsupported asset: " << asset_str;
         continue;
       }
       const auto& val_str = el.value().get<std::string>();
-      balances.insert(std::make_pair(ASSET_MAP[asset_str], std::stod(val_str)));
+      balances.insert(std::make_pair(KRAKEN_ASSET_MAP.at(asset_str), std::stod(val_str)));
     }
     return Result<AccountBalance>(res.response, AccountBalance(std::move(balances)));
   }
@@ -237,7 +232,7 @@ public:
       const auto& vol_str = val["vol"].get<std::string>();
       const auto& price_str = descr["price"].get<std::string>();
       const auto& status_str = val["status"].get<std::string>();
-      SymbolPairId sp_id = SymbolPair(pair_str);
+      SymbolPairId sp_id = SymbolPair::FromKrakenString(pair_str);
       if (sp_id == SymbolPairId::UNKNOWN) {
         BOOST_LOG_TRIVIAL(warning) << "Unsupported pair: " << pair_str;
         // Add as unknown, so that client knows there are some unsupported orders
@@ -290,39 +285,13 @@ private:
   }
 
   const std::string& GetSymbolString(SymbolPairId symbol) const {
-    if (SYMBOL_MAP.count(symbol) == 0) {
+    if (KRAKEN_SYMBOL_TO_STRING_MAP.count(symbol) == 0) {
       BOOST_LOG_TRIVIAL(error) << "Unknown symbol. Exiting.";
       std::exit(1);
     }
-    return SYMBOL_MAP.at(symbol);
+    return KRAKEN_SYMBOL_TO_STRING_MAP.at(symbol);
   }
 
 private:
   HttpClient m_http_client;
-};
-
-const std::unordered_map<std::string, std::string> KrakenClient::ASSET_NAME_MAP = {
-  {"XXBT", "BTC"},
-  {"XBT", "BTC"}
-};
-
-std::unordered_map<SymbolPairId, std::string> KrakenClient::SYMBOL_MAP = {
-  {SymbolPairId::ADA_USDT, "ADAUSDT"},
-  {SymbolPairId::BTC_USDT, "BTCUSDT"},
-  {SymbolPairId::ETH_USDT, "ETHUSDT"},
-  {SymbolPairId::EOS_USDT, "EOSUSDT"},
-  {SymbolPairId::ADA_BTC, "ADABTC"},
-  {SymbolPairId::ETH_BTC, "ETHBTC"},
-  {SymbolPairId::EOS_BTC, "EOSBTC"},
-  {SymbolPairId::EOS_ETH, "EOSETH"}
-};
-
-std::unordered_map<std::string, SymbolId> KrakenClient::ASSET_MAP = {
-  {"ADA", SymbolId::ADA},
-  {"XBT", SymbolId::BTC},
-  {"XXBT", SymbolId::BTC},
-  {"ETH", SymbolId::ETH},
-  {"XETH", SymbolId::ETH},
-  {"EOS", SymbolId::EOS},
-  {"USDT", SymbolId::USDT}
 };
