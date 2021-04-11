@@ -109,8 +109,11 @@ public:
       }
       // std::cout << "Got match between " << best_bid_exchange << " and " << best_ask_exchange
       //   << " with profit " << std::to_string(match.m_profit) << std::endl;
-      if (m_account_managers.count(best_bid_exchange) > 0
-        && m_account_managers.count(best_ask_exchange) > 0) {
+      auto best_bid_count = m_account_managers.count(best_bid_exchange);
+      auto best_ask_count = m_account_managers.count(best_ask_exchange);
+      BOOST_LOG_TRIVIAL(debug) << "Got account manager for best bid (" << best_bid_exchange << "): " << best_bid_count;
+      BOOST_LOG_TRIVIAL(debug) << "Got account manager for best ask (" << best_ask_exchange << "): " << best_ask_count;
+      if (best_bid_count > 0 && best_ask_count > 0) {
         // Set trade amount to minimum across best bid, best ask and default amount
         double vol = m_opts.m_default_amount[current_symbol_pair.GetBaseAsset()];
         if (best_bid_ticker.m_bid_vol.has_value()) {
@@ -141,7 +144,9 @@ public:
         }
         // Only one thread can send orders at any given point,
         // skip if another thread is currently sending orders.
-        if (m_orders_mutex.try_lock() ) {
+        BOOST_LOG_TRIVIAL(debug) << "Trying to lock";
+        std::unique_lock<std::mutex> lock_obj(m_orders_mutex, std::defer_lock);
+        if (lock_obj.try_lock()) {
           auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
               current_symbol_id, Side::SELL, vol, best_bid_ticker.m_bid);
           auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
@@ -158,7 +163,7 @@ public:
           }
           BOOST_LOG_TRIVIAL(info) << "Arbitrage match good enough. Order sent!";
           BOOST_LOG_TRIVIAL(info) << match << std::endl;
-          m_orders_mutex.unlock();
+          lock_obj.unlock();
         }
       }
     }
@@ -185,6 +190,10 @@ public:
     //BOOST_LOG_TRIVIAL(info) << "Arrived: " << ticker.m_arrived_ts << ", best ask: " << best_ask.GetTimestamp() << ", best bid: " << best_bid.GetTimestamp() << std::endl;
     //BOOST_LOG_TRIVIAL(info) << ticker << std::endl;
     OnTicker(ticker);
+  }
+
+  virtual void OnConnectionOpen(const std::string& name) override {
+    m_orders_mutex.unlock();
   }
 
   virtual void OnConnectionClose(const std::string& name) override {
