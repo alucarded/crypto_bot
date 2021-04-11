@@ -45,16 +45,20 @@ int main(int argc, char* argv[]) {
     { "kraken", ExchangeParams("kraken", 0.0, 0.0026) }
   };
   strategy_opts.m_default_amount = {
-    {SymbolId::BTC, 0.001},
     {SymbolId::ADA, 50},
+    {SymbolId::BTC, 0.001},
+    {SymbolId::DOT, 1.5},
     {SymbolId::ETH, 0.03},
     {SymbolId::EOS, 12},
+    {SymbolId::XLM, 100},
   };
   strategy_opts.m_min_amount = {
-    {SymbolId::BTC, 0.0002},
     {SymbolId::ADA, 20},
+    {SymbolId::BTC, 0.0002},
+    {SymbolId::DOT, 0.4},
     {SymbolId::ETH, 0.01},
     {SymbolId::EOS, 4},
+    {SymbolId::XLM, 30},
   };
   strategy_opts.m_max_ticker_age_us = 1000000; // 1s
   strategy_opts.m_max_ticker_delay_us = 1000000; // 1s
