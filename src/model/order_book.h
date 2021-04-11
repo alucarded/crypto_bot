@@ -182,6 +182,17 @@ public:
     return m_asks.back();
   }
 
+  uint64_t GetLatestUpdateTimestamp() const {
+    uint64_t ret = 0;
+    std::for_each(m_bids.cbegin(), m_bids.cend(), [&](const PriceLevel& pl) {
+      ret = std::max<uint64_t>(ret, pl.GetTimestamp());
+    });
+    std::for_each(m_asks.cbegin(), m_asks.cend(), [&](const PriceLevel& pl) {
+      ret = std::max<uint64_t>(ret, pl.GetTimestamp());
+    });
+    return ret;
+  }
+
   inline const std::string& GetExchangeName() const { return m_exchange_name; }
   inline SymbolPairId GetSymbolPairId() const { return m_symbol; }
   inline size_t GetDepth() const { return m_depth; }

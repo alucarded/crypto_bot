@@ -91,7 +91,7 @@ private:
         auto now = system_clock::now();
         system_clock::duration tp = now.time_since_epoch();
         microseconds us = duration_cast<microseconds>(tp);
-        m_tickers_watcher.Set(ob.GetSymbolPairId(), us.count());
+        m_tickers_watcher.Set(ob.GetSymbolPairId(), us.count(), ob.GetLatestUpdateTimestamp());
         m_exchange_listener->OnOrderBookUpdate(ob);
       } else {
         // TODO: implement state machine, with subscription class objects in a vector as a state,
@@ -117,7 +117,7 @@ private:
       static uint64_t last_ticker_id = 0;
       ticker.m_id = last_ticker_id++;
       ticker.m_symbol = SymbolPair::FromKrakenString(symbol);
-      m_tickers_watcher.Set(SymbolPair(ticker.m_symbol), ticker.m_arrived_ts);
+      m_tickers_watcher.Set(SymbolPair(ticker.m_symbol), ticker.m_arrived_ts, ticker.m_arrived_ts);
       return ticker;
   }
 
