@@ -53,12 +53,12 @@ int main(int argc, char* argv[]) {
     {SymbolId::XLM, 100},
   };
   strategy_opts.m_min_amount = {
-    {SymbolId::ADA, 20},
+    {SymbolId::ADA, 25},
     {SymbolId::BTC, 0.0002},
-    {SymbolId::DOT, 0.4},
-    {SymbolId::ETH, 0.01},
-    {SymbolId::EOS, 4},
-    {SymbolId::XLM, 30},
+    {SymbolId::DOT, 0.5},
+    {SymbolId::ETH, 0.005},
+    {SymbolId::EOS, 2.5},
+    {SymbolId::XLM, 20},
   };
   strategy_opts.m_max_ticker_age_us = 1000000; // 1s
   strategy_opts.m_max_ticker_delay_us = 2000000; // 1s
