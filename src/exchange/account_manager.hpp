@@ -136,6 +136,17 @@ public:
     return ret;
   }
 
+  bool HasOpenOrders(SymbolPairId pair) {
+    m_our_orders_lock.lock();
+    for (auto it = m_our_orders.cbegin(); it != m_our_orders.cend(); ++it) {
+      if (it->second.GetSymbolId() == pair) {
+        return true;
+      }
+    }
+    m_our_orders_lock.unlock();
+    return false;
+  }
+
   double GetFreeBalance(SymbolId symbol_id) {
     m_account_balance_lock.lock();
     double ret = m_account_balance.GetFreeBalance(symbol_id);
@@ -265,6 +276,7 @@ protected:
   }
 
   void AdjustBalanceClosedOrder(const Order& order) {
+    BOOST_LOG_TRIVIAL(debug) << "AdjustBalanceClosedOrder, order: " << order;
     SubtractLockedBalance(order);
     // Adjust balance based on executed amount
     auto executed_qty = order.GetExecutedQuantity();
