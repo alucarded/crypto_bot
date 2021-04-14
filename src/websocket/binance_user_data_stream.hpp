@@ -108,6 +108,8 @@ private:
       .OrderStatus_(Order::GetStatus(msg_json["X"].get<std::string>()))
       // TODO: more ?
       .Build();
+    order.SetExecutedQuantity(std::stod(msg_json["z"].get<std::string>()));
+    order.SetTotalCost(std::stod(msg_json["Z"].get<std::string>()));
     m_user_data_listener->OnOrderUpdate(order);
   }
 

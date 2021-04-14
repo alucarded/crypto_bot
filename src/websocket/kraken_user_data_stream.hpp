@@ -90,6 +90,8 @@ private:
             order_builder.OrderStatus_(status);
           }
           Order order = order_builder.Build();
+          order.SetExecutedQuantity(std::stod(order_val["vol_exec"].get<std::string>()));
+          order.SetTotalCost(std::stod(order_val["cost"].get<std::string>()));
           m_user_data_listener->OnOrderUpdate(order);
         }
       }
