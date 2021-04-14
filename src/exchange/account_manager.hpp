@@ -7,6 +7,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <unordered_set>
 
 class AccountManager : public ExchangeClient, public UserDataListener {
@@ -52,11 +53,14 @@ public:
   // ExchangeClient
 
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
+    std::scoped_lock<std::mutex> lock{m_order_mutex};
     // TODO: register all order ids (so that we know, which ones do we manage, how many our open orders are there etc)
     auto res = m_client->MarketOrder(symbol, side, qty);
     if (res) {
       auto& order = res.Get();
+      m_our_orders_lock.lock();
       m_our_orders.insert_or_assign(order.GetId(), std::move(order));
+      m_our_orders_lock.unlock();
       AddLockedBalance(order);
       BOOST_LOG_TRIVIAL(trace) << "Account balance after placing market order: " << m_account_balance;
     }
@@ -64,11 +68,14 @@ public:
   }
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
+    std::scoped_lock<std::mutex> lock{m_order_mutex};
     auto res = m_client->LimitOrder(symbol, side, qty, price);
     if (res) {
       auto& order = res.Get();
       order.SetPrice(price);
+      m_our_orders_lock.lock();
       m_our_orders.insert_or_assign(order.GetId(), std::move(order));
+      m_our_orders_lock.unlock();
       AddLockedBalance(order);
       BOOST_LOG_TRIVIAL(trace) << "Account balance after placing limit order: " << m_account_balance;
     }
@@ -107,6 +114,7 @@ public:
   }
 
   virtual void OnOrderUpdate(const Order& order_update) override {
+    std::scoped_lock<std::mutex> lock{m_order_mutex};
     BOOST_LOG_TRIVIAL(debug) << "AccountManager::OnOrderUpdate " + GetExchange();
     BOOST_LOG_TRIVIAL(debug) << "Order: " << order_update;
     if (order_update.GetSymbolId() == SymbolPairId::UNKNOWN) {
@@ -308,4 +316,12 @@ protected:
   cryptobot::spinlock m_our_orders_lock;
   AccountBalance m_account_balance;
   cryptobot::spinlock m_account_balance_lock;
+  // The mutex prevents following race condition (at least this one):
+  // 1. LimitOrder() is called and HTTP request with new order is sent
+  // 2. NEW order event is received via user data stream.
+  //    Since the order was not yet added to m_our_orders, it will be handled as external order.
+  // 3. The order was filled immediately (as market order), so FILLED event is received
+  // 3. Response from order request is received and order is added to m_our_orders.
+  // 4. The balance has locked amount, which will never be freed.
+  std::mutex m_order_mutex;
 };
