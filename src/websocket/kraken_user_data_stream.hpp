@@ -75,20 +75,22 @@ private:
           if (order_val.contains("vol")) {
             order_builder.Quantity(std::stod(order_val["vol"].get<std::string>()));
           }
-          if (order_val.contains("status")) {
-            const auto& status_str = order_val["status"].get<std::string>();
-            OrderStatus status = OrderStatus::UNKNOWN;
-            if (status_str == "open" || status_str == "pending") {
-              status = OrderStatus::NEW;
-            } else if (status_str == "closed") {
-              status = OrderStatus::FILLED;
-            } else if (status_str == "canceled") {
-              status = OrderStatus::CANCELED;
-            } else if (status_str == "expired") {
-              status = OrderStatus::EXPIRED;
-            }
-            order_builder.OrderStatus_(status);
+          if (!order_val.contains("status")) {
+            BOOST_LOG_TRIVIAL(error) << "Got Kraken order update without status field: " << msg_json << std::endl;
+            return;
           }
+          const auto& status_str = order_val["status"].get<std::string>();
+          OrderStatus status = OrderStatus::UNKNOWN;
+          if (status_str == "open" || status_str == "pending") {
+            status = OrderStatus::NEW;
+          } else if (status_str == "closed") {
+            status = OrderStatus::FILLED;
+          } else if (status_str == "canceled") {
+            status = OrderStatus::CANCELED;
+          } else if (status_str == "expired") {
+            status = OrderStatus::EXPIRED;
+          }
+          order_builder.OrderStatus_(status);
           Order order = order_builder.Build();
           order.SetExecutedQuantity(std::stod(order_val["vol_exec"].get<std::string>()));
           order.SetTotalCost(std::stod(order_val["cost"].get<std::string>()));

@@ -252,7 +252,6 @@ protected:
         break;
       default:
         BOOST_LOG_TRIVIAL(error) << "Unsupported order status";
-        std::exit(1);
     }
   }
 
