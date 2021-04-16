@@ -203,6 +203,8 @@ public:
       bres = SendImpl(request, ec);
     }
     if ( ec ) {
+      // Something with the stream is broken - intialize it again next time
+      m_ssl_stream_opt.reset();
       __MAKE_ERRMSG(res, ec.message());
       return res;
     }

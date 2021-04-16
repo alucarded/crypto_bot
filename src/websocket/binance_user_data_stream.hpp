@@ -41,6 +41,7 @@ private:
     auto res = m_binance_client->StartUserDataStream();
     while (!res.has_value()) {
       BOOST_LOG_TRIVIAL(error) << "Error getting user data stream listen key. Retrying...";
+      std::this_thread::sleep_for(400ms);
       res = m_binance_client->StartUserDataStream();
     }
     m_uri = "wss://stream.binance.com:9443/ws/" + res.value();
