@@ -2,6 +2,7 @@
 
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
+#include "model/kraken.h"
 #include "model/symbol.h"
 #include "utils/string.hpp"
 
@@ -149,13 +150,17 @@ public:
   // TODO: add expiration time ?
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
     const std::string& symbol_str = GetSymbolString(symbol);
+    if (KRAKEN_ORDER_PRECISIONS_MAP.count(symbol) == 0) {
+      BOOST_LOG_TRIVIAL(error) << "Unknown Kraken order price precision for " << symbol << ". Exiting...";
+      // This should not happen, but in case it does better stop the bot
+      std::exit(1);
+    }
+    const auto& precision_settings = KRAKEN_ORDER_PRECISIONS_MAP.at(symbol);
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
         .QueryParam("pair", symbol_str)
         .QueryParam("type", (Side::BUY == side ? "buy" : "sell"))
         .QueryParam("ordertype", "limit")
-        // TODO: std::to_string has default precision of 6 digits, use ostringstream
-        // FIXME: get precision
-        .QueryParam("price", cryptobot::to_string(price, 8))
+        .QueryParam("price", cryptobot::to_string(price, precision_settings.m_price_precision))
         .QueryParam("volume", std::to_string(qty))
         .Header("API-Key", g_public_key)
         .WithQueryParamSigning(std::bind(&KrakenClient::SignQueryString, this, _1, _2))

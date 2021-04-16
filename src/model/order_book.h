@@ -1,5 +1,6 @@
 #pragma once
 
+#include "settings.h"
 #include "symbol.h"
 
 #include <algorithm>
@@ -79,14 +80,6 @@ private:
   price_t m_price;
   quantity_t m_volume;
   uint64_t m_timestamp;
-};
-
-struct PrecisionSettings {
-  PrecisionSettings(size_t pp, size_t vp, size_t tp) : m_price_precision(pp), m_volume_precision(vp), m_timestamp_precision(tp) {}
-
-  const size_t m_price_precision;
-  const size_t m_volume_precision;
-  const size_t m_timestamp_precision;
 };
 
 class OrderBook {

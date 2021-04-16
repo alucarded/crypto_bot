@@ -129,18 +129,17 @@ private:
   KrakenOrderBookHandler m_order_book_handler;
 };
 
-// TODO: Create ExchangeSettings class, which pulls these from https://api.kraken.com/0/public/AssetPairs
 const std::unordered_map<SymbolPairId, PrecisionSettings> KrakenWebsocketClient::SENT_PRECISIONS = {
   // price_precision, volume_precision, timestamp_precision
-  {SymbolPairId::BTC_USDT, PrecisionSettings(1, 8, 6)},
-  {SymbolPairId::DOT_BTC, PrecisionSettings(4, 8, 6)},
-  {SymbolPairId::DOT_USDT, PrecisionSettings(4, 8, 6)},
-  {SymbolPairId::EOS_BTC, PrecisionSettings(7, 8, 6)},
-  {SymbolPairId::EOS_USDT, PrecisionSettings(4, 8, 6)},
-  {SymbolPairId::ADA_BTC, PrecisionSettings(8, 8, 6)},
+  {SymbolPairId::BTC_USDT, PrecisionSettings(5, 8, 6)},
+  {SymbolPairId::DOT_BTC, PrecisionSettings(10, 8, 6)},
+  {SymbolPairId::DOT_USDT, PrecisionSettings(6, 8, 6)},
+  {SymbolPairId::EOS_BTC, PrecisionSettings(8, 8, 6)},
+  {SymbolPairId::EOS_USDT, PrecisionSettings(6, 8, 6)},
+  {SymbolPairId::ADA_BTC, PrecisionSettings(9, 8, 6)},
   {SymbolPairId::ADA_USDT, PrecisionSettings(8, 8, 6)},
-  {SymbolPairId::ETH_BTC, PrecisionSettings(5, 8, 6)},
-  {SymbolPairId::EOS_ETH, PrecisionSettings(6, 8, 6)},
-  {SymbolPairId::ETH_USDT, PrecisionSettings(2, 8, 6)},
-  {SymbolPairId::XLM_BTC, PrecisionSettings(8, 8, 6)},
+  {SymbolPairId::ETH_BTC, PrecisionSettings(6, 8, 6)},
+  {SymbolPairId::EOS_ETH, PrecisionSettings(8, 8, 6)},
+  {SymbolPairId::ETH_USDT, PrecisionSettings(5, 8, 6)},
+  {SymbolPairId::XLM_BTC, PrecisionSettings(9, 8, 6)},
 };
