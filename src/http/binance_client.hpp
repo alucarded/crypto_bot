@@ -94,13 +94,14 @@ public:
 
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
     const std::string& symbol_str = GetSymbolString(symbol);
+    auto pair_settings = m_binance_settings.GetPairSettings(symbol);
+    qty = qty - std::fmod(qty, pair_settings.step_size);
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
       .Header("X-MBX-APIKEY", g_api_key)
       .QueryParam("symbol", symbol_str)
       .QueryParam("side", (side == Side::BUY ? "BUY" : "SELL"))
       .QueryParam("type", "MARKET")
-      // TODO: make sure precision is always fine
-      .QueryParam("quantity", std::to_string(qty))
+      .QueryParam("quantity", cryptobot::to_string(qty, pair_settings.base_asset_precision))
       .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
       .send();
     if (!res) {
@@ -115,15 +116,15 @@ public:
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
     const std::string& symbol_str = GetSymbolString(symbol);
+    auto pair_settings = m_binance_settings.GetPairSettings(symbol);
+    qty = qty - std::fmod(qty, pair_settings.step_size);
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
       .Header("X-MBX-APIKEY", g_api_key)
       .QueryParam("symbol", symbol_str)
       .QueryParam("side", (side == Side::BUY ? "BUY" : "SELL"))
       .QueryParam("type", "LIMIT")
-      // TODO: make sure precision is always fine
-      // FIXME
-      .QueryParam("quantity", std::to_string(qty))
-      .QueryParam("price", cryptobot::to_string(price, 8))
+      .QueryParam("quantity", cryptobot::to_string(qty, pair_settings.base_asset_precision))
+      .QueryParam("price", cryptobot::to_string(price, pair_settings.quote_precision))
       // TODO: for now always GTC
       .QueryParam("timeInForce", "GTC")
       .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
@@ -143,15 +144,6 @@ public:
   }
 
   virtual Result<AccountBalance> GetAccountBalance() override {
-    // binapi::rest::api::result<binapi::rest::account_info_t> res = m_api.account_info();
-    // //auto account_info = res.response;
-    // json response_json = json::parse(res.reply);
-    // json balances_json = response_json["balances"];
-    // std::unordered_map<std::string, double> balances;
-    // for (const auto& b : balances_json) {
-    //   balances.insert(std::make_pair(b["asset"], b["free"].get<double>()));
-    // }
-    // return AccountBalance(std::move(balances));
     HttpClient::Result res = m_http_client.get(HOST, PORT, GET_ACCOUNT_BALANCE_PATH)
         .Header("X-MBX-APIKEY", g_api_key)
         .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
