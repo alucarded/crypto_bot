@@ -1,4 +1,5 @@
 #pragma once
+#include "exchange/binance_settings.hpp"
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
 #include "model/symbol.h"
@@ -71,6 +72,7 @@ public:
   inline static const std::string HOST = "api.binance.com";
   inline static const std::string PORT = "443";
   inline static const std::string ADD_ORDER_PATH = "/api/v3/order";
+  inline static const std::string EXCHANGE_INFO_PATH = "/api/v3/exchangeInfo";
   inline static const std::string GET_ACCOUNT_BALANCE_PATH = "/api/v3/account";
   inline static const std::string GET_OPEN_ORDERS_PATH = "/api/v3/openOrders";
   inline static const std::string LISTEN_KEY_PATH = "/api/v3/userDataStream";
@@ -78,7 +80,8 @@ public:
   BinanceClient()
       : m_last_order_id(0),
         m_http_client(HttpClient::Options("cryptobot-1.0.0")),
-        m_timeout(1000) {
+        m_timeout(1000),
+        m_binance_settings(GetExchangeInfo()) {
   }
 
   virtual ~BinanceClient() {
@@ -247,6 +250,9 @@ public:
     return bool(res);
   }
 
+  BinanceSettings GetBinanceSettings() const {
+    return m_binance_settings;
+  }
 private:
 
   const std::string& GetSymbolString(SymbolPairId symbol) const {
@@ -282,8 +288,19 @@ private:
     data += signature;
   }
 
+  json GetExchangeInfo() {
+    BOOST_LOG_TRIVIAL(debug) << "Getting Binance exchange info";
+    HttpClient::Result res = m_http_client.get(HOST, PORT, EXCHANGE_INFO_PATH)
+        .send();
+    if (!res) {
+      throw std::runtime_error("Error getting Binance exchange info: " + res.errmsg);
+    }
+    return json::parse(res.response);
+  }
+
 private:
   uint64_t m_last_order_id;
   HttpClient m_http_client;
   int m_timeout;
+  BinanceSettings m_binance_settings;
 };
