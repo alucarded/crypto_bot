@@ -20,14 +20,7 @@ public:
   }
 
   void Initialize() {
-    auto res = m_client->GetAccountBalance();
-    if (!res) {
-      throw std::runtime_error("Failed getting account balance for " + GetExchange());
-    }
-    m_account_balance_lock.lock();
-    m_account_balance = std::move(res.Get());
-    m_account_balance_lock.unlock();
-    //m_is_up_to_date.store(true, std::memory_order_relaxed);
+    RefreshAccountBalance();
 
     auto open_orders_res = m_client->GetOpenOrders();
     if (!open_orders_res) {
@@ -44,6 +37,16 @@ public:
       }
       HandleExternalOrder(o);
     }
+  }
+
+  void RefreshAccountBalance() {
+    auto res = m_client->GetAccountBalance();
+    if (!res) {
+      throw std::runtime_error("Failed getting account balance for " + GetExchange());
+    }
+    m_account_balance_lock.lock();
+    m_account_balance = std::move(res.Get());
+    m_account_balance_lock.unlock();
   }
 
   virtual std::string GetExchange() override {
@@ -133,8 +136,14 @@ public:
     Order& order = it->second;
     BOOST_LOG_TRIVIAL(trace) << "AccountManager::UpdateOurOrder";
     UpdateOurOrder(order_update, order);
-    BOOST_LOG_TRIVIAL(debug) << "Account balance after order update: " << m_account_balance;
     m_our_orders_lock.unlock();
+    m_account_balance_lock.lock();
+    BOOST_LOG_TRIVIAL(debug) << "Account balance after order update: " << m_account_balance;
+    m_account_balance_lock.unlock();
+    RefreshAccountBalance();
+    m_account_balance_lock.lock();
+    BOOST_LOG_TRIVIAL(debug) << "Account balance after refresh: " << m_account_balance;
+    m_account_balance_lock.unlock();
   }
 
   bool HasOpenOrders() {
