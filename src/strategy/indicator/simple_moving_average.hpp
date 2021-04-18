@@ -1,22 +1,33 @@
+#include <cassert>
 #include <optional>
+#include <vector>
 
 class SimpleMovingAverage {
 public:
-  SimpleMovingAverage(size_t period) : m_period(period) {
+  SimpleMovingAverage(size_t period) : m_period(period), m_count(0) {
   }
 
-  void Add(double val) {
-    const size_t curr_size = m_values.size();
-
-    // TODO: right now it will grow indefinietly, add memory cleanup logic
-    m_values.push_back(val);
-    m_sum += val;
-    if (curr_size >= m_period) {
-      if (curr_size > m_period) {
-        m_sum -= m_values[curr_size - 1 - m_period];
-      }
+  void Update(const std::vector<double>& series) {
+    size_t sz = series.size();
+    assert(sz >= m_count);
+    ++m_count;
+    m_sum += series[sz - 1];
+    if (m_count > m_period) {
+      m_sum -= series[sz - 1 - m_period];
+    }
+    if (m_count >= m_period) {
       m_smas.push_back(m_sum / double(m_period));
     }
+  }
+
+  void Reset() {
+    m_smas.clear();
+    m_sum = 0;
+    m_count = 0;
+  }
+
+  void Calculate(const std::vector<double>& series) {
+    // TODO:
   }
 
   std::optional<double> Get() const {
@@ -36,7 +47,7 @@ public:
   }
 private:
   const size_t m_period;
-  std::vector<double> m_values;
   std::vector<double> m_smas;
   double m_sum;
+  size_t m_count;
 };
