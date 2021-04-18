@@ -84,8 +84,9 @@ public:
       auto best_bid_ticker_age = now_us - best_bid_ticker.m_arrived_ts;
       auto best_ask_ticker_age = now_us - best_ask_ticker.m_arrived_ts;
       BOOST_LOG_TRIVIAL(debug) << "Best bid ticker age (" << best_bid_exchange
-            << "): " << std::to_string(best_bid_ticker_age) << ", best ask ticker age (" << best_ask_exchange
-            << "): " << std::to_string(best_ask_ticker_age);
+            << " - " << best_bid_ticker.m_symbol << "): " << std::to_string(best_bid_ticker_age)
+            << ", best ask ticker age (" << best_ask_exchange
+            << " - " << best_ask_ticker.m_symbol << "): " << std::to_string(best_ask_ticker_age);
       if (best_bid_ticker_age > m_opts.m_max_ticker_age_us) {
         BOOST_LOG_TRIVIAL(debug) << "Ticker " << best_bid_ticker.m_exchange << " " << best_bid_ticker.m_symbol << " is too old";
         return;
@@ -127,12 +128,21 @@ public:
           BOOST_LOG_TRIVIAL(warning) << "Order amount below minimum.";
           return;
         }
+        // TODO: check available amount and use to set order amount
         if (!CanSell(best_bid_exchange, current_symbol_pair, vol) || !CanBuy(best_ask_exchange, current_symbol_pair, vol, best_ask_ticker.m_ask)) {
           BOOST_LOG_TRIVIAL(warning) << "Not enough funds.";
           return;
         }
-        if (HasOpenOrders(best_bid_exchange) || HasOpenOrders(best_ask_exchange)) {
-          BOOST_LOG_TRIVIAL(warning) << "There are open orders.";
+        // if (HasOpenOrders(best_bid_exchange) || HasOpenOrders(best_ask_exchange)) {
+        //   BOOST_LOG_TRIVIAL(warning) << "There are open orders.";
+        //   return;
+        // }
+        if (best_bid_ticker.m_bid == best_bid_ticker.m_ask) {
+          BOOST_LOG_TRIVIAL(warning) << "Best bid ticker has same ask!";
+          return;
+        }
+        if (best_ask_ticker.m_ask == best_ask_ticker.m_bid) {
+          BOOST_LOG_TRIVIAL(warning) << "Best ask ticker has same bid!";
           return;
         }
         // Limit trades rate
