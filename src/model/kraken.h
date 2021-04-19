@@ -12,7 +12,7 @@ extern const std::unordered_map<SymbolPairId, PrecisionSettings> KRAKEN_ORDER_PR
   {SymbolPairId::EOS_BTC, PrecisionSettings(7, 8, 6)},
   {SymbolPairId::EOS_USDT, PrecisionSettings(4, 8, 6)},
   {SymbolPairId::ADA_BTC, PrecisionSettings(8, 8, 6)},
-  {SymbolPairId::ADA_USDT, PrecisionSettings(8, 8, 6)},
+  {SymbolPairId::ADA_USDT, PrecisionSettings(6, 8, 6)},
   {SymbolPairId::ETH_BTC, PrecisionSettings(5, 8, 6)},
   {SymbolPairId::EOS_ETH, PrecisionSettings(6, 8, 6)},
   {SymbolPairId::ETH_USDT, PrecisionSettings(2, 8, 6)},
