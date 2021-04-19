@@ -1,6 +1,7 @@
 #pragma once
 
 #include "symbol_pair_settings.hpp"
+#include "utils/string.hpp"
 
 #include <cassert>
 
@@ -43,7 +44,9 @@ private:
         if (filter_type == "LOT_SIZE") {
           sps.min_qty = std::stod(filter["minQty"].get<std::string>());
           sps.max_qty = std::stod(filter["maxQty"].get<std::string>());
-          sps.step_size = std::stod(filter["stepSize"].get<std::string>());
+          const auto& step_size_str = filter["stepSize"].get<std::string>();
+          sps.step_size = std::stod(step_size_str);
+          sps.order_precision = cryptobot::precision_from_string(step_size_str);
         }
       }
       SymbolPair sp = SymbolPair::FromBinanceString(sps.symbol);

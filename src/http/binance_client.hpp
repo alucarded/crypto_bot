@@ -95,13 +95,12 @@ public:
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
     const std::string& symbol_str = GetSymbolString(symbol);
     auto pair_settings = m_binance_settings.GetPairSettings(symbol);
-    qty = qty - std::fmod(qty, pair_settings.step_size);
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
       .Header("X-MBX-APIKEY", g_api_key)
       .QueryParam("symbol", symbol_str)
       .QueryParam("side", (side == Side::BUY ? "BUY" : "SELL"))
       .QueryParam("type", "MARKET")
-      .QueryParam("quantity", cryptobot::to_string(qty, pair_settings.base_asset_precision))
+      .QueryParam("quantity", cryptobot::to_string(qty, pair_settings.order_precision))
       .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
       .send();
     if (!res) {
@@ -117,13 +116,12 @@ public:
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
     const std::string& symbol_str = GetSymbolString(symbol);
     auto pair_settings = m_binance_settings.GetPairSettings(symbol);
-    qty = qty - std::fmod(qty, pair_settings.step_size);
     HttpClient::Result res = m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
       .Header("X-MBX-APIKEY", g_api_key)
       .QueryParam("symbol", symbol_str)
       .QueryParam("side", (side == Side::BUY ? "BUY" : "SELL"))
       .QueryParam("type", "LIMIT")
-      .QueryParam("quantity", cryptobot::to_string(qty, pair_settings.base_asset_precision))
+      .QueryParam("quantity", cryptobot::to_string(qty, pair_settings.order_precision))
       .QueryParam("price", cryptobot::to_string(price, pair_settings.quote_precision))
       // TODO: for now always GTC
       .QueryParam("timeInForce", "GTC")
