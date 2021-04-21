@@ -108,6 +108,12 @@ public:
       return Result<Order>(res.response, res.errmsg);
     }
     json res_json = json::parse(res.response);
+    if (!res_json.contains("orderId")) {
+      const auto& errmsg = res_json["msg"].get<std::string>();
+      BOOST_LOG_TRIVIAL(error) << "Error response making market order request for "
+          << GetExchange() << ": " << errmsg;
+      return Result<Order>(res.response, errmsg);
+    }
     const auto& order_id = res_json["orderId"].get<int64_t>();
     const auto& client_order_id = res_json["clientOrderId"].get<std::string>();
     return Result<Order>(res.response, Order(std::to_string(order_id), client_order_id, symbol, side, OrderType::MARKET, qty));
@@ -132,6 +138,12 @@ public:
       return Result<Order>(res.response, res.errmsg);
     }
     json res_json = json::parse(res.response);
+    if (!res_json.contains("orderId")) {
+      const auto& errmsg = res_json["msg"].get<std::string>();
+      BOOST_LOG_TRIVIAL(error) << "Error response making limit order request for "
+          << GetExchange() << ": " << errmsg;
+      return Result<Order>(res.response, errmsg);
+    }
     const auto& order_id = res_json["orderId"].get<int64_t>();
     const auto& client_order_id = res_json["clientOrderId"].get<std::string>();
     return Result<Order>(res.response, Order(std::to_string(order_id), client_order_id, symbol, side, OrderType::LIMIT, qty));
