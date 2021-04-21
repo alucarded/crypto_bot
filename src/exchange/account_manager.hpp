@@ -10,6 +10,7 @@
 #include <mutex>
 #include <unordered_set>
 
+// TODO: AccountManager specializations for exchanges
 class AccountManager : public ExchangeClient, public UserDataListener {
 public:
   AccountManager(ExchangeClient* exchange_client)
@@ -32,8 +33,8 @@ public:
     auto& orders = open_orders_res.Get();
     for (auto& o : orders) {
       if (o.GetSymbolId() == SymbolPairId::UNKNOWN) {
-        BOOST_LOG_TRIVIAL(error) << "Order for unknown pair, exiting";
-        std::exit(1);
+        BOOST_LOG_TRIVIAL(warning) << "Order for unknown pair!";
+        continue;
       }
       HandleExternalOrder(o);
     }
@@ -47,6 +48,15 @@ public:
     m_account_balance_lock.lock();
     m_account_balance = std::move(res.Get());
     m_account_balance_lock.unlock();
+    // Replay cached orders
+    m_our_orders_lock.lock();
+    for (const auto& it: m_external_orders) {
+      AddLockedBalance(it.second);
+    }
+    for (const auto& it: m_our_orders) {
+      AddLockedBalance(it.second);
+    }
+    m_our_orders_lock.unlock();
   }
 
   virtual std::string GetExchange() override {
@@ -114,29 +124,34 @@ public:
   virtual void OnAccountBalanceUpdate(const AccountBalance& account_balance) override {
     BOOST_LOG_TRIVIAL(info) << "AccountManager::OnAccountBalanceUpdate " + GetExchange();
     BOOST_LOG_TRIVIAL(info) << "Account balance: " << account_balance << std::endl;
+    m_account_balance_lock.lock();
+    m_account_balance.UpdateTotalBalance(account_balance);
+    m_account_balance_lock.unlock();
   }
 
   virtual void OnOrderUpdate(const Order& order_update) override {
-    std::scoped_lock<std::mutex> lock{m_order_mutex};
+    std::unique_lock<std::mutex> lock{m_order_mutex, std::defer_lock};
     BOOST_LOG_TRIVIAL(debug) << "AccountManager::OnOrderUpdate " + GetExchange();
     BOOST_LOG_TRIVIAL(debug) << "Order: " << order_update;
     if (order_update.GetSymbolId() == SymbolPairId::UNKNOWN) {
       BOOST_LOG_TRIVIAL(error) << "Order for unknown pair, exiting";
       std::exit(1);
     }
+    // TODO: remove m_our_orders_lock ?
+    lock.lock();
     m_our_orders_lock.lock();
     auto it = m_our_orders.find(order_update.GetId());
     if (it == m_our_orders.end()) {
       m_our_orders_lock.unlock();
       BOOST_LOG_TRIVIAL(info) << "Update for order, which did not originate from here";
       HandleExternalOrder(order_update);
-      BOOST_LOG_TRIVIAL(debug) << "Account balance after order update: " << m_account_balance;
-      return;
+    } else {
+      Order& order = it->second;
+      BOOST_LOG_TRIVIAL(trace) << "AccountManager::UpdateOurOrder";
+      UpdateOurOrder(order_update, order);
     }
-    Order& order = it->second;
-    BOOST_LOG_TRIVIAL(trace) << "AccountManager::UpdateOurOrder";
-    UpdateOurOrder(order_update, order);
     m_our_orders_lock.unlock();
+    lock.unlock();
     m_account_balance_lock.lock();
     BOOST_LOG_TRIVIAL(debug) << "Account balance after order update: " << m_account_balance;
     m_account_balance_lock.unlock();
@@ -245,7 +260,6 @@ protected:
       case OrderStatus::CANCELED:
       case OrderStatus::REJECTED:
       case OrderStatus::EXPIRED: {
-          //TODO:
           m_external_orders_lock.lock();
           auto it = m_external_orders.find(order.GetId());
           if (it == m_external_orders.end()) {
@@ -253,6 +267,9 @@ protected:
             BOOST_LOG_TRIVIAL(warning) << "Order not present: " << order.GetId();
             return;
           }
+          it->second.SetExecutedQuantity(order.GetQuantity());
+          // TODO: take into account fee and fee currency
+          it->second.SetTotalCost(order.GetQuantity() * order.GetPrice());
           it->second.SetStatus(order.GetStatus());
           AdjustBalanceClosedOrder(it->second);
           m_external_orders.erase(it);
@@ -319,6 +336,7 @@ protected:
 protected:
   ExchangeClient* m_client;
   std::unordered_map<std::string, Order> m_external_orders;
+  // TODO: re-think locks - probably there are too many
   cryptobot::spinlock m_external_orders_lock;
   std::unordered_map<std::string, Order> m_our_orders;
   cryptobot::spinlock m_our_orders_lock;
