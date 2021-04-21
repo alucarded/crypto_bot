@@ -20,8 +20,9 @@
 class HttpClient {
 public:
   struct Options {
-    Options(const std::string& user_agent) : m_user_agent(user_agent) {}
-    std::string m_user_agent;
+    Options(const std::string& ua, size_t retries) : user_agent(ua), retry_count(retries) {}
+    std::string user_agent;
+    size_t retry_count;
     // TODO: add more
   };
 
@@ -37,7 +38,8 @@ public:
   public:
     Request(HttpClient& http_client, const std::string& host, const std::string& port,
         const std::string& path, boost::beast::http::verb method, const std::string& user_agent)
-        : m_http_client(http_client), m_host(host), m_port(port), m_path(path), m_method(method), m_user_agent(user_agent) {
+        : m_http_client(http_client), m_host(host), m_port(port), m_path(path), m_method(method), m_user_agent(user_agent),
+          m_retries(0) {
 
     }
 
@@ -105,7 +107,7 @@ public:
 
       // Default headers
       req.set(boost::beast::http::field::host, m_host);
-      //req.set(boost::beast::http::field::user_agent, m_user_agent);
+      //req.set(boost::beast::http::field::user_agent, user_agent);
       // TODO: content type should not be hardcoded
       //req.set(boost::beast::http::field::content_type, "application/x-www-form-urlencoded");
 
@@ -130,6 +132,7 @@ public:
     std::unordered_map<std::string, std::string> m_query_params;
     std::unordered_map<std::string, std::string> m_headers;
     // TODO: support all types of requests
+    size_t m_retries;
 
     std::function<void(Request&, std::string&)> m_signing_function;
 
@@ -153,19 +156,19 @@ public:
   // TODO: capitalize all method names!!!
   // TODO: For now it is always https
   HttpClient::Request get(const std::string& host, const std::string& port, const std::string& path) {
-    return Request(*this, host, port, path, boost::beast::http::verb::get, m_options.m_user_agent);
+    return Request(*this, host, port, path, boost::beast::http::verb::get, m_options.user_agent);
   }
 
   HttpClient::Request post(const std::string& host, const std::string& port, const std::string& path) {
-    return Request(*this, host, port, path, boost::beast::http::verb::post, m_options.m_user_agent);
+    return Request(*this, host, port, path, boost::beast::http::verb::post, m_options.user_agent);
   }
 
   HttpClient::Request put(const std::string& host, const std::string& port, const std::string& path) {
-    return Request(*this, host, port, path, boost::beast::http::verb::put, m_options.m_user_agent);
+    return Request(*this, host, port, path, boost::beast::http::verb::put, m_options.user_agent);
   }
 
   HttpClient::Request delete_(const std::string& host, const std::string& port, const std::string& path) {
-    return Request(*this, host, port, path, boost::beast::http::verb::delete_, m_options.m_user_agent);
+    return Request(*this, host, port, path, boost::beast::http::verb::delete_, m_options.user_agent);
   }
 
 #define __STRINGIZE_I(x) #x
@@ -194,18 +197,15 @@ public:
 
     boost::system::error_code ec;
     boost::beast::http::response<boost::beast::http::string_body> bres = SendImpl(request, ec);
-    if (ec == boost::beast::http::error::end_of_stream) {
-      // Reconnect and try again
-      if (!OpenConnection(request.m_host, request.m_port, res)) {
-        return res;
-      }
-      BOOST_LOG_TRIVIAL(debug) << "Open connection again milliseconds: " << m_timer.checkpoint();
-      bres = SendImpl(request, ec);
-    }
     if ( ec ) {
-      // Something with the stream is broken - intialize it again next time
-      m_ssl_stream_opt.reset();
       __MAKE_ERRMSG(res, ec.message());
+      m_ssl_stream_opt.reset();
+      // Reconnect and try again
+      if (request.m_retries < m_options.retry_count) {
+        ++request.m_retries;
+        return send(request);
+      }
+      m_timer.stop();
       return res;
     }
     // TODO: perhaps add parsing in this move assignment (response class implementing move assignment with parsing)

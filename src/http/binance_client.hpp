@@ -79,7 +79,7 @@ public:
 
   BinanceClient()
       : m_last_order_id(0),
-        m_http_client(HttpClient::Options("cryptobot-1.0.0")),
+        m_http_client(HttpClient::Options("cryptobot-1.0.0", 1)),
         m_timeout(1000),
         m_binance_settings(GetExchangeInfo()) {
   }

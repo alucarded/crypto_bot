@@ -113,7 +113,7 @@ public:
   inline static const std::string GET_OPEN_ORDERS_PATH = "/0/private/OpenOrders";
   inline static const std::string GET_WEB_SOCKETS_TOKEN_PATH = "/0/private/GetWebSocketsToken";
 
-  KrakenClient() : m_http_client(HttpClient::Options("cryptobot-1.0.0")) {
+  KrakenClient() : m_http_client(HttpClient::Options("cryptobot-1.0.0", 1)) {
 
   }
 
