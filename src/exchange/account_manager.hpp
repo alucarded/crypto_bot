@@ -136,9 +136,9 @@ public:
         BOOST_LOG_TRIVIAL(warning) << "Order for unknown pair!";
         return;
     }
-    std::unique_lock<std::mutex> lock{m_order_mutex, std::defer_lock};
+    std::unique_lock<std::mutex> order_lock{m_order_mutex, std::defer_lock};
     // TODO: remove m_our_orders_lock ?
-    lock.lock();
+    order_lock.lock();
     m_our_orders_lock.lock();
     auto it = m_our_orders.find(order_update.GetId());
     if (it == m_our_orders.end()) {
@@ -151,7 +151,6 @@ public:
       UpdateOurOrder(order_update, order);
     }
     m_our_orders_lock.unlock();
-    lock.unlock();
     m_account_balance_lock.lock();
     BOOST_LOG_TRIVIAL(debug) << "Account balance after order update: " << m_account_balance;
     m_account_balance_lock.unlock();
@@ -159,6 +158,7 @@ public:
     m_account_balance_lock.lock();
     BOOST_LOG_TRIVIAL(debug) << "Account balance after refresh: " << m_account_balance;
     m_account_balance_lock.unlock();
+    order_lock.unlock();
   }
 
   bool HasOpenOrders() {
