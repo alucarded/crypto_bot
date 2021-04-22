@@ -130,13 +130,13 @@ public:
   }
 
   virtual void OnOrderUpdate(const Order& order_update) override {
-    std::unique_lock<std::mutex> lock{m_order_mutex, std::defer_lock};
     BOOST_LOG_TRIVIAL(debug) << "AccountManager::OnOrderUpdate " + GetExchange();
     BOOST_LOG_TRIVIAL(debug) << "Order: " << order_update;
     if (order_update.GetSymbolId() == SymbolPairId::UNKNOWN) {
-      BOOST_LOG_TRIVIAL(error) << "Order for unknown pair, exiting";
-      std::exit(1);
+        BOOST_LOG_TRIVIAL(warning) << "Order for unknown pair!";
+        return;
     }
+    std::unique_lock<std::mutex> lock{m_order_mutex, std::defer_lock};
     // TODO: remove m_our_orders_lock ?
     lock.lock();
     m_our_orders_lock.lock();
