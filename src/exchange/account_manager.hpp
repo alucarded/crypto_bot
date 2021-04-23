@@ -66,7 +66,7 @@ public:
   // ExchangeClient
 
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
-    std::scoped_lock<std::mutex> lock{m_order_mutex};
+    std::scoped_lock<std::mutex> order_lock{m_order_mutex};
     // TODO: register all order ids (so that we know, which ones do we manage, how many our open orders are there etc)
     auto res = m_client->MarketOrder(symbol, side, qty);
     if (res) {
@@ -81,7 +81,7 @@ public:
   }
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
-    std::scoped_lock<std::mutex> lock{m_order_mutex};
+    std::scoped_lock<std::mutex> order_lock{m_order_mutex};
     auto res = m_client->LimitOrder(symbol, side, qty, price);
     if (res) {
       auto& order = res.Get();
@@ -122,6 +122,7 @@ public:
   }
 
   virtual void OnAccountBalanceUpdate(const AccountBalance& account_balance) override {
+    std::scoped_lock<std::mutex> order_lock{m_order_mutex};
     BOOST_LOG_TRIVIAL(info) << "AccountManager::OnAccountBalanceUpdate " + GetExchange();
     BOOST_LOG_TRIVIAL(info) << "Account balance: " << account_balance << std::endl;
     m_account_balance_lock.lock();
@@ -136,29 +137,29 @@ public:
         BOOST_LOG_TRIVIAL(warning) << "Order for unknown pair!";
         return;
     }
-    std::unique_lock<std::mutex> order_lock{m_order_mutex, std::defer_lock};
-    // TODO: remove m_our_orders_lock ?
-    order_lock.lock();
-    m_our_orders_lock.lock();
-    auto it = m_our_orders.find(order_update.GetId());
-    if (it == m_our_orders.end()) {
+    {
+      std::scoped_lock<std::mutex> order_lock{m_order_mutex};
+      // TODO: remove m_our_orders_lock ?
+      m_our_orders_lock.lock();
+      auto it = m_our_orders.find(order_update.GetId());
+      if (it == m_our_orders.end()) {
+        m_our_orders_lock.unlock();
+        BOOST_LOG_TRIVIAL(info) << "Update for order, which did not originate from here";
+        HandleExternalOrder(order_update);
+      } else {
+        Order& order = it->second;
+        BOOST_LOG_TRIVIAL(trace) << "AccountManager::UpdateOurOrder";
+        UpdateOurOrder(order_update, order);
+      }
       m_our_orders_lock.unlock();
-      BOOST_LOG_TRIVIAL(info) << "Update for order, which did not originate from here";
-      HandleExternalOrder(order_update);
-    } else {
-      Order& order = it->second;
-      BOOST_LOG_TRIVIAL(trace) << "AccountManager::UpdateOurOrder";
-      UpdateOurOrder(order_update, order);
+      m_account_balance_lock.lock();
+      BOOST_LOG_TRIVIAL(debug) << "Account balance after order update: " << m_account_balance;
+      m_account_balance_lock.unlock();
+      RefreshAccountBalance();
+      m_account_balance_lock.lock();
+      BOOST_LOG_TRIVIAL(debug) << "Account balance after refresh: " << m_account_balance;
+      m_account_balance_lock.unlock();
     }
-    m_our_orders_lock.unlock();
-    m_account_balance_lock.lock();
-    BOOST_LOG_TRIVIAL(debug) << "Account balance after order update: " << m_account_balance;
-    m_account_balance_lock.unlock();
-    RefreshAccountBalance();
-    m_account_balance_lock.lock();
-    BOOST_LOG_TRIVIAL(debug) << "Account balance after refresh: " << m_account_balance;
-    m_account_balance_lock.unlock();
-    order_lock.unlock();
   }
 
   bool HasOpenOrders() {

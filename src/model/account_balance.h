@@ -21,6 +21,7 @@ struct AccountBalance {
 
   AccountBalance& operator=(AccountBalance&& account_balance) {
     m_asset_balance_map = std::move(account_balance.m_asset_balance_map);
+    m_locked_balance_map = std::move(account_balance.m_locked_balance_map);
     return *this;
   }
 
@@ -52,6 +53,12 @@ struct AccountBalance {
 
   const std::unordered_map<SymbolId, double>& GetBalanceMap() const {
     return m_asset_balance_map;
+  }
+
+  void UpdateTotalBalance(const AccountBalance& other) {
+    for (const auto& p : other.GetBalanceMap()) {
+      SetTotalBalance(p.first, p.second);
+    }
   }
 
   // This should always contain full balance per asset (open orders included)
