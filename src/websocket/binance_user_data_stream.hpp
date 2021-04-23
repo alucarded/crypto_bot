@@ -45,6 +45,8 @@ private:
       res = m_binance_client->StartUserDataStream();
     }
     m_uri = "wss://stream.binance.com:9443/ws/" + res.value();
+    // TODO: block sending orders until we are connected
+    // TODO: refresh open orders and balance
   }
 
   virtual bool OnPing(websocketpp::connection_hdl conn, std::string payload) override {

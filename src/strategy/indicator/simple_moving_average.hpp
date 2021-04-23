@@ -38,12 +38,21 @@ public:
     return std::optional<double>(m_smas[m_smas.size() - 1]);
   }
 
+  inline double GetUnsafe() const {
+    return m_smas[m_smas.size() - 1];
+  }
+
   std::optional<double> GetSlope() const {
     size_t sz = m_smas.size();
     if (sz < 2) {
       return std::nullopt;
     }
     return std::optional<double>(m_smas[sz - 1] - m_smas[sz - 2]);
+  }
+
+  inline double GetSlopeUnsafe() const {
+    const size_t sz = m_smas.size();
+    return m_smas[sz - 1] - m_smas[sz - 2];
   }
 private:
   const size_t m_period;

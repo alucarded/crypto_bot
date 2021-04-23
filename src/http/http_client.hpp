@@ -144,7 +144,7 @@ public:
   HttpClient(const Options& options) :
     m_ioctx(),
     m_options(options),
-    m_ssl_ctx{boost::asio::ssl::context::sslv23_client},
+    m_ssl_ctx{boost::asio::ssl::context::tlsv12_client},
     m_resolver{m_ioctx} {
 
   }
@@ -203,6 +203,7 @@ public:
       // Reconnect and try again
       if (request.m_retries < m_options.retry_count) {
         ++request.m_retries;
+        BOOST_LOG_TRIVIAL(debug) << "Retrying HTTP request. Attempt: " << request.m_retries;
         return send(request);
       }
       m_timer.stop();
@@ -212,6 +213,7 @@ public:
     res.response = std::move(bres.body());
     m_timer.stop();
     BOOST_LOG_TRIVIAL(debug) << "HTTP request-response total: " << m_timer.elapsedMilliseconds();
+    BOOST_LOG_TRIVIAL(debug) << "HTTP response header: " << bres.base();
     BOOST_LOG_TRIVIAL(debug) << "HTTP response body: " << res.response;
 
     // if (!bres.keep_alive()) {

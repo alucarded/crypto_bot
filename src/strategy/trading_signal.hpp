@@ -4,7 +4,12 @@ enum PriceOutlook : int {
   BULLISH = 1
 };
 
+struct Prediction {
+  PriceOutlook price_outlook;
+  double target_price;
+};
+
 class TradingSignal {
 public:
-  virtual PriceOutlook GetPRiceOutlook() const = 0;
+  virtual Prediction Predict() const = 0;
 };

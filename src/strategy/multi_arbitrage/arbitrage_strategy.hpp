@@ -4,6 +4,7 @@
 #include "exchange/exchange_listener.h"
 #include "consumer/consumer.h"
 #include "model/options.h"
+#include "strategy/mean_reversion_signal.hpp"
 #include "strategy/trading_strategy.h"
 #include "utils/math.hpp"
 #include "utils/spinlock.hpp"
@@ -32,6 +33,11 @@ struct ArbitrageStrategyOptions {
   int64_t m_min_trade_interval_us;
   double m_base_currency_ratio;
   double m_allowed_deviation;
+};
+
+struct OrderFutures {
+  std::future<Result<Order>> buy_order_future;
+  std::future<Result<Order>> sell_order_future;
 };
 
 class ArbitrageStrategy : public TradingStrategy, public ExchangeListener {
@@ -66,9 +72,18 @@ public:
   }
 
   virtual void OnTicker(const Ticker& ticker) override {
-    //std::cout << ticker << std::endl;
     SymbolPair current_symbol_pair = ticker.m_symbol;
     SymbolPairId current_symbol_id = SymbolPairId(current_symbol_pair);
+#ifdef WITH_MEAN_REVERSION_SIGNAL
+    // Only one exchange guarantees the block will be run by only one thread
+    if (ticker.m_exchange == "binance") {
+      // Update signal
+      if (m_mrs.find(current_symbol_id) == m_mrs.end()) {
+        m_mrs.emplace(current_symbol_id, MeanReversionSignal(8u, 21u, 55u));
+      }
+      m_mrs[current_symbol_id].Consume(ticker);
+    }
+#endif
     m_tickers_lock.lock();
     m_tickers[current_symbol_id][ticker.m_exchange] = ticker;
     auto match_opt = m_matcher.FindMatch(m_tickers[current_symbol_id]);
@@ -133,10 +148,7 @@ public:
           BOOST_LOG_TRIVIAL(warning) << "Not enough funds.";
           return;
         }
-        // if (HasOpenOrders(best_bid_exchange) || HasOpenOrders(best_ask_exchange)) {
-        //   BOOST_LOG_TRIVIAL(warning) << "There are open orders.";
-        //   return;
-        // }
+
         if (best_bid_ticker.m_bid == best_bid_ticker.m_ask) {
           BOOST_LOG_TRIVIAL(warning) << "Best bid ticker has same ask!";
           return;
@@ -152,27 +164,56 @@ public:
           BOOST_LOG_TRIVIAL(info) << "Rate limiting trades";
           return;
         }
+        std::unique_lock<std::mutex> lock_obj(m_orders_mutex, std::defer_lock);
         // Only one thread can send orders at any given point,
         // skip if another thread is currently sending orders.
-        BOOST_LOG_TRIVIAL(debug) << "Trying to lock";
-        std::unique_lock<std::mutex> lock_obj(m_orders_mutex, std::defer_lock);
         if (lock_obj.try_lock()) {
-          auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
-              current_symbol_id, Side::SELL, vol, best_bid_ticker.m_bid);
-          auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
-              current_symbol_id, Side::BUY, vol, best_ask_ticker.m_ask);
-          auto f1_res = f1.get();
-          if (!f1_res) {
-            BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
-            std::exit(1);
-          }
-          auto f2_res = f2.get();
-          if (!f2_res) {
-            BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
-            std::exit(1);
-          }
-          BOOST_LOG_TRIVIAL(info) << "Arbitrage match good enough. Order sent!";
-          BOOST_LOG_TRIVIAL(info) << match << std::endl;
+#ifdef WITH_MEAN_REVERSION_SIGNAL
+          Prediction prediction = m_mrs[current_symbol_id].Predict();
+          switch(prediction.price_outlook) {
+            case PriceOutlook::BEARISH: {
+                auto f1 = std::async(std::launch::async, &ExchangeClient::MarketOrder, m_account_managers[best_bid_exchange].get(),
+                    current_symbol_id, Side::SELL, vol);
+                auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
+                    current_symbol_id, Side::BUY, vol, prediction.target_price);
+                auto f1_res = f1.get();
+                if (!f1_res) {
+                  BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
+                  std::exit(1);
+                }
+                auto f2_res = f2.get();
+                if (!f2_res) {
+                  BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
+                  std::exit(1);
+                }
+              }
+              break;
+            case PriceOutlook::NEUTRAL:
+              SendBasicArbitrageOrders(best_bid_ticker, best_ask_ticker, vol);
+              break;
+            case PriceOutlook::BULLISH: {
+                auto f1 = std::async(std::launch::async, &ExchangeClient::MarketOrder, m_account_managers[best_ask_exchange].get(),
+                    current_symbol_id, Side::BUY, vol);
+                auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
+                    current_symbol_id, Side::SELL, vol, prediction.target_price);
+                auto f1_res = f1.get();
+                if (!f1_res) {
+                  BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
+                  std::exit(1);
+                }
+                auto f2_res = f2.get();
+                if (!f2_res) {
+                  BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
+                  std::exit(1);
+                }
+              }
+              break;
+            default:
+              throw std::runtime_error("Unsupported PriceOutlook value");
+          };
+#else
+          SendBasicArbitrageOrders(best_bid_ticker, best_ask_ticker, vol);
+#endif
           lock_obj.unlock();
         }
       }
@@ -216,6 +257,30 @@ public:
 
 private:
 
+  void SendBasicArbitrageOrders(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker, double vol) {
+    const auto& best_bid_exchange = best_bid_ticker.m_exchange;
+    const auto& best_ask_exchange = best_ask_ticker.m_exchange;
+    SymbolPairId current_symbol_id = SymbolPairId(best_bid_ticker.m_symbol); 
+    auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
+        current_symbol_id, Side::SELL, vol, best_bid_ticker.m_bid);
+    auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
+        current_symbol_id, Side::BUY, vol, best_ask_ticker.m_ask);
+    auto f1_res = f1.get();
+    if (!f1_res) {
+      BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
+      std::exit(1);
+    }
+    auto f2_res = f2.get();
+    if (!f2_res) {
+      BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
+      std::exit(1);
+    }
+    BOOST_LOG_TRIVIAL(info) << "Arbitrage match good enough. Order sent!";
+    BOOST_LOG_TRIVIAL(info) << "Best bid: " << best_bid_ticker;
+    BOOST_LOG_TRIVIAL(info) << "Best ask: " << best_ask_ticker;
+    //BOOST_LOG_TRIVIAL(info) << match << std::endl;
+  }
+
   inline bool CanSell(const std::string& exchange_name, SymbolPair symbol_pair, double amount) {
     SymbolId symbol_id = symbol_pair.GetBaseAsset();
     double balance = m_account_managers[exchange_name]->GetFreeBalance(symbol_id);
@@ -237,6 +302,7 @@ private:
   ArbitrageStrategyMatcher m_matcher;
   // symbol -> (exchange -> ticker)
   std::map<SymbolPairId, std::map<std::string, Ticker>> m_tickers;
+  std::map<SymbolPairId, MeanReversionSignal> m_mrs;
   std::mutex m_orders_mutex;
   cryptobot::spinlock m_tickers_lock;
   std::atomic<int64_t> m_last_trade_us;
