@@ -79,7 +79,7 @@ public:
     if (ticker.m_exchange == "binance") {
       // Update signal
       if (m_mrs.find(current_symbol_id) == m_mrs.end()) {
-        m_mrs.emplace(current_symbol_id, MeanReversionSignal(8u, 21u, 55u));
+        m_mrs.emplace(current_symbol_id, MeanReversionSignal(8u, 21u, 55u, 8u));
       }
       m_mrs[current_symbol_id].Consume(ticker);
     }
@@ -187,6 +187,9 @@ public:
 #else
           SendBasicArbitrageOrders(best_bid_ticker, best_ask_ticker, order_size);
 #endif
+          BOOST_LOG_TRIVIAL(info) << "Arbitrage match. Orders sent!";
+          BOOST_LOG_TRIVIAL(info) << "Best bid ticker: " << best_bid_ticker;
+          BOOST_LOG_TRIVIAL(info) << "Best ask ticker: " << best_ask_ticker;
           lock_obj.unlock();
         }
       }
@@ -248,10 +251,6 @@ private:
       BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
       std::exit(1);
     }
-    BOOST_LOG_TRIVIAL(info) << "Arbitrage match good enough. Order sent!";
-    BOOST_LOG_TRIVIAL(info) << "Best bid: " << best_bid_ticker;
-    BOOST_LOG_TRIVIAL(info) << "Best ask: " << best_ask_ticker;
-    //BOOST_LOG_TRIVIAL(info) << match << std::endl;
   }
 
   inline double GetBaseBalance(const std::string& exchange_name, SymbolPair symbol_pair) const {
@@ -259,7 +258,7 @@ private:
     return m_account_managers.at(exchange_name)->GetFreeBalance(symbol_id);
   }
 
-  inline bool GetQuoteBalance(const std::string& exchange_name, SymbolPair symbol_pair) const {
+  inline double GetQuoteBalance(const std::string& exchange_name, SymbolPair symbol_pair) const {
     SymbolId symbol_id = symbol_pair.GetQuoteAsset();
     return m_account_managers.at(exchange_name)->GetFreeBalance(symbol_id);
   }
@@ -285,6 +284,8 @@ private:
 
     double base_asset_balance = GetBaseBalance(best_bid_ticker.m_exchange, sp);
     double quote_asset_balance = GetQuoteBalance(best_ask_ticker.m_exchange, sp);
+    BOOST_LOG_TRIVIAL(debug) << best_bid_ticker.m_exchange << " - base asset account balance: " << base_asset_balance;
+    BOOST_LOG_TRIVIAL(debug) << best_ask_ticker.m_exchange << " - quote asset account balance: " << quote_asset_balance;
     // 2. Allow maximum 98% of actual balance to be traded
     // This is to decrease risk of order failure due to insufficient funds (workaround inaccurate balance or not taking fee into account)
     double tradable_base_balance = 0.98 * base_asset_balance;
@@ -293,6 +294,8 @@ private:
     double quote_vol = std::min(base_vol * best_ask_ticker.m_ask, tradable_quote_balance);
     // Maximum volume available for arbitrage
     base_vol = std::min({base_vol, quote_vol/best_ask_ticker.m_ask, tradable_base_balance});
+    BOOST_LOG_TRIVIAL(debug) << "tradable_base_balance=" << tradable_base_balance << ", tradable_quote_balance=" << tradable_quote_balance
+        << ", quote_vol=" << quote_vol << ", base_vol=" << base_vol;
 
     return base_vol;
   }

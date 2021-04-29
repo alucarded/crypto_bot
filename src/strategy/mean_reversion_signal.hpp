@@ -1,3 +1,4 @@
+#include "indicator/average_true_range.hpp"
 #include "indicator/simple_moving_average.hpp"
 #include "model/candle.h"
 #include "trading_signal.hpp"
@@ -10,29 +11,30 @@
 using namespace std::chrono;
 
 struct MeanReversionSignalSettings {
-  MeanReversionSignalSettings(size_t sh, size_t mid, size_t lng)
-      : short_sma_period(sh), mid_sma_period(mid), long_sma_period(lng) {}
+  MeanReversionSignalSettings(size_t sh, size_t mid, size_t lng, size_t atr_p)
+      : short_sma_period(sh), mid_sma_period(mid), long_sma_period(lng), atr_period(atr_p) {}
   size_t short_sma_period;
   size_t mid_sma_period;
   size_t long_sma_period;
+  size_t atr_period;
 };
 
 class MeanReversionSignal : public TradingSignal {
 public:
 
   MeanReversionSignal()
-      : m_minute(0), m_sma_short(8), m_sma_mid(21), m_sma_long(55) {
+      : m_minute(0), m_sma_short(8), m_sma_mid(21), m_sma_long(55), m_atr(8) {
 
   }
 
   MeanReversionSignal(const MeanReversionSignalSettings& settings)
       : m_minute(0), m_sma_short(settings.short_sma_period), m_sma_mid(settings.mid_sma_period),
-        m_sma_long(settings.long_sma_period) {
+        m_sma_long(settings.long_sma_period), m_atr(settings.atr_period) {
 
   }
 
-  MeanReversionSignal(size_t short_sma_period, size_t mid_sma_period, size_t long_sma_period)
-      : m_minute(0), m_sma_short(short_sma_period), m_sma_mid(mid_sma_period), m_sma_long(long_sma_period) {
+  MeanReversionSignal(size_t short_sma_period, size_t mid_sma_period, size_t long_sma_period, size_t atr_period)
+      : m_minute(0), m_sma_short(short_sma_period), m_sma_mid(mid_sma_period), m_sma_long(long_sma_period), m_atr(atr_period) {
 
   }
 
@@ -63,15 +65,16 @@ public:
   
     // We try to take advantage of longer term momentum (trend measured as SMA slope) and shorter term mean reversion
     // TODO: better way of finding target price (perhaps use some stochastic method and create couple of orders)
-    // TODO: ...and also set threshold instead of current_price (eg. use ATR)
-    auto take_profit_price = GetTargetPrice();
-    if (short_sma > current_price && mid_sma > current_price && long_sma > current_price
-        && short_sma_slope > 0 && mid_sma_slope > 0 && long_sma_slope > 0) {
+    double margin = m_atr.Get();
+    if (short_sma > current_price + margin && mid_sma > current_price && long_sma > current_price
+        /*&& short_sma_slope > 0*/ && mid_sma_slope > 0 && long_sma_slope > 0) {
+      auto take_profit_price = GetTargetChange(current_price) + current_price;
       BOOST_LOG_TRIVIAL(info) << "Bullish prediction: " << take_profit_price;
       return {PriceOutlook::BULLISH, take_profit_price};
     }
-    if (short_sma < current_price && mid_sma < current_price && long_sma < current_price
-        && short_sma_slope < 0 && mid_sma_slope < 0 && long_sma_slope < 0) {
+    if (short_sma < current_price - margin && mid_sma < current_price && long_sma < current_price
+        /*&& short_sma_slope < 0*/ && mid_sma_slope < 0 && long_sma_slope < 0) {
+      auto take_profit_price = GetTargetChange(current_price) + current_price;
       BOOST_LOG_TRIVIAL(info) << "Bearish prediction: " << take_profit_price;
       return {PriceOutlook::BEARISH, take_profit_price};
     }
@@ -80,53 +83,48 @@ public:
   }
 
   void Consume(const Ticker& ticker) {
+    double mean_price = (ticker.m_bid + ticker.m_ask) / 2;
+    m_candle.Add(mean_price, 0);
+
     auto now = system_clock::now();
     system_clock::duration tp = now.time_since_epoch();
     minutes mins = duration_cast<minutes>(tp);
     auto mins_count = mins.count();
     if (m_minute < mins_count) {
-      double mean_price = (ticker.m_bid + ticker.m_ask) / 2;
       BOOST_LOG_TRIVIAL(info) << "Minute close for " << ticker.m_symbol << ": " << mean_price;
       m_closes.push_back(mean_price);
       m_sma_short.Update(m_closes);
       m_sma_mid.Update(m_closes);
       m_sma_long.Update(m_closes);
+      m_atr.Update(m_candle);
+      // TODO: previous close == current open, is it ok?
+      m_candle.Reset(m_candle.GetClose(), 0);
       m_minute = mins_count;
     }
     m_ticker = ticker;
-    // TODO: use spread and volatility somehow ?
-    // if (m_minute < mins_count) {
-    //   m_candles.push_back(m_candle);
-    //   m_sma.Add(m_candle.GetClose());
-    //   // TODO: add trade volume
-    //   m_candle.Reset(mean_price, 0);
-    //   return;
-    // }
-    // assert(m_minute == mins_count);
-    // m_candle.Add(mean_price, 0);
   }
 private:
   
-  double GetTargetPrice() const {
+  double GetTargetChange(double current_price) const {
     assert(m_sma_mid.Get().has_value());
     assert(m_sma_long.Get().has_value());
     auto mid_sma = m_sma_mid.GetUnsafe();
     auto long_sma = m_sma_long.GetUnsafe();
-    // assert(m_sma_mid.GetSlope().has_value());
-    // assert(m_sma_long.GetSlope().has_value());
-    // auto mid_sma_slope = m_sma_mid.GetSlopeUnsafe();
-    // auto long_sma_slope = m_sma_long.GetSlopeUnsafe();  
-    return (mid_sma + long_sma) / 2;
+    double atr = m_atr.Get();
+    double sma_change = ((mid_sma + long_sma) / 2) - current_price;
+    double res = std::max(std::abs(sma_change), atr);
+    return mid_sma > current_price ? res : -res;
   }
 
 private:
   uint64_t m_minute;
-  // // TODO: update candles in a separate CandleHistory object
-  // Candle m_candle;
-  // std::vector<Candle> m_candles;
+  Candle m_candle;
   std::vector<double> m_closes;
+  // std::vector<double> m_lows;
+  // std::vector<double> m_highs;
   SimpleMovingAverage m_sma_short;
   SimpleMovingAverage m_sma_mid;
   SimpleMovingAverage m_sma_long;
+  AverageTrueRange m_atr;
   Ticker m_ticker;
 };

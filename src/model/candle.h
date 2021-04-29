@@ -1,3 +1,7 @@
+#pragma once
+
+#include <algorithm>
+
 struct Candle {
   Candle() : o(0), h(0), l(0), c(0) {}
 
