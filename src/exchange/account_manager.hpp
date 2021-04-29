@@ -49,14 +49,19 @@ public:
     m_account_balance = std::move(res.Get());
     m_account_balance_lock.unlock();
     // Replay cached orders
-    m_our_orders_lock.lock();
+    m_external_orders_lock.lock();
     for (const auto& it: m_external_orders) {
       AddLockedBalance(it.second);
     }
+    m_external_orders_lock.unlock();
+    m_our_orders_lock.lock();
     for (const auto& it: m_our_orders) {
       AddLockedBalance(it.second);
     }
     m_our_orders_lock.unlock();
+    m_account_balance_lock.lock();
+    BOOST_LOG_TRIVIAL(debug) << GetExchange() + " - account balance after refresh: " << m_account_balance;
+    m_account_balance_lock.unlock();
   }
 
   virtual std::string GetExchange() override {
@@ -95,8 +100,10 @@ public:
     return res;
   }
 
+  // This will return the cached balance
   virtual Result<AccountBalance> GetAccountBalance() override {
-    return m_client->GetAccountBalance();
+    return Result<AccountBalance>("", m_account_balance);
+    //return m_client->GetAccountBalance();
   }
 
   virtual void CancelAllOrders() override {
@@ -141,24 +148,24 @@ public:
       std::scoped_lock<std::mutex> order_lock{m_order_mutex};
       // TODO: remove m_our_orders_lock ?
       m_our_orders_lock.lock();
-      auto it = m_our_orders.find(order_update.GetId());
-      if (it == m_our_orders.end()) {
-        m_our_orders_lock.unlock();
+      auto it_our = m_our_orders.find(order_update.GetId());
+      bool is_our = it_our != m_our_orders.end();
+      m_our_orders_lock.unlock();
+      if (!is_our) {
         BOOST_LOG_TRIVIAL(info) << "Update for order, which did not originate from here";
         HandleExternalOrder(order_update);
       } else {
-        Order& order = it->second;
+        m_our_orders_lock.lock();
+        Order& order = it_our->second;
         BOOST_LOG_TRIVIAL(trace) << "AccountManager::UpdateOurOrder";
         UpdateOurOrder(order_update, order);
+        m_our_orders_lock.unlock();
       }
-      m_our_orders_lock.unlock();
       m_account_balance_lock.lock();
       BOOST_LOG_TRIVIAL(debug) << "Account balance after order update: " << m_account_balance;
       m_account_balance_lock.unlock();
+      // TODO: do this in separate thread, periodically (not perfect, but better)
       RefreshAccountBalance();
-      m_account_balance_lock.lock();
-      BOOST_LOG_TRIVIAL(debug) << "Account balance after refresh: " << m_account_balance;
-      m_account_balance_lock.unlock();
     }
   }
 
@@ -184,6 +191,7 @@ public:
     m_account_balance_lock.lock();
     double ret = m_account_balance.GetFreeBalance(symbol_id);
     m_account_balance_lock.unlock();
+    BOOST_LOG_TRIVIAL(debug) << "Free " << symbol_id << " balance: " << ret;
     return ret;
   }
 
@@ -217,7 +225,7 @@ protected:
         m_our_orders.erase(order.GetId());
         break;
       case OrderStatus::CANCELED:
-        AdjustBalanceClosedOrder(order);
+        SubtractLockedBalance(order);
         m_our_orders.erase(order.GetId());
         break;
       case OrderStatus::PENDING_CANCEL:
@@ -239,14 +247,17 @@ protected:
   }
 
   void HandleExternalOrder(const Order& order) {
+    m_external_orders_lock.lock();
+    auto it = m_external_orders.find(order.GetId());
+    bool was_added = it != m_external_orders.end();
+    m_external_orders_lock.unlock();
     switch (order.GetStatus()) {
         case OrderStatus::NEW: {
-          m_external_orders_lock.lock();
-          if (m_external_orders.count(order.GetId()) > 0) {
-            m_external_orders_lock.unlock();
+          if (was_added) {
             BOOST_LOG_TRIVIAL(warning) << "Order already added: " << order.GetId();
             return;
           }
+          m_external_orders_lock.lock();
           m_external_orders.emplace(order.GetId(), order);
           m_external_orders_lock.unlock();
 
@@ -261,13 +272,11 @@ protected:
       case OrderStatus::CANCELED:
       case OrderStatus::REJECTED:
       case OrderStatus::EXPIRED: {
-          m_external_orders_lock.lock();
-          auto it = m_external_orders.find(order.GetId());
-          if (it == m_external_orders.end()) {
-            m_external_orders_lock.unlock();
+          if (!was_added) {
             BOOST_LOG_TRIVIAL(warning) << "Order not present: " << order.GetId();
             return;
           }
+          m_external_orders_lock.lock();
           it->second.SetExecutedQuantity(order.GetQuantity());
           // TODO: take into account fee and fee currency
           it->second.SetTotalCost(order.GetQuantity() * order.GetPrice());
