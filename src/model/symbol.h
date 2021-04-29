@@ -8,6 +8,7 @@ enum SymbolPairId : int {
   ADA_USDT = 0,
   BNB_USDT,
   BTC_USDT,
+  DOGE_USDT,
   DOT_USDT,
   ETH_USDT,
   EOS_USDT,
@@ -26,6 +27,7 @@ std::ostream& operator<< (std::ostream& os, SymbolPairId spid) {
     case SymbolPairId::ADA_USDT: return os << "ADA_USDT";
     case SymbolPairId::BNB_USDT: return os << "BNB_USDT";
     case SymbolPairId::BTC_USDT: return os << "BTC_USDT";
+    case SymbolPairId::DOGE_USDT: return os << "DOGE_USDT";
     case SymbolPairId::DOT_USDT: return os << "DOT_USDT";
     case SymbolPairId::ETH_USDT: return os << "ETH_USDT";
     case SymbolPairId::EOS_USDT: return os << "EOS_USDT";
@@ -45,6 +47,7 @@ enum SymbolId : int {
   ADA = 0,
   BNB,
   BTC,
+  DOGE,
   DOT,
   ETH,
   EOS,
@@ -58,6 +61,7 @@ std::ostream& operator<< (std::ostream& os, SymbolId sid) {
     case SymbolId::ADA: return os << "ADA";
     case SymbolId::BNB: return os << "BNB";
     case SymbolId::BTC: return os << "BTC";
+    case SymbolId::DOGE: return os << "DOGE";
     case SymbolId::DOT: return os << "DOT";
     case SymbolId::ETH: return os << "ETH";
     case SymbolId::EOS: return os << "EOS";
@@ -90,6 +94,7 @@ public:
       {SymbolPairId::ADA_USDT, SymbolId::ADA},
       {SymbolPairId::BNB_USDT, SymbolId::BNB},
       {SymbolPairId::BTC_USDT, SymbolId::BTC},
+      {SymbolPairId::DOGE_USDT, SymbolId::DOGE},
       {SymbolPairId::DOT_USDT, SymbolId::DOT},
       {SymbolPairId::ETH_USDT, SymbolId::ETH},
       {SymbolPairId::EOS_USDT, SymbolId::EOS},
@@ -109,6 +114,7 @@ public:
       {SymbolPairId::ADA_USDT, SymbolId::USDT},
       {SymbolPairId::BNB_USDT, SymbolId::USDT},
       {SymbolPairId::BTC_USDT, SymbolId::USDT},
+      {SymbolPairId::DOGE_USDT, SymbolId::USDT},
       {SymbolPairId::DOT_USDT, SymbolId::USDT},
       {SymbolPairId::ETH_USDT, SymbolId::USDT},
       {SymbolPairId::EOS_USDT, SymbolId::USDT},
@@ -145,6 +151,7 @@ private:
       {"ADAUSDT", SymbolPairId::ADA_USDT},
       {"BNBUSDT", SymbolPairId::BNB_USDT},
       {"BTCUSDT", SymbolPairId::BTC_USDT},
+      {"DOGEUSDT", SymbolPairId::DOGE_USDT},
       {"DOTUSDT", SymbolPairId::DOT_USDT},
       {"ETHUSDT", SymbolPairId::ETH_USDT},
       {"EOSUSDT", SymbolPairId::EOS_USDT},
@@ -165,6 +172,8 @@ private:
       {"ADAUSDT", SymbolPairId::ADA_USDT},
       {"XBT/USDT", SymbolPairId::BTC_USDT},
       {"XBTUSDT", SymbolPairId::BTC_USDT},
+      {"XDG/USDT", SymbolPairId::DOGE_USDT},
+      {"XDGUSDT", SymbolPairId::DOGE_USDT},
       {"DOT/USDT", SymbolPairId::DOT_USDT},
       {"DOTUSDT", SymbolPairId::DOT_USDT},
       {"ETH/USDT", SymbolPairId::ETH_USDT},
@@ -195,6 +204,7 @@ extern const std::unordered_map<SymbolPairId, std::string> BINANCE_SYMBOL_TO_STR
   {SymbolPairId::ADA_USDT, "ADAUSDT"},
   {SymbolPairId::BNB_USDT, "BNBUSDT"},
   {SymbolPairId::BTC_USDT, "BTCUSDT"},
+  {SymbolPairId::DOGE_USDT, "DOGEUSDT"},
   {SymbolPairId::DOT_USDT, "DOTUSDT"},
   {SymbolPairId::ETH_USDT, "ETHUSDT"},
   {SymbolPairId::EOS_USDT, "EOSUSDT"},
@@ -211,6 +221,7 @@ extern const std::unordered_map<std::string, SymbolId> BINANCE_ASSET_MAP = {
   {"ADA", SymbolId::ADA},
   {"BNB", SymbolId::BNB},
   {"BTC", SymbolId::BTC},
+  {"DOGE", SymbolId::DOGE},
   {"DOT", SymbolId::DOT},
   {"ETH", SymbolId::ETH},
   {"EOS", SymbolId::EOS},
@@ -221,6 +232,7 @@ extern const std::unordered_map<std::string, SymbolId> BINANCE_ASSET_MAP = {
 extern const std::unordered_map<SymbolPairId, std::string> KRAKEN_SYMBOL_TO_STRING_MAP = {
   {SymbolPairId::ADA_USDT, "ADAUSDT"},
   {SymbolPairId::BTC_USDT, "BTCUSDT"},
+  {SymbolPairId::DOGE_USDT, "DOGEUSDT"},
   {SymbolPairId::DOT_USDT, "DOTUSDT"},
   {SymbolPairId::ETH_USDT, "ETHUSDT"},
   {SymbolPairId::EOS_USDT, "EOSUSDT"},
@@ -237,6 +249,8 @@ extern const std::unordered_map<std::string, SymbolId> KRAKEN_ASSET_MAP = {
   {"DOT", SymbolId::DOT},
   {"XBT", SymbolId::BTC},
   {"XXBT", SymbolId::BTC},
+  {"XDG", SymbolId::DOGE},
+  {"XXDG", SymbolId::DOGE},
   {"ETH", SymbolId::ETH},
   {"XETH", SymbolId::ETH},
   {"EOS", SymbolId::EOS},
