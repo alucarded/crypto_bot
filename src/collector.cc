@@ -1,13 +1,13 @@
 #include "websocket/binance_websocket_client.hpp"
-#include "websocket/bitbay_websocket_client.hpp"
-#include "websocket/bitstamp_websocket_client.hpp"
-#include "websocket/bybit_websocket_client.hpp"
-#include "websocket/coinbase_websocket_client.hpp"
-#include "websocket/ftx_websocket_client.hpp"
-#include "websocket/huobi_global_websocket_client.hpp"
+// #include "websocket/bitbay_websocket_client.hpp"
+// #include "websocket/bitstamp_websocket_client.hpp"
+// #include "websocket/bybit_websocket_client.hpp"
+// #include "websocket/coinbase_websocket_client.hpp"
+// #include "websocket/ftx_websocket_client.hpp"
+// #include "websocket/huobi_global_websocket_client.hpp"
 #include "websocket/kraken_websocket_client.hpp"
-#include "websocket/okex_websocket_client.hpp"
-#include "websocket/poloniex_websocket_client.hpp"
+// #include "websocket/okex_websocket_client.hpp"
+// #include "websocket/poloniex_websocket_client.hpp"
 #include "consumer/mongo_ticker_consumer.hpp"
 #include "db/mongo_client.hpp"
 #include "utils/config.hpp"
@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Created Mongo client pool" << std::endl;
     pass.clear();
 
-    MongoTickerConsumer mongo_consumer(mongo_client, "findata", "BtcUsdtTicker_v2");
+    MongoTickerConsumer mongo_consumer(mongo_client, config_json["db"].get<std::string>(), config_json["collection"].get<std::string>());
     // TODO: add Binance US for USDT-USD rates
     BinanceWebsocketClient binance_client(&mongo_consumer);
     // No USDT on Bitstamp
@@ -54,7 +54,10 @@ int main(int argc, char* argv[]) {
     };
 
     try {
-        std::for_each(websocket_client_list.begin(), websocket_client_list.end(), [](WebsocketClient* tc) { tc->start(); });
+        std::for_each(websocket_client_list.begin(), websocket_client_list.end(), [](WebsocketClient* tc) {
+            std::promise<void> promise;
+            tc->start(std::move(promise));
+        });
         // Just wait for now
         std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
     } catch (websocketpp::exception const & e) {

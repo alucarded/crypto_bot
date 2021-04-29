@@ -1,6 +1,8 @@
 {
   "user": "app",
-  "host": "18.132.211.87",
+  "host": "54.183.97.206",
   "port": "28888",
-  "authSource": "findata"
+  "authSource": "findata",
+  "db": "findata",
+  "collection": "BookTickers"
 }
