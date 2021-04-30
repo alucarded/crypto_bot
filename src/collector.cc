@@ -1,13 +1,5 @@
 #include "websocket/binance_websocket_client.hpp"
-// #include "websocket/bitbay_websocket_client.hpp"
-// #include "websocket/bitstamp_websocket_client.hpp"
-// #include "websocket/bybit_websocket_client.hpp"
-// #include "websocket/coinbase_websocket_client.hpp"
-// #include "websocket/ftx_websocket_client.hpp"
-// #include "websocket/huobi_global_websocket_client.hpp"
 #include "websocket/kraken_websocket_client.hpp"
-// #include "websocket/okex_websocket_client.hpp"
-// #include "websocket/poloniex_websocket_client.hpp"
 #include "consumer/mongo_ticker_consumer.hpp"
 #include "db/mongo_client.hpp"
 #include "utils/config.hpp"
@@ -17,8 +9,8 @@
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
-      std::cerr << "Please provide configuration file" << std::endl;
-      return -1;
+        std::cerr << "Please provide configuration file" << std::endl;
+        return -1;
     }
     std::string config_path(argv[1]);
     auto config_json = cryptobot::GetConfigJson(config_path);
@@ -32,39 +24,65 @@ int main(int argc, char* argv[]) {
     pass.clear();
 
     MongoTickerConsumer mongo_consumer(mongo_client, config_json["db"].get<std::string>(), config_json["collection"].get<std::string>());
-    // TODO: add Binance US for USDT-USD rates
-    BinanceWebsocketClient binance_client(&mongo_consumer);
-    // No USDT on Bitstamp
-    //BitstampWebsocketClient bitstamp_client(&mongo_consumer);
-    KrakenWebsocketClient kraken_client(&mongo_consumer);
-    // No USDT on Coinbase
-    //CoinbaseWebsocketClient coinbase_client(&mongo_consumer);
-    //PoloniexWebsocketClient poloniex_client(&mongo_consumer);
-    //BitbayWebsocketClient bitbay_client(&mongo_consumer);
-    //HuobiGlobalWebsocketClient huobi_global_client(&mongo_consumer);
-    // OkexWebsocketClient huobi_global_client(&mongo_consumer);
-    // BybitWebsocketClient bybit_client(&mongo_consumer);
-    //FtxWebsocketClient ftx_client(&mongo_consumer);
-    std::list<WebsocketClient*> websocket_client_list = {&binance_client,
-            &kraken_client//,
-            //&poloniex_client,
-            //&bitbay_client,
-            //&huobi_global_client,
-            //&ftx_client
-    };
+    BinanceWebsocketClient binance_websocket_client(&mongo_consumer);
+    KrakenWebsocketClient kraken_websocket_client(&mongo_consumer);
 
-    try {
-        std::for_each(websocket_client_list.begin(), websocket_client_list.end(), [](WebsocketClient* tc) {
-            std::promise<void> promise;
-            tc->start(std::move(promise));
-        });
-        // Just wait for now
-        std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
-    } catch (websocketpp::exception const & e) {
-        std::cout << e.what() << std::endl;
-    } catch (std::exception const & e) {
-        std::cout << e.what() << std::endl;
-    } catch (...) {
-        std::cout << "other exception" << std::endl;
-    }
+    std::promise<void> binance_promise;
+    std::future<void> binance_future = binance_promise.get_future();
+    binance_websocket_client.start(std::move(binance_promise));
+
+    std::promise<void> kraken_promise;
+    std::future<void> kraken_future = kraken_promise.get_future();
+    kraken_websocket_client.start(std::move(kraken_promise));
+
+    binance_future.wait();
+    kraken_future.wait();
+
+    auto wait_time = 400ms;
+    binance_websocket_client.SubscribeTicker("btcusdt");
+    std::this_thread::sleep_for(wait_time);
+    binance_websocket_client.SubscribeTicker("adausdt");
+    std::this_thread::sleep_for(wait_time);
+    binance_websocket_client.SubscribeTicker("dotusdt");
+    std::this_thread::sleep_for(wait_time);
+    binance_websocket_client.SubscribeTicker("eosusdt");
+    std::this_thread::sleep_for(wait_time);
+    binance_websocket_client.SubscribeTicker("ethusdt");
+    std::this_thread::sleep_for(wait_time);
+    binance_websocket_client.SubscribeTicker("adabtc");
+    std::this_thread::sleep_for(wait_time);
+    binance_websocket_client.SubscribeTicker("dotbtc");
+    std::this_thread::sleep_for(wait_time);
+    binance_websocket_client.SubscribeTicker("eosbtc");
+    std::this_thread::sleep_for(wait_time);
+    binance_websocket_client.SubscribeTicker("eoseth");
+    std::this_thread::sleep_for(wait_time);
+    binance_websocket_client.SubscribeTicker("ethbtc");
+    std::this_thread::sleep_for(wait_time);
+    binance_websocket_client.SubscribeTicker("xlmbtc");
+
+    kraken_websocket_client.SubscribeOrderBook("XBT/USDT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("ADA/USDT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("DOT/USDT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("EOS/USDT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("ETH/USDT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("ADA/XBT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("DOT/XBT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("EOS/XBT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("EOS/ETH");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("ETH/XBT");
+    std::this_thread::sleep_for(wait_time);
+    kraken_websocket_client.SubscribeOrderBook("XLM/XBT");
+
+    // Just wait for now
+    std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
 }
