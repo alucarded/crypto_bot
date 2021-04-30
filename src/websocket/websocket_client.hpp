@@ -45,7 +45,7 @@ public:
     }
 protected:
     WebsocketClient(const std::string& uri, const std::string& name) :  m_uri(uri), m_name(name), m_endpoint(new client()),
-            m_do_reconnect(true), m_reconnect_delay(100ms) {
+            m_do_reconnect(true), m_reconnect_delay(3000ms) {
         init_endpoint();
     }
 
