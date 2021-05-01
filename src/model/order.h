@@ -73,6 +73,7 @@ public:
     return OrderType::UNKNOWN;
   }
 
+  // TODO: rename to ParseStatus
   static OrderStatus GetStatus(const std::string& status_str) {
     static std::unordered_map<std::string, OrderStatus> s_status_map = {
       // Binance statuses
