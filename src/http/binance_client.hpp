@@ -114,14 +114,14 @@ public:
           << GetExchange() << ": " << errmsg;
       return Result<Order>(res.response, errmsg);
     }
-    const auto& order_id = res_json["orderId"].get<int64_t>();
-    const auto& client_order_id = res_json["clientOrderId"].get<std::string>();
+    auto order_id = res_json["orderId"].get<int64_t>();
+    auto client_order_id = res_json["clientOrderId"].get<std::string>();
     double cummulative_quote_qty = std::stod(res_json["cummulativeQuoteQty"].get<std::string>());
     // Price is required to calculate locked balance
     // TODO: maybe pass quote quantity directly to avoid dividing and then multiplying again
     double price = cummulative_quote_qty / qty;
     const auto& status = res_json["status"].get<std::string>();
-    return Result<Order>(res.response, Order(std::to_string(order_id), client_order_id, symbol, side, OrderType::MARKET, qty, price, Order::GetStatus(status)));
+    return Result<Order>(res.response, Order(std::move(std::to_string(order_id)), std::move(client_order_id), symbol, side, OrderType::MARKET, qty, price, Order::GetStatus(status)));
   }
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
@@ -149,10 +149,10 @@ public:
           << GetExchange() << ": " << errmsg;
       return Result<Order>(res.response, errmsg);
     }
-    const auto& order_id = res_json["orderId"].get<int64_t>();
-    const auto& client_order_id = res_json["clientOrderId"].get<std::string>();
+    auto order_id = res_json["orderId"].get<int64_t>();
+    auto client_order_id = res_json["clientOrderId"].get<std::string>();
     const auto& status = res_json["status"].get<std::string>();
-    return Result<Order>(res.response, Order(std::to_string(order_id), client_order_id, symbol, side, OrderType::LIMIT, qty, price, Order::GetStatus(status)));
+    return Result<Order>(res.response, Order(std::move(std::to_string(order_id)), std::move(client_order_id), symbol, side, OrderType::LIMIT, qty, price, Order::GetStatus(status)));
   }
 
   virtual void CancelAllOrders() override {
