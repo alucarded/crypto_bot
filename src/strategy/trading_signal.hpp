@@ -11,5 +11,6 @@ struct Prediction {
 
 class TradingSignal {
 public:
-  virtual Prediction Predict() const = 0;
+// TODO: it is arbitrage-specific now..
+  virtual Prediction Predict(double best_bid, double best_ask) const = 0;
 };

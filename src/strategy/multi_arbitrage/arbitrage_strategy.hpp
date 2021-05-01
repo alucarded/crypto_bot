@@ -142,9 +142,10 @@ public:
         // skip if another thread is currently sending orders.
         if (lock_obj.try_lock()) {
 #ifdef WITH_MEAN_REVERSION_SIGNAL
-          Prediction prediction = m_mrs[current_symbol_id].Predict();
+          Prediction prediction = m_mrs[current_symbol_id].Predict(best_bid_ticker.m_bid, best_ask_ticker.m_ask);
           switch(prediction.price_outlook) {
             case PriceOutlook::BEARISH: {
+                // TODO: do not use market order, use tilted limit order
                 auto f1 = std::async(std::launch::async, &ExchangeClient::MarketOrder, m_account_managers[best_bid_exchange].get(),
                     current_symbol_id, Side::SELL, order_size);
                 auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
@@ -197,26 +198,7 @@ public:
   }
 
   virtual void OnOrderBookUpdate(const OrderBook& order_book) {
-    const auto& best_ask = order_book.GetBestAsk();
-    const auto& best_bid = order_book.GetBestBid();
-    const auto& precision_settings = order_book.GetPrecisionSettings();
-    Ticker ticker;
-    ticker.m_ask = double(best_ask.GetPrice())/quick_pow10(precision_settings.m_price_precision);
-    ticker.m_ask_vol = std::optional<double>(best_ask.GetVolume());
-    ticker.m_bid = double(best_bid.GetPrice())/quick_pow10(precision_settings.m_price_precision);
-    ticker.m_bid_vol = std::optional<double>(best_bid.GetVolume());
-    ticker.m_source_ts = std::optional<int64_t>(std::min(best_ask.GetTimestamp(), best_bid.GetTimestamp()));
-    using namespace std::chrono;
-    auto now = system_clock::now();
-    system_clock::duration tp = now.time_since_epoch();
-    microseconds us = duration_cast<microseconds>(tp);
-    ticker.m_arrived_ts = us.count();
-    ticker.m_exchange = order_book.GetExchangeName();
-    // TODO: hardcoded
-    ticker.m_symbol = order_book.GetSymbolPairId();
-    //BOOST_LOG_TRIVIAL(info) << "Arrived: " << ticker.m_arrived_ts << ", best ask: " << best_ask.GetTimestamp() << ", best bid: " << best_bid.GetTimestamp() << std::endl;
-    //BOOST_LOG_TRIVIAL(info) << ticker << std::endl;
-    OnTicker(ticker);
+    OnTicker(ExchangeListener::TickerFromOrderBook(order_book));
   }
 
   virtual void OnConnectionOpen(const std::string& name) override {
