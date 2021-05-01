@@ -1,5 +1,6 @@
 #include "tickers_watcher.hpp"
 
+#include "exchange/exchange_listener.h"
 #include "serialization_utils.hpp"
 #include "websocket/websocket_client.hpp"
 #include "utils/spinlock.hpp"
@@ -39,8 +40,8 @@ public:
 private:
   virtual void OnOpen(websocketpp::connection_hdl conn) override {
     for (const auto& msg : m_subscription_msg) {
-      WebsocketClient::send(msg);
       std::this_thread::sleep_for(400ms);
+      WebsocketClient::send(msg);
     }
     m_exchange_listener->OnConnectionOpen(NAME);
   }
