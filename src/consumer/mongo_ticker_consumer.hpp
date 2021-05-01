@@ -60,10 +60,12 @@ public:
         // Save in bucket related to arrival minute (now)
         // Then during backtesting check what was the delay
         // and its impact on order execution.
+        std::ostringstream symbol_name_stream;
+        symbol_name_stream << SymbolPairId(ticker.m_symbol);
         coll.update_one(
             document{}
                 << "exchange" << ticker.m_exchange
-                << "symbol" << SymbolPairId(ticker.m_symbol)
+                << "symbol" << symbol_name_stream.str()
                 << "minute_utc" << mins.count()
                 << finalize,
             document{}
@@ -81,6 +83,10 @@ public:
                 << bsoncxx::builder::stream::close_document
                 << finalize,
             mongocxx::options::update().upsert(true));
+    }
+
+    virtual void OnOrderBookUpdate(const OrderBook& order_book) {
+        OnTicker(ExchangeListener::TickerFromOrderBook(order_book));
     }
 
     // // This can be called from multiple threads

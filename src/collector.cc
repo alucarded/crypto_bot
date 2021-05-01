@@ -4,14 +4,29 @@
 #include "db/mongo_client.hpp"
 #include "utils/config.hpp"
 
+// TODO: which includes are really neccessary?
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/log/utility/setup/console.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+
 #include <iostream>
 #include <thread>
+
+namespace logging = boost::log;
+namespace keywords = boost::log::keywords;
 
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "Please provide configuration file" << std::endl;
         return -1;
     }
+    logging::core::get()->set_filter(
+        logging::trivial::severity >= logging::trivial::info);
+    logging::add_common_attributes();
+
     std::string config_path(argv[1]);
     auto config_json = cryptobot::GetConfigJson(config_path);
     // TODO: take credentials from parameter store

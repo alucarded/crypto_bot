@@ -76,6 +76,7 @@ class SymbolPair {
 public:
   SymbolPair() : m_symbol_id(SymbolPairId::UNKNOWN) {}
   SymbolPair(SymbolPairId id) : m_symbol_id(id) {}
+  SymbolPair(const std::string& str) : m_symbol_id(GetStringSymbol(str)) {}
 
   operator SymbolPairId() const { return m_symbol_id; }
   const SymbolPairId& operator()() const { return m_symbol_id; }
@@ -145,6 +146,14 @@ private:
     return it->second;
   }
 
+  static SymbolPairId GetStringSymbol(const std::string& s) {
+    auto it = getStringSymbols().find(s);
+    if (it == getStringSymbols().end()) {
+      return SymbolPairId::UNKNOWN;
+    }
+    return it->second;
+  }
+
   using SymbolPairMap = std::unordered_map<std::string, SymbolPairId>;
   static const SymbolPairMap& getBinanceSymbols() {
     static const SymbolPairMap ret{
@@ -192,6 +201,26 @@ private:
       {"EOSETH", SymbolPairId::EOS_ETH},
       {"XLM/XBT", SymbolPairId::XLM_BTC},
       {"XLMXBT", SymbolPairId::XLM_BTC},
+    };
+    return ret;
+  }
+
+  static const SymbolPairMap& getStringSymbols() {
+    static const SymbolPairMap ret{
+      {"ADA_USDT", SymbolPairId::ADA_USDT},
+      {"BNB_USDT", SymbolPairId::BNB_USDT},
+      {"BTC_USDT", SymbolPairId::BTC_USDT},
+      {"DOGE_USDT", SymbolPairId::DOGE_USDT},
+      {"DOT_USDT", SymbolPairId::DOT_USDT},
+      {"ETH_USDT", SymbolPairId::ETH_USDT},
+      {"EOS_USDT", SymbolPairId::EOS_USDT},
+      {"ADA_BTC", SymbolPairId::ADA_BTC},
+      {"BNB_BTC", SymbolPairId::BNB_BTC},
+      {"DOT_BTC", SymbolPairId::DOT_BTC},
+      {"ETH_BTC", SymbolPairId::ETH_BTC},
+      {"EOS_BTC", SymbolPairId::EOS_BTC},
+      {"EOS_ETH", SymbolPairId::EOS_ETH},
+      {"XLM_BTC", SymbolPairId::XLM_BTC},
     };
     return ret;
   }
