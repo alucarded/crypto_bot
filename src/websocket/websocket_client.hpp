@@ -40,9 +40,6 @@ public:
         try {
             m_endpoint->pause_reading(m_con);
             m_endpoint->close(m_con, websocketpp::close::status::normal, "");
-            m_endpoint.reset(new client());
-            std::promise<void> promise;
-            start(std::move(promise));
         } catch (const websocketpp::exception &e) {
             BOOST_LOG_TRIVIAL(error) << "Exception when closing websocketpp endpoint: " << e.what();
         }
