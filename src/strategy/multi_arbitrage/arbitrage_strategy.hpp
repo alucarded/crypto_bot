@@ -260,8 +260,6 @@ private:
     double default_vol = m_opts.m_default_amount.at(sp.GetBaseAsset());
     if (base_vol > default_vol) {
       base_vol = std::max(0.2 * base_vol, default_vol);
-    } else {
-      base_vol = 0.2 * base_vol;
     }
 
     double base_asset_balance = GetBaseBalance(best_bid_ticker.m_exchange, sp);
