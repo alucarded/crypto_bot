@@ -69,22 +69,22 @@ public:
     double margin = m_atr.Get();
     if (current_price < short_sma - margin && mid_sma > current_price && long_sma > current_price) {
       if (mid_sma_slope > 0 && long_sma_slope > 0) {
-        auto take_profit_price = best_ask + std::max(std::abs(mid_sma - best_ask), m_atr.Get());
+        auto take_profit_price = best_ask + std::max(std::abs(mid_sma - best_ask), 1.5*m_atr.Get());
         BOOST_LOG_TRIVIAL(info) << "Bullish prediction: " << take_profit_price;
         return {PriceOutlook::BULLISH, take_profit_price};
       } else if (current_price < short_sma - 1.5*margin){
-        auto take_profit_price = best_ask + margin;
+        auto take_profit_price = best_ask + 1.5*margin;
         BOOST_LOG_TRIVIAL(info) << "Bullish prediction: " << take_profit_price;
         return {PriceOutlook::BULLISH, take_profit_price};
       }
     }
     if (current_price > short_sma + margin && mid_sma < current_price && long_sma < current_price) {
       if (mid_sma_slope < 0 && long_sma_slope < 0) {
-        auto take_profit_price = best_bid - std::max(std::abs(mid_sma - best_bid), m_atr.Get());
+        auto take_profit_price = best_bid - std::max(std::abs(mid_sma - best_bid), 1.5*m_atr.Get());
         BOOST_LOG_TRIVIAL(info) << "Bearish prediction: " << take_profit_price;
         return {PriceOutlook::BEARISH, take_profit_price};
       } else if (current_price > short_sma + 1.5*margin) {
-        auto take_profit_price = best_bid - margin;
+        auto take_profit_price = best_bid - 1.5*margin;
         BOOST_LOG_TRIVIAL(info) << "Bearish prediction: " << take_profit_price;
         return {PriceOutlook::BEARISH, take_profit_price};
       }
