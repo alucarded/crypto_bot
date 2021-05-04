@@ -57,7 +57,7 @@ class Order {
 public:
 
   static OrderType GetType(const std::string& type_str) {
-    static std::unordered_map<std::string, OrderType> s_order_type_map = {
+    static const std::unordered_map<std::string, OrderType> s_order_type_map = {
       {"MARKET", OrderType::MARKET},
       {"LIMIT", OrderType::LIMIT}
     };
@@ -75,7 +75,7 @@ public:
 
   // TODO: rename to ParseStatus
   static OrderStatus GetStatus(const std::string& status_str) {
-    static std::unordered_map<std::string, OrderStatus> s_status_map = {
+    static const std::unordered_map<std::string, OrderStatus> s_status_map = {
       // Binance statuses
       {"NEW", OrderStatus::NEW},
       {"PARTIALLY_FILLED", OrderStatus::PARTIALLY_FILLED},

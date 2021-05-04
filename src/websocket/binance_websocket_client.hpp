@@ -29,6 +29,7 @@ public:
   void SubscribeTicker(const std::string& symbol) {
       const std::string message = "{\"method\": \"SUBSCRIBE\",\"params\": [\"" + symbol + "@bookTicker\"],\"id\": " + std::to_string(++s_sub_id) +"}";
       m_subscription_msg.push_back(message);
+      BOOST_LOG_TRIVIAL(info) << message;
       WebsocketClient::send(message);
   }
 

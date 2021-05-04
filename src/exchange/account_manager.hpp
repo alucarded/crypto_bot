@@ -73,6 +73,7 @@ public:
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
     std::scoped_lock<std::mutex> order_lock{m_order_mutex};
     // TODO: register all order ids (so that we know, which ones do we manage, how many our open orders are there etc)
+    // TODO: FIXME: pass expected price as not all exchanges will respond with filled quote amount or price (eg. Kraken)
     auto res = m_client->MarketOrder(symbol, side, qty);
     if (res) {
       auto& order = res.Get();
