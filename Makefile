@@ -8,6 +8,12 @@ GTESTS=src/strategy/multi_arbitrage/arbitrage_strategy_matcher_unittest.cc \
        src/exchange/account_manager_unittest.cc \
        src/strategy/indicator/simple_moving_average_unittest.cc
 
+ARBITRAGE_MAIN_SRC=src/arbitrage_strategy_main.cc \
+       src/exchange/account_refresher.cc \
+			 src/model/order.cc \
+			 src/model/symbol.cc \
+			 src/model/account_balance.cc
+
 collector:
 	g++ -pipe src/collector.cc -o collector $(CFLAGS) $(LDFLAGS)
 
@@ -31,7 +37,7 @@ integration_tests:
 	g++ -pipe src/http/kraken_client_test.cc -o kraken_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 arbitrage_main:
-	g++ -pipe src/arbitrage_strategy_main.cc -o arbitrage_main $(CFLAGS) $(LDFLAGS) -DWITH_MEAN_REVERSION_SIGNAL
+	g++ -pipe $(ARBITRAGE_MAIN_SRC) -o arbitrage_main $(CFLAGS) $(LDFLAGS) -DWITH_MEAN_REVERSION_SIGNAL
 
 arbitrage_finder:
 	g++ -pipe src/arbitrage_finder_main.cc -o arbitrage_finder_main $(CFLAGS) $(LDFLAGS)

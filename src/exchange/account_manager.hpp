@@ -1,5 +1,6 @@
 #pragma once
 
+#include "account_refresher.h"
 #include "exchange_client.h"
 #include "user_data_listener.hpp"
 #include "utils/spinlock.hpp"
@@ -14,14 +15,14 @@
 class AccountManager : public ExchangeClient, public UserDataListener {
 public:
   AccountManager(ExchangeClient* exchange_client)
-      : m_client(exchange_client) {
+      : m_client(exchange_client), m_account_refresher(this) {
   }
 
   virtual ~AccountManager() {
   }
 
   void Initialize() {
-    RefreshAccountBalance();
+    m_account_refresher.Start();
 
     auto open_orders_res = m_client->GetOpenOrders();
     if (!open_orders_res) {
@@ -41,6 +42,8 @@ public:
   }
 
   void RefreshAccountBalance() {
+    // TODO: FIXME: implement asynchronous pooled http client!
+    std::scoped_lock<std::mutex> order_lock{m_order_mutex};
     auto res = m_client->GetAccountBalance();
     if (!res) {
       throw std::runtime_error("Failed getting account balance for " + GetExchange());
@@ -165,8 +168,6 @@ public:
       m_account_balance_lock.lock();
       BOOST_LOG_TRIVIAL(debug) << "Account balance after order update: " << m_account_balance;
       m_account_balance_lock.unlock();
-      // TODO: do this in separate thread, periodically (not perfect, but better)
-      RefreshAccountBalance();
     }
   }
 
@@ -361,4 +362,5 @@ protected:
   // 3. Response from order request is received and order is added to m_our_orders.
   // 4. The balance has locked amount, which will never be freed.
   std::mutex m_order_mutex;
+  AccountRefresher m_account_refresher;
 };
