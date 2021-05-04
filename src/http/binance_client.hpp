@@ -133,7 +133,7 @@ public:
       .QueryParam("side", (side == Side::BUY ? "BUY" : "SELL"))
       .QueryParam("type", "LIMIT")
       .QueryParam("quantity", cryptobot::to_string(qty, pair_settings.order_precision))
-      .QueryParam("price", cryptobot::to_string(price, pair_settings.quote_precision))
+      .QueryParam("price", cryptobot::to_string(price, pair_settings.price_precision))
       // TODO: for now always GTC
       .QueryParam("timeInForce", "GTC")
       .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))

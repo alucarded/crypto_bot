@@ -39,7 +39,9 @@ private:
         if (filter_type == "PRICE_FILTER") {
           sps.min_price = std::stod(filter["minPrice"].get<std::string>());
           sps.max_price = std::stod(filter["maxPrice"].get<std::string>());
-          sps.tick_size = std::stod(filter["tickSize"].get<std::string>());
+          const auto& tick_size_str = filter["tickSize"].get<std::string>();
+          sps.tick_size = std::stod(tick_size_str);
+          sps.price_precision = cryptobot::precision_from_string(tick_size_str);
         }
         if (filter_type == "LOT_SIZE") {
           sps.min_qty = std::stod(filter["minQty"].get<std::string>());
