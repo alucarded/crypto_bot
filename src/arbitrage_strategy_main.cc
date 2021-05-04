@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
   binance_future.wait();
   kraken_future.wait();
 
-  auto wait_time = 400ms;
+  auto wait_time = 500ms;
   binance_websocket_client.SubscribeTicker("btcusdt");
   std::this_thread::sleep_for(wait_time);
   binance_websocket_client.SubscribeTicker("adausdt");
@@ -123,6 +123,8 @@ int main(int argc, char* argv[]) {
   binance_websocket_client.SubscribeTicker("ethbtc");
   std::this_thread::sleep_for(wait_time);
   binance_websocket_client.SubscribeTicker("xlmbtc");
+  std::this_thread::sleep_for(wait_time);
+  binance_websocket_client.SubscribeTicker("dogeusdt");
 
   kraken_websocket_client.SubscribeOrderBook("XBT/USDT");
   std::this_thread::sleep_for(wait_time);
@@ -145,6 +147,8 @@ int main(int argc, char* argv[]) {
   kraken_websocket_client.SubscribeOrderBook("ETH/XBT");
   std::this_thread::sleep_for(wait_time);
   kraken_websocket_client.SubscribeOrderBook("XLM/XBT");
+  std::this_thread::sleep_for(wait_time);
+  binance_websocket_client.SubscribeTicker("XDG/USDT");
 
   std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
 }
