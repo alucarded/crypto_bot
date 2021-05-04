@@ -7,6 +7,7 @@
 #include <boost/log/trivial.hpp>
 
 #include <chrono>
+#include <memory>
 #include <string>
 
 using namespace std::chrono;
@@ -104,6 +105,6 @@ private:
 
 private:
   std::string m_listen_key;
-  KrakenClient* m_kraken_client;
+  std::unique_ptr<KrakenClient> m_kraken_client;
   UserDataListener* m_user_data_listener;
 };

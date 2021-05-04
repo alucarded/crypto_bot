@@ -6,13 +6,15 @@
 #include <boost/log/trivial.hpp>
 
 #include <chrono>
+#include <memory>
 #include <string>
 
 using namespace std::chrono;
 
 class BinanceUserDataStream : public WebsocketClient {
 public:
-  static BinanceUserDataStream Create(BinanceClient* binance_client, UserDataListener* user_data_listener) {
+  static BinanceUserDataStream Create(UserDataListener* user_data_listener) {
+    BinanceClient* binance_client = new BinanceClient();
     auto res = binance_client->StartUserDataStream();
     if (!res.has_value()) {
       BOOST_LOG_TRIVIAL(error) << "Error getting user data stream listen key";
@@ -118,7 +120,7 @@ private:
 
 private:
   std::string m_listen_key;
-  BinanceClient* m_binance_client;
+  std::unique_ptr<BinanceClient> m_binance_client;
   UserDataListener* m_user_data_listener;
   uint64_t m_last_keepalive;
   uint64_t m_keepalive_interval;

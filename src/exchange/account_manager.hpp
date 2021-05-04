@@ -22,6 +22,7 @@ public:
   }
 
   void Initialize() {
+    std::scoped_lock<std::mutex> order_lock{m_order_mutex};
     m_account_refresher.Start();
 
     auto open_orders_res = m_client->GetOpenOrders();
@@ -42,7 +43,7 @@ public:
   }
 
   void RefreshAccountBalance() {
-    // TODO: FIXME: implement asynchronous pooled http client!
+    // TODO: FIXME: implement asynchronous pooled http client and avoid locking so much!
     std::scoped_lock<std::mutex> order_lock{m_order_mutex};
     auto res = m_client->GetAccountBalance();
     if (!res) {

@@ -71,13 +71,13 @@ int main(int argc, char* argv[]) {
   KrakenClient* kraken_client = new KrakenClient();
   AccountManager* kraken_account_manager = new AccountManager(kraken_client);
 
-  BinanceUserDataStream binance_stream = BinanceUserDataStream::Create(binance_client, binance_account_manager);
+  BinanceUserDataStream binance_stream = BinanceUserDataStream::Create(binance_account_manager);
   std::promise<void> binance_stream_promise;
   std::future<void> binance_user_future = binance_stream_promise.get_future();
   binance_stream.start(std::move(binance_stream_promise));
   binance_user_future.wait();
 
-  KrakenUserDataStream kraken_stream(kraken_client, kraken_account_manager);
+  KrakenUserDataStream kraken_stream(new KrakenClient(), kraken_account_manager);
   std::promise<void> kraken_stream_promise;
   std::future<void> kraken_user_future = kraken_stream_promise.get_future();
   kraken_stream.start(std::move(kraken_stream_promise));
@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
   std::this_thread::sleep_for(wait_time);
   kraken_websocket_client.SubscribeOrderBook("XLM/XBT");
   std::this_thread::sleep_for(wait_time);
-  binance_websocket_client.SubscribeTicker("XDG/USDT");
+  kraken_websocket_client.SubscribeTicker("XDG/USDT");
 
   std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
 }
