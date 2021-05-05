@@ -213,8 +213,8 @@ public:
     res.response = std::move(bres.body());
     m_timer.stop();
     BOOST_LOG_TRIVIAL(debug) << "HTTP request-response total: " << m_timer.elapsedMilliseconds();
-    BOOST_LOG_TRIVIAL(debug) << "HTTP response header: " << bres.base();
-    BOOST_LOG_TRIVIAL(debug) << "HTTP response body: " << res.response;
+    BOOST_LOG_TRIVIAL(trace) << "HTTP response header: " << bres.base();
+    BOOST_LOG_TRIVIAL(trace) << "HTTP response body: " << res.response;
 
     // if (!bres.keep_alive()) {
     //   m_ssl_stream.shutdown(ec);

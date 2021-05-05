@@ -169,7 +169,6 @@ public:
       return Result<AccountBalance>(res.response, res.errmsg);
     }
     json response_json = json::parse(res.response);
-    BOOST_LOG_TRIVIAL(debug) << "[BinanceClient::GetAccountBalance] " << res.response << std::endl;
     if (response_json.contains("code")) {
       return Result<AccountBalance>(res.response, response_json["msg"].get<std::string>());
     }
@@ -177,7 +176,7 @@ public:
     for (const auto& b : response_json["balances"]) {
       auto asset_str = b["asset"];
       if (BINANCE_ASSET_MAP.count(asset_str) == 0) {
-        BOOST_LOG_TRIVIAL(warning) << "[BinanceClient::GetAccountBalance] Skipping unsupported asset: " << asset_str;
+        BOOST_LOG_TRIVIAL(debug) << "[BinanceClient::GetAccountBalance] Skipping unsupported asset: " << asset_str;
         continue;
       }
       const auto& free_str  = b["free"].get<std::string>();

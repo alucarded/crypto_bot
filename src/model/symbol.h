@@ -150,6 +150,8 @@ private:
       {"XBTUSDT", SymbolPairId::BTC_USDT},
       {"XDG/USDT", SymbolPairId::DOGE_USDT},
       {"XDGUSDT", SymbolPairId::DOGE_USDT},
+      {"DOGE/USDT", SymbolPairId::DOGE_USDT},
+      {"DOGEUSDT", SymbolPairId::DOGE_USDT},
       {"DOT/USDT", SymbolPairId::DOT_USDT},
       {"DOTUSDT", SymbolPairId::DOT_USDT},
       {"ETH/USDT", SymbolPairId::ETH_USDT},

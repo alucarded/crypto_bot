@@ -36,8 +36,10 @@ protected:
     for (const auto& p : m_last_arrived) {
       auto us_since_last = duration_cast<microseconds>(tp).count() - p.second;
       auto ms_since_last = us_since_last/1000.0;
-      max_age_pair = p.first;
-      max_age = std::max<double>(max_age, ms_since_last);
+      if (ms_since_last > max_age) {
+        max_age_pair = p.first;
+        max_age = ms_since_last;
+      }
       BOOST_LOG_TRIVIAL(info) << m_exchange << ": " << p.first << " arrived " << std::to_string(ms_since_last) << " ms ago";
     }
     BOOST_LOG_TRIVIAL(info) << m_exchange << ": Average delay is " << std::to_string(m_sum_delay/double(m_count));
