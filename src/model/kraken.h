@@ -7,7 +7,7 @@
 extern const std::unordered_map<SymbolPairId, PrecisionSettings> KRAKEN_ORDER_PRECISIONS_MAP = {
   // price_precision, volume_precision, timestamp_precision
   {SymbolPairId::BTC_USDT, PrecisionSettings(1, 8, 6)},
-  {SymbolPairId::DOT_BTC, PrecisionSettings(4, 8, 6)},
+  {SymbolPairId::DOT_BTC, PrecisionSettings(8, 8, 6)},
   {SymbolPairId::DOT_USDT, PrecisionSettings(4, 8, 6)},
   {SymbolPairId::EOS_BTC, PrecisionSettings(7, 8, 6)},
   {SymbolPairId::EOS_USDT, PrecisionSettings(4, 8, 6)},
