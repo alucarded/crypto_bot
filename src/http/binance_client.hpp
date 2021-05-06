@@ -176,7 +176,7 @@ public:
     for (const auto& b : response_json["balances"]) {
       auto asset_str = b["asset"];
       if (BINANCE_ASSET_MAP.count(asset_str) == 0) {
-        BOOST_LOG_TRIVIAL(debug) << "[BinanceClient::GetAccountBalance] Skipping unsupported asset: " << asset_str;
+        BOOST_LOG_TRIVIAL(trace) << "[BinanceClient::GetAccountBalance] Skipping unsupported asset: " << asset_str;
         continue;
       }
       const auto& free_str  = b["free"].get<std::string>();

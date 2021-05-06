@@ -22,7 +22,7 @@ public:
   }
 private:
   void ParseExchangeInfo(const json& payload) {
-    BOOST_LOG_TRIVIAL(debug) << "Got Binance exchange info payload: " << payload;
+    BOOST_LOG_TRIVIAL(trace) << "Got Binance exchange info payload: " << payload;
     const auto& symbols = payload["symbols"];
     for (const auto& symbol_json : symbols) {
       SymbolPairSettings sps;
@@ -54,7 +54,7 @@ private:
       SymbolPair sp = SymbolPair::FromBinanceString(sps.symbol);
       SymbolPairId spid = SymbolPairId(sp);
       if (spid == SymbolPairId::UNKNOWN) {
-        BOOST_LOG_TRIVIAL(info) << "BinanceSettings: Symbol pair unknown";
+        BOOST_LOG_TRIVIAL(debug) << "BinanceSettings: Symbol pair unknown";
         continue;
       }
       m_pair_settings.emplace(spid, sps);
