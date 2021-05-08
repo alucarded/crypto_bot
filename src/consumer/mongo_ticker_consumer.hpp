@@ -42,7 +42,7 @@ public:
     }
 
     // This can be called from multiple threads
-    virtual void OnTicker(const Ticker& ticker) {
+    virtual void OnBookTicker(const Ticker& ticker) {
         BOOST_LOG_TRIVIAL(trace) << "ExchangeListener::OnTicker, ticker=" << ticker;
         mongocxx::pool::entry client_entry = m_mongo_client->Get();
         mongocxx::client& client = *client_entry;
@@ -86,7 +86,7 @@ public:
     }
 
     virtual void OnOrderBookUpdate(const OrderBook& order_book) {
-        OnTicker(ExchangeListener::TickerFromOrderBook(order_book));
+        OnBookTicker(ExchangeListener::TickerFromOrderBook(order_book));
     }
 
     // // This can be called from multiple threads

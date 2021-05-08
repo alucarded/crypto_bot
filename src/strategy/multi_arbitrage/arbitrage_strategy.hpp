@@ -71,7 +71,7 @@ public:
     }
   }
 
-  virtual void OnTicker(const Ticker& ticker) override {
+  virtual void OnBookTicker(const Ticker& ticker) override {
     SymbolPair current_symbol_pair = ticker.m_symbol;
     SymbolPairId current_symbol_id = SymbolPairId(current_symbol_pair);
 #ifdef WITH_MEAN_REVERSION_SIGNAL
@@ -203,7 +203,7 @@ public:
   }
 
   virtual void OnOrderBookUpdate(const OrderBook& order_book) {
-    OnTicker(ExchangeListener::TickerFromOrderBook(order_book));
+    OnBookTicker(ExchangeListener::TickerFromOrderBook(order_book));
   }
 
   virtual void OnConnectionOpen(const std::string& name) override {
@@ -288,7 +288,7 @@ private:
   bool HasOpenOrders(SymbolPairId pair_id) const {
     for (const auto& p : m_account_managers) {
       const auto& manager_ptr = p.second;
-      if (manager_ptr->HasOpenOrder(pair_id)) {
+      if (manager_ptr->HasOpenOrders(pair_id)) {
         return true;
       }
     }

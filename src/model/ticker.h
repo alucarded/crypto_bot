@@ -85,3 +85,7 @@ std::ostream& operator<<(std::ostream& os, const RawTicker& rt) {
       << ", m_exchange=" << rt.m_exchange
       << ", m_symbol=" << rt.m_symbol;
 }
+
+struct TradeTicker {
+  // TODO
+};

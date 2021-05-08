@@ -78,7 +78,7 @@ private:
       ticker.m_id = 1;
       // TODO: reconnect/resubscribe all websocket clients when they are inactive for too long
       m_tickers_watcher.Set(SymbolPair(ticker.m_symbol), ticker.m_arrived_ts, ticker.m_arrived_ts);
-      m_exchange_listener->OnTicker(ticker);
+      m_exchange_listener->OnBookTicker(ticker);
   }
 
 private:

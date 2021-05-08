@@ -1,5 +1,5 @@
-#include "consumer/consumer.h"
 #include "db/mongo_client.hpp"
+#include "exchange/exchange_listener.h"
 #include "model/ticker.h"
 
 #include <bsoncxx/json.hpp>
@@ -22,11 +22,12 @@ using bsoncxx::builder::stream::finalize;
 using bsoncxx::builder::stream::open_array;
 using bsoncxx::builder::stream::open_document;
 
+// Produces book tickers
 class MongoTickerProducer {
 public:
   MongoTickerProducer(MongoClient* mongo_client, const std::string& db_name,
-      const std::string &coll_name, Consumer<RawTicker>* ticker_consumer)
-      : m_mongo_client(mongo_client), m_db_name(db_name), m_coll_name(coll_name), m_ticker_consumer(ticker_consumer) {
+      const std::string &coll_name)
+      : m_mongo_client(mongo_client), m_db_name(db_name), m_coll_name(coll_name) {
 
   }
 
@@ -62,11 +63,25 @@ public:
     return Produce(cursor);
   }
 
+  void Register(ExchangeListener* exchange_listener) {
+    m_exchange_listeners.push_back(exchange_listener);
+  }
+
+  void Unregister(ExchangeListener* exchange_listener) {
+    size_t i = 0;
+    while (i < m_exchange_listeners.size()) {
+      if (m_exchange_listeners.at(i) == exchange_listener) {
+        m_exchange_listeners.erase(m_exchange_listeners.begin() + i);
+      } else {
+        ++i;
+      }
+    }
+  }
 private:
 
   int64_t Produce(mongocxx::cursor& cursor) {
     // Put all tickers in a vector
-    std::vector<RawTicker> tickers_vec;
+    std::vector<Ticker> tickers_vec;
     int64_t prev_min_bucket = 0;
     int64_t total_tickers = 0;
     for(auto doc : cursor) {
@@ -78,31 +93,31 @@ private:
       bsoncxx::document::element tickers_elem = doc["tickers"];
       bsoncxx::types::b_array arr = tickers_elem.get_array();
       for (bsoncxx::array::element ticker_doc : arr.value) {
-        RawTicker raw_ticker;
-        raw_ticker.m_bid = ticker_doc["bid"].get_value().get_utf8().value.to_string();
-        raw_ticker.m_bid_vol = ticker_doc["bid_vol"].get_value().get_utf8().value.to_string();
-        raw_ticker.m_ask = ticker_doc["ask"].get_value().get_utf8().value.to_string();
-        raw_ticker.m_ask_vol = ticker_doc["ask_vol"].get_value().get_utf8().value.to_string();
-        raw_ticker.m_source_ts = ticker_doc["s_us"].get_int64().value;
-        raw_ticker.m_arrived_ts = ticker_doc["a_us"].get_int64().value;
-        raw_ticker.m_exchange = exchange_elem.get_value().get_utf8().value.to_string();
-        raw_ticker.m_symbol = doc["symbol"] ? doc["symbol"].get_value().get_utf8().value.to_string() : "";
-        tickers_vec.push_back(raw_ticker);
+        Ticker ticker;
+        ticker.m_bid = ticker_doc["bid"].get_double();
+        ticker.m_bid_vol = ticker_doc["bid_vol"].get_double();
+        ticker.m_ask = ticker_doc["ask"].get_double();
+        ticker.m_ask_vol = ticker_doc["ask_vol"].get_double();
+        ticker.m_source_ts = ticker_doc["s_us"].get_int64().value;
+        ticker.m_arrived_ts = ticker_doc["a_us"].get_int64().value;
+        ticker.m_exchange = exchange_elem.get_value().get_utf8().value.to_string();
+        ticker.m_symbol = doc["symbol"] ? doc["symbol"].get_value().get_utf8().value.to_string() : "";
+        tickers_vec.push_back(ticker);
         // std::cout << "Added ticker:" << std::endl;
-        // std::cout << raw_ticker;
+        // std::cout << ticker;
       }
 
       if (tickers_vec.size() > 10000) {
         total_tickers += tickers_vec.size();
-        std::cout << "Flushing tickers... " + std::to_string(total_tickers) << std::endl;
-        std::sort(tickers_vec.begin(), tickers_vec.end(), [](const RawTicker& a, const RawTicker& b) -> bool {
+        std::cout << "Flushing tickers... " << total_tickers << std::endl;
+        std::sort(tickers_vec.begin(), tickers_vec.end(), [](const Ticker& a, const Ticker& b) -> bool {
           // Here we assume ticks always arrive in the right order
           // In strategy part we can verify it and compare source timestamps and arrived timestamps
           return a.m_arrived_ts < b.m_arrived_ts;
         });
-        if (m_ticker_consumer) {
-          std::for_each(tickers_vec.begin(), tickers_vec.end(), [&](const RawTicker& rt) {
-            m_ticker_consumer->Consume(rt);
+        for (const auto& listener_ptr : m_exchange_listeners) {
+          std::for_each(tickers_vec.begin(), tickers_vec.end(), [&](const Ticker& rt) {
+            listener_ptr->OnBookTicker(rt);
           });
         }
         tickers_vec.clear();
@@ -116,5 +131,5 @@ private:
   MongoClient* m_mongo_client;
   const std::string m_db_name;
   const std::string m_coll_name;
-  Consumer<RawTicker>* m_ticker_consumer;
+  std::vector<ExchangeListener*> m_exchange_listeners;
 };

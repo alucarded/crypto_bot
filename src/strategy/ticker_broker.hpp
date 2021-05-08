@@ -43,7 +43,7 @@ public:
       //   return;
       // }
       for (auto subscriber : m_subscribers) {
-        subscriber->OnTicker(ticker);
+        subscriber->OnBookTicker(ticker);
       }
     }
   }

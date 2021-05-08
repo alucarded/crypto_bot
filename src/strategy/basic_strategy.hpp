@@ -38,7 +38,7 @@ public:
     if (!tickers.count(m_opts.m_trading_exchange)) {
       return;
     }
-    //m_exchange_client->OnTicker(tickers[m_opts.m_trading_exchange]);
+    //m_exchange_client->OnBookTicker(tickers[m_opts.m_trading_exchange]);
     if (tickers.size() < m_opts.m_required_exchanges) {
       std::cout << "Not enough exchanges. Got " << std::to_string(tickers.size()) << ", required " << std::to_string(m_opts.m_required_exchanges) << std::endl;
       return;
@@ -107,7 +107,7 @@ public:
       }
       m_tickers[raw_ticker.m_exchange] = ticker;
       if (m_opts.m_trading_exchange == raw_ticker.m_exchange) {
-        m_exchange_client->OnTicker(ticker);
+        m_exchange_client->OnBookTicker(ticker);
       }
     }
     execute(m_tickers);
@@ -117,7 +117,7 @@ public:
     std::cout << "Max margin: " << m_max_margin << std::endl;
   }
 
-  virtual void OnTicker(const Ticker& ticker) override {
+  virtual void OnBookTicker(const Ticker& ticker) override {
 
   }
 

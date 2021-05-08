@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     arbitrage_strategy.RegisterExchangeClient("binance", new ArbitrageFinderClient("binance"));
     arbitrage_strategy.RegisterExchangeClient("kraken", new DummyClient());
     arbitrage_strategy.Initialize();
-    //TickerBroker ticker_broker({&arbitrage_strategy});
+
     BinanceWebsocketClient binance_websocket_client(&arbitrage_strategy);
     //ExchangeListener exchange_listener;
     KrakenWebsocketClient kraken_websocket_client(&arbitrage_strategy);

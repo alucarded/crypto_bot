@@ -67,6 +67,7 @@ public:
     // We try to take advantage of longer term momentum (trend measured as SMA slope) and shorter term mean reversion
     // TODO: better way of finding target price (perhaps use some stochastic method and create couple of orders)
     double margin = m_atr.Get();
+    // TODO: TEST!!!!!
     if (current_price < short_sma - margin && mid_sma > current_price && long_sma > current_price) {
       if (mid_sma_slope > 0 && long_sma_slope > 0) {
         auto take_profit_price = best_ask + std::max(std::abs(mid_sma - best_ask), 1.5*m_atr.Get());

@@ -15,8 +15,12 @@ public:
     BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnConnectionClose, name=" + name;
   }
 
-  virtual void OnTicker(const Ticker& ticker) {
-    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnTicker, ticker=" << ticker;
+  virtual void OnBookTicker(const Ticker& ticker) {
+    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnBookTicker, ticker=" << ticker;
+  }
+
+  virtual void OnTradeTicker(const Ticker& ticker) {
+    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnTradeTicker, ticker=" << ticker;
   }
 
   virtual void OnOrderBookUpdate(const OrderBook& order_book) {

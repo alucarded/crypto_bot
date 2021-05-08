@@ -3,7 +3,6 @@
 #include "http/kraken_client.hpp"
 #include "model/symbol.h"
 #include "strategy/multi_arbitrage/arbitrage_strategy.hpp"
-//#include "strategy/ticker_broker.hpp"
 #include "websocket/binance_websocket_client.hpp"
 #include "websocket/binance_user_data_stream.hpp"
 #include "websocket/kraken_user_data_stream.hpp"

@@ -8,11 +8,14 @@ GTESTS=src/strategy/multi_arbitrage/arbitrage_strategy_matcher_unittest.cc \
        src/exchange/account_manager_unittest.cc \
        src/strategy/indicator/simple_moving_average_unittest.cc
 
-ARBITRAGE_MAIN_SRC=src/arbitrage_strategy_main.cc \
-       src/exchange/account_refresher.cc \
-			 src/model/order.cc \
+COMMON_SRC=src/model/order.cc \
 			 src/model/symbol.cc \
-			 src/model/account_balance.cc
+			 src/model/account_balance.cc \
+			 src/exchange/account_refresher.cc
+ARBITRAGE_MAIN_SRC=src/arbitrage_strategy_main.cc
+ARBITRAGE_BACKTEST_SRC=src/arbitrage_strategy_backtest.cc \
+			 src/db/mongo_client.hpp \
+			 src/producer/mongo_ticker_producer.hpp
 
 collector:
 	g++ -pipe src/collector.cc -o collector $(CFLAGS) $(LDFLAGS)
@@ -21,7 +24,7 @@ basic_backtest:
 	g++ -pipe src/basic_strategy_backtest.cc src/db/mongo_client.hpp src/producer/mongo_ticker_producer.hpp -o basic_backtest $(CFLAGS) $(LDFLAGS)
 
 arbitrage_backtest:
-	g++ -pipe src/arbitrage_strategy_backtest.cc src/db/mongo_client.hpp src/producer/mongo_ticker_producer.hpp -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
+	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_BACKTEST_SRC) -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
 
 unit_tests:
 	# g++ -pipe $(GTESTS) -o unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
@@ -37,7 +40,7 @@ integration_tests:
 	g++ -pipe src/http/kraken_client_test.cc -o kraken_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 arbitrage_main:
-	g++ -pipe $(ARBITRAGE_MAIN_SRC) -o arbitrage_main $(CFLAGS) $(LDFLAGS) -DWITH_MEAN_REVERSION_SIGNAL
+	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_MAIN_SRC) -o arbitrage_main $(CFLAGS) $(LDFLAGS) -DWITH_MEAN_REVERSION_SIGNAL
 
 arbitrage_finder:
 	g++ -pipe src/arbitrage_finder_main.cc -o arbitrage_finder_main $(CFLAGS) $(LDFLAGS)

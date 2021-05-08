@@ -78,7 +78,7 @@ private:
     auto channel_name = msg_json[msg_json.size() - 2];
     const auto& symbol = msg_json[msg_json.size() - 1].get<std::string>();
     if (channel_name == "ticker") {
-      m_exchange_listener->OnTicker(ParseTicker(msg_json[1], symbol));
+      m_exchange_listener->OnBookTicker(ParseTicker(msg_json[1], symbol));
     } else if (channel_name.get<std::string>().find("book") != std::string::npos) {
       SymbolPair symbol_pair = SymbolPair::FromKrakenString(symbol);
       SymbolPairId pair_id = SymbolPairId(symbol_pair);
