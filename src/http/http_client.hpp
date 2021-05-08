@@ -187,6 +187,7 @@ public:
 
     BOOST_LOG_TRIVIAL(debug) << "Starting HTTP request";
     m_timer.start();
+    // std::shared_ptr<HttpConnection> connection = m_connection_pool.Get(request.m_host, request.m_port);
     if (!m_ssl_stream_opt || !m_ssl_stream_opt.value().next_layer().is_open()) {
       BOOST_LOG_TRIVIAL(info) << "Establishing HTTPS connection to " << request.m_host << ":" << request.m_port;
       if (!OpenConnection(request.m_host, request.m_port, res)) {
@@ -196,6 +197,7 @@ public:
     }
 
     boost::system::error_code ec;
+    // boost::beast::http::response<boost::beast::http::string_body> bres = connection->Send(request.build());
     boost::beast::http::response<boost::beast::http::string_body> bres = SendImpl(request, ec);
     if ( ec ) {
       __MAKE_ERRMSG(res, ec.message());
@@ -287,6 +289,7 @@ private:
     return bres;
   }
 private:
+  //HttpConnectionPool m_connection_pool;
   boost::asio::io_context m_ioctx;
   Options m_options;
   boost::asio::ssl::context m_ssl_ctx;
