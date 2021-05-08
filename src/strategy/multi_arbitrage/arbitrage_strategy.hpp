@@ -162,8 +162,15 @@ public:
                 }
               }
               break;
-            case PriceOutlook::NEUTRAL:
-              SendBasicArbitrageOrders(best_bid_ticker, best_ask_ticker, order_size);
+            case PriceOutlook::NEUTRAL: {
+#endif
+                if (HasOpenOrders(current_symbol_id)) {
+                  BOOST_LOG_TRIVIAL(warning) << "Not doing basic arbitrage since there are already open orders for " << current_symbol_id;
+                  return;
+                }
+                SendBasicArbitrageOrders(best_bid_ticker, best_ask_ticker, order_size);
+#ifdef WITH_MEAN_REVERSION_SIGNAL
+              }
               break;
             case PriceOutlook::BULLISH: {
                 auto f1 = std::async(std::launch::async, &ExchangeClient::MarketOrder, m_account_managers[best_ask_exchange].get(),
@@ -185,8 +192,6 @@ public:
             default:
               throw std::runtime_error("Unsupported PriceOutlook value");
           };
-#else
-          SendBasicArbitrageOrders(best_bid_ticker, best_ask_ticker, order_size);
 #endif
           BOOST_LOG_TRIVIAL(info) << "Arbitrage match. Orders sent!";
           BOOST_LOG_TRIVIAL(info) << "Best bid ticker: " << best_bid_ticker;
@@ -280,6 +285,15 @@ private:
     return base_vol;
   }
 
+  bool HasOpenOrders(SymbolPairId pair_id) const {
+    for (const auto& p : m_account_managers) {
+      const auto& manager_ptr = p.second;
+      if (manager_ptr->HasOpenOrder(pair_id)) {
+        return true;
+      }
+    }
+    return false;
+  }
 private:
   ArbitrageStrategyOptions m_opts;
   ArbitrageStrategyMatcher m_matcher;
