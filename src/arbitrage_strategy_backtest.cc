@@ -8,17 +8,28 @@
 
 #include "json/json.hpp"
 
+#include <boost/log/core.hpp>
+#include <boost/log/trivial.hpp>
+#include <boost/log/expressions.hpp>
+
 #include <cerrno>
 #include <fstream>
 #include <iostream>
 #include <map>
 #include <sstream>
 
+namespace logging = boost::log;
+namespace keywords = boost::log::keywords;
+
 int main(int argc, char* argv[]) {
   if (argc < 2) {
     std::cerr << "Please provide configuration file" << std::endl;
     return -1;
   }
+
+  logging::core::get()->set_filter(
+      logging::trivial::severity >= logging::trivial::debug);
+
   std::string config_path(argv[1]);
   auto config_json = cryptobot::GetConfigJson(config_path);
   // TODO: take credentials from parameter store
@@ -72,7 +83,7 @@ int main(int argc, char* argv[]) {
   arbitrage_strategy.RegisterExchangeClient("binance", binance_account_manager);
   arbitrage_strategy.RegisterExchangeClient("kraken", kraken_account_manager);
 
-  MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v4");
+  MongoTickerProducer mongo_producer(mongo_client, config_json["db"].get<std::string>(), config_json["collection"].get<std::string>());
   // First register clients, so that execution price is same as seen price
   mongo_producer.Register(binance_backtest_client);
   mongo_producer.Register(kraken_backtest_client);

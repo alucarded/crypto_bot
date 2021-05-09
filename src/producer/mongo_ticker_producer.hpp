@@ -2,6 +2,8 @@
 #include "exchange/exchange_listener.h"
 #include "model/ticker.h"
 
+#include <boost/log/trivial.hpp>
+
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/stdx.hpp>
@@ -94,14 +96,30 @@ private:
       bsoncxx::types::b_array arr = tickers_elem.get_array();
       for (bsoncxx::array::element ticker_doc : arr.value) {
         Ticker ticker;
+        if (ticker_doc["bid"].type() != bsoncxx::type::k_double) {
+          BOOST_LOG_TRIVIAL(warning) << "Bid value does not have double type! The type is " << int(ticker_doc["bid"].type());
+          continue;
+        }
         ticker.m_bid = ticker_doc["bid"].get_double();
         ticker.m_bid_vol = ticker_doc["bid_vol"].get_double();
         ticker.m_ask = ticker_doc["ask"].get_double();
         ticker.m_ask_vol = ticker_doc["ask_vol"].get_double();
-        ticker.m_source_ts = ticker_doc["s_us"].get_int64().value;
+        if (ticker_doc["s_us"].type() == bsoncxx::type::k_int64) {
+          BOOST_LOG_TRIVIAL(warning) << "Source timestamp value does not have int64 type! The type is " << int(ticker_doc["s_us"].type());
+          ticker.m_source_ts = ticker_doc["s_us"].get_int64().value;
+        }
         ticker.m_arrived_ts = ticker_doc["a_us"].get_int64().value;
         ticker.m_exchange = exchange_elem.get_value().get_utf8().value.to_string();
-        ticker.m_symbol = doc["symbol"] ? doc["symbol"].get_value().get_utf8().value.to_string() : "";
+        ticker.m_symbol = SymbolPairId::UNKNOWN;
+        if (doc["symbol"].type() == bsoncxx::type::k_int32) {
+          ticker.m_symbol = SymbolPairId(doc["symbol"].get_int32().value);
+        } else if (doc["symbol"].type() == bsoncxx::type::k_int64) {
+          ticker.m_symbol = SymbolPairId(doc["symbol"].get_int64().value);
+        } else if (doc["symbol"].type() == bsoncxx::type::k_utf8) {
+          ticker.m_symbol = SymbolPair(doc["symbol"].get_utf8().value.to_string());
+        } else {
+          BOOST_LOG_TRIVIAL(warning) << "Symbol value has type: " << int(doc["symbol"].type());
+        }
         tickers_vec.push_back(ticker);
         // std::cout << "Added ticker:" << std::endl;
         // std::cout << ticker;
@@ -109,7 +127,7 @@ private:
 
       if (tickers_vec.size() > 10000) {
         total_tickers += tickers_vec.size();
-        std::cout << "Flushing tickers... " << total_tickers << std::endl;
+        BOOST_LOG_TRIVIAL(info) << "Flushing tickers... " << total_tickers;
         std::sort(tickers_vec.begin(), tickers_vec.end(), [](const Ticker& a, const Ticker& b) -> bool {
           // Here we assume ticks always arrive in the right order
           // In strategy part we can verify it and compare source timestamps and arrived timestamps
