@@ -63,7 +63,7 @@ public:
     auto short_sma_slope = short_sma_slope_opt.value();
     auto mid_sma_slope = mid_sma_slope_opt.value();
     auto long_sma_slope = long_sma_slope_opt.value();
-  
+
     // We try to take advantage of longer term momentum (trend measured as SMA slope) and shorter term mean reversion
     // TODO: better way of finding target price (perhaps use some stochastic method and create couple of orders)
     double margin = m_atr.Get();
@@ -73,7 +73,7 @@ public:
         auto take_profit_price = best_ask + std::max(std::abs(mid_sma - best_ask), 1.5*m_atr.Get());
         BOOST_LOG_TRIVIAL(info) << "Bullish prediction: " << take_profit_price;
         return {PriceOutlook::BULLISH, take_profit_price};
-      } else if (current_price < short_sma - 1.5*margin){
+      } else if (current_price < short_sma - 1.5*margin) {
         auto take_profit_price = best_ask + 1.5*margin;
         BOOST_LOG_TRIVIAL(info) << "Bullish prediction: " << take_profit_price;
         return {PriceOutlook::BULLISH, take_profit_price};

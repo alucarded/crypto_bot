@@ -113,7 +113,7 @@ private:
         ticker.m_symbol = SymbolPairId::UNKNOWN;
         if (doc["symbol"].type() == bsoncxx::type::k_int32) {
           ticker.m_symbol = SymbolPairId(doc["symbol"].get_int32().value);
-        } else if (doc["symbol"].type() == bsoncxx::type::k_int64) {
+        } else if (doc["symbol"].type() == bsoncxx::type::k_int64) { 
           ticker.m_symbol = SymbolPairId(doc["symbol"].get_int64().value);
         } else if (doc["symbol"].type() == bsoncxx::type::k_utf8) {
           ticker.m_symbol = SymbolPair(doc["symbol"].get_utf8().value.to_string());
@@ -144,6 +144,7 @@ private:
       prev_min_bucket = minute_utc;
     }
     return total_tickers;
+    
   }
 
   MongoClient* m_mongo_client;

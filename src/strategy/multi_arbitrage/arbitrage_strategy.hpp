@@ -33,6 +33,7 @@ struct ArbitrageStrategyOptions {
   int64_t m_min_trade_interval_us;
   double m_base_currency_ratio;
   double m_allowed_deviation;
+  std::function<uint64_t(const Ticker&)> time_provider_fcn = [](const Ticker& ticker) { return duration_cast<microseconds>(system_clock::now().time_since_epoch()).count(); };
 };
 
 struct OrderFutures {
@@ -95,7 +96,7 @@ public:
       const auto& best_bid_exchange = best_bid_ticker.m_exchange;
       const auto& best_ask_exchange = best_ask_ticker.m_exchange;
       // Check tickers arrival timestamp
-      auto now_us = duration_cast<microseconds>(system_clock::now().time_since_epoch()).count();
+      auto now_us = m_opts.time_provider_fcn(ticker);
       auto best_bid_ticker_age = now_us - best_bid_ticker.m_arrived_ts;
       auto best_ask_ticker_age = now_us - best_ask_ticker.m_arrived_ts;
       BOOST_LOG_TRIVIAL(debug) << "Best bid ticker age (" << best_bid_exchange

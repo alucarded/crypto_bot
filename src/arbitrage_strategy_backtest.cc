@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
   }
 
   logging::core::get()->set_filter(
-      logging::trivial::severity >= logging::trivial::debug);
+      logging::trivial::severity >= logging::trivial::info);
 
   std::string config_path(argv[1]);
   auto config_json = cryptobot::GetConfigJson(config_path);
@@ -79,9 +79,11 @@ int main(int argc, char* argv[]) {
   strategy_opts.m_min_trade_interval_us = 0;
   strategy_opts.m_base_currency_ratio = 0.5;
   strategy_opts.m_allowed_deviation = 0.3;
+  strategy_opts.time_provider_fcn = [](const Ticker& ticker) { return ticker.m_arrived_ts; };
   ArbitrageStrategy arbitrage_strategy(strategy_opts);
   arbitrage_strategy.RegisterExchangeClient("binance", binance_account_manager);
   arbitrage_strategy.RegisterExchangeClient("kraken", kraken_account_manager);
+  arbitrage_strategy.Initialize();
 
   MongoTickerProducer mongo_producer(mongo_client, config_json["db"].get<std::string>(), config_json["collection"].get<std::string>());
   // First register clients, so that execution price is same as seen price
