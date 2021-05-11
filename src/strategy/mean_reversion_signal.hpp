@@ -40,8 +40,6 @@ public:
 
   virtual Prediction Predict(double best_bid, double best_ask) const override {
     // TODO: test that, clean that, backtest that...
-    double current_price = (m_ticker.m_bid + m_ticker.m_ask) / 2;
-
     auto short_sma_opt = m_sma_short.Get();
     auto mid_sma_opt = m_sma_mid.Get();
     auto long_sma_opt = m_sma_long.Get();
@@ -53,7 +51,7 @@ public:
     if (!short_sma_opt.has_value() || !mid_sma_opt.has_value() || !long_sma_opt.has_value()
         || !short_sma_slope_opt.has_value() || !mid_sma_slope_opt.has_value() || !long_sma_slope_opt.has_value()) {
       BOOST_LOG_TRIVIAL(info) << "Predict: not enough data";
-      return {PriceOutlook::NEUTRAL, current_price};
+      return {PriceOutlook::NEUTRAL, 0};
     }
 
     auto short_sma = short_sma_opt.value();
@@ -68,30 +66,30 @@ public:
     // TODO: better way of finding target price (perhaps use some stochastic method and create couple of orders)
     double margin = m_atr.Get();
     // TODO: TEST!!!!!
-    if (current_price < short_sma - margin && mid_sma > current_price && long_sma > current_price) {
+    if (m_ticker.m_ask < short_sma - margin && mid_sma > m_ticker.m_ask && long_sma > m_ticker.m_ask) {
       if (mid_sma_slope > 0 && long_sma_slope > 0) {
-        auto take_profit_price = best_ask + std::max(std::abs(mid_sma - best_ask), 1.5*m_atr.Get());
+        auto take_profit_price = best_ask + std::max(std::abs(mid_sma - best_ask), 1.6*m_atr.Get());
         BOOST_LOG_TRIVIAL(info) << "Bullish prediction: " << take_profit_price;
         return {PriceOutlook::BULLISH, take_profit_price};
-      } else if (current_price < short_sma - 1.5*margin) {
-        auto take_profit_price = best_ask + 1.5*margin;
+      } else if (m_ticker.m_ask < short_sma - 1.6*margin) {
+        auto take_profit_price = best_ask + 1.6*margin;
         BOOST_LOG_TRIVIAL(info) << "Bullish prediction: " << take_profit_price;
         return {PriceOutlook::BULLISH, take_profit_price};
       }
     }
-    if (current_price > short_sma + margin && mid_sma < current_price && long_sma < current_price) {
+    if (m_ticker.m_bid > short_sma + margin && mid_sma < m_ticker.m_bid && long_sma < m_ticker.m_bid) {
       if (mid_sma_slope < 0 && long_sma_slope < 0) {
-        auto take_profit_price = best_bid - std::max(std::abs(mid_sma - best_bid), 1.5*m_atr.Get());
+        auto take_profit_price = best_bid - std::max(std::abs(mid_sma - best_bid), 1.6*m_atr.Get());
         BOOST_LOG_TRIVIAL(info) << "Bearish prediction: " << take_profit_price;
         return {PriceOutlook::BEARISH, take_profit_price};
-      } else if (current_price > short_sma + 1.5*margin) {
-        auto take_profit_price = best_bid - 1.5*margin;
+      } else if (m_ticker.m_bid > short_sma + 1.6*margin) {
+        auto take_profit_price = best_bid - 1.6*margin;
         BOOST_LOG_TRIVIAL(info) << "Bearish prediction: " << take_profit_price;
         return {PriceOutlook::BEARISH, take_profit_price};
       }
     }
     BOOST_LOG_TRIVIAL(info) << "Neutral prediction";
-    return {PriceOutlook::NEUTRAL, current_price};
+    return {PriceOutlook::NEUTRAL, 0};
   }
 
   void Consume(const Ticker& ticker) {
