@@ -167,6 +167,7 @@ public:
 #endif
                 if (HasOpenOrders(current_symbol_id)) {
                   BOOST_LOG_TRIVIAL(warning) << "Not doing basic arbitrage since there are already open orders for " << current_symbol_id;
+                  lock_obj.unlock();
                   return;
                 }
                 SendBasicArbitrageOrders(best_bid_ticker, best_ask_ticker, order_size);
@@ -272,10 +273,10 @@ private:
     double quote_asset_balance = GetQuoteBalance(best_ask_ticker.m_exchange, sp);
     BOOST_LOG_TRIVIAL(debug) << best_bid_ticker.m_exchange << " - base asset account balance: " << base_asset_balance;
     BOOST_LOG_TRIVIAL(debug) << best_ask_ticker.m_exchange << " - quote asset account balance: " << quote_asset_balance;
-    // 2. Allow maximum 98% of actual balance to be traded
+    // 2. Allow maximum 90% of actual balance to be traded
     // This is to decrease risk of order failure due to insufficient funds (workaround inaccurate balance or not taking fee into account)
-    double tradable_base_balance = 0.98 * base_asset_balance;
-    double tradable_quote_balance = 0.98 * quote_asset_balance;
+    double tradable_base_balance = 0.90 * base_asset_balance;
+    double tradable_quote_balance = 0.90 * quote_asset_balance;
     // Check with available balances
     double quote_vol = std::min(base_vol * best_ask_ticker.m_ask, tradable_quote_balance);
     // Maximum volume available for arbitrage
