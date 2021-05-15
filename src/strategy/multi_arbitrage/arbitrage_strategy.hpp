@@ -146,16 +146,17 @@ public:
           Prediction prediction = m_mrs[current_symbol_id].Predict(best_bid_ticker.m_bid, best_ask_ticker.m_ask);
           switch(prediction.price_outlook) {
             case PriceOutlook::BEARISH: {
-                // TODO: do not use market order, use tilted limit order
-                auto f1 = std::async(std::launch::async, &ExchangeClient::MarketOrder, m_account_managers[best_bid_exchange].get(),
-                    current_symbol_id, Side::SELL, order_size);
-                auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
-                    current_symbol_id, Side::BUY, order_size, prediction.target_price);
+                // Use limit order tilted by fee
+                double fee = m_opts.m_exchange_params.at(best_bid_exchange).m_fee;
+                auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
+                    current_symbol_id, Side::SELL, order_size, (1.0 - fee) * best_bid_ticker.m_bid);
                 auto f1_res = f1.get();
                 if (!f1_res) {
                   BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
                   std::exit(1);
                 }
+                auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
+                    current_symbol_id, Side::BUY, order_size, prediction.target_price);
                 auto f2_res = f2.get();
                 if (!f2_res) {
                   BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
@@ -175,15 +176,17 @@ public:
               }
               break;
             case PriceOutlook::BULLISH: {
-                auto f1 = std::async(std::launch::async, &ExchangeClient::MarketOrder, m_account_managers[best_ask_exchange].get(),
-                    current_symbol_id, Side::BUY, order_size);
-                auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
-                    current_symbol_id, Side::SELL, order_size, prediction.target_price);
+                // Use limit order tilted by fee
+                double fee = m_opts.m_exchange_params.at(best_ask_exchange).m_fee;
+                auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
+                    current_symbol_id, Side::BUY, order_size, (1.0 + fee) * best_ask_ticker.m_ask);
                 auto f1_res = f1.get();
                 if (!f1_res) {
                   BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
                   std::exit(1);
                 }
+                auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
+                    current_symbol_id, Side::SELL, order_size, prediction.target_price);
                 auto f2_res = f2.get();
                 if (!f2_res) {
                   BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
@@ -209,7 +212,6 @@ public:
   }
 
   virtual void OnConnectionOpen(const std::string& name) override {
-    m_orders_mutex.unlock();
   }
 
   virtual void OnConnectionClose(const std::string& name) override {
