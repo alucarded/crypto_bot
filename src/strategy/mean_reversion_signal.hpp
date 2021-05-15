@@ -66,24 +66,24 @@ public:
     // TODO: better way of finding target price (perhaps use some stochastic method and create couple of orders)
     double margin = m_atr.Get();
     // TODO: TEST!!!!!
-    if (m_ticker.m_ask < short_sma - margin && mid_sma > m_ticker.m_ask && long_sma > m_ticker.m_ask) {
+    if (m_ticker.m_ask < short_sma - 1.5*margin && mid_sma > m_ticker.m_ask && long_sma > m_ticker.m_ask) {
       if (mid_sma_slope > 0 && long_sma_slope > 0) {
-        auto take_profit_price = best_ask + std::max(std::abs(mid_sma - best_ask), 1.6*m_atr.Get());
+        auto take_profit_price = best_ask + std::max(std::abs(mid_sma - best_ask), 1.5*margin);
         BOOST_LOG_TRIVIAL(info) << "Bullish prediction: " << take_profit_price;
         return {PriceOutlook::BULLISH, take_profit_price};
-      } else if (m_ticker.m_ask < short_sma - 1.6*margin) {
-        auto take_profit_price = best_ask + 1.6*margin;
+      } else if (m_ticker.m_ask < short_sma - 2.0*margin) {
+        auto take_profit_price = best_ask + 1.5*margin;
         BOOST_LOG_TRIVIAL(info) << "Bullish prediction: " << take_profit_price;
         return {PriceOutlook::BULLISH, take_profit_price};
       }
     }
-    if (m_ticker.m_bid > short_sma + margin && mid_sma < m_ticker.m_bid && long_sma < m_ticker.m_bid) {
+    if (m_ticker.m_bid > short_sma + 1.5*margin && mid_sma < m_ticker.m_bid && long_sma < m_ticker.m_bid) {
       if (mid_sma_slope < 0 && long_sma_slope < 0) {
-        auto take_profit_price = best_bid - std::max(std::abs(mid_sma - best_bid), 1.6*m_atr.Get());
+        auto take_profit_price = best_bid - std::max(std::abs(mid_sma - best_bid), 1.5*margin);
         BOOST_LOG_TRIVIAL(info) << "Bearish prediction: " << take_profit_price;
         return {PriceOutlook::BEARISH, take_profit_price};
-      } else if (m_ticker.m_bid > short_sma + 1.6*margin) {
-        auto take_profit_price = best_bid - 1.6*margin;
+      } else if (m_ticker.m_bid > short_sma + 2.0*margin) {
+        auto take_profit_price = best_bid - 1.5*margin;
         BOOST_LOG_TRIVIAL(info) << "Bearish prediction: " << take_profit_price;
         return {PriceOutlook::BEARISH, take_profit_price};
       }
