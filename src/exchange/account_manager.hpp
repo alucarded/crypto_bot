@@ -183,6 +183,7 @@ public:
     m_our_orders_lock.lock();
     for (auto it = m_our_orders.cbegin(); it != m_our_orders.cend(); ++it) {
       if (it->second.GetSymbolId() == pair) {
+        m_our_orders_lock.unlock();
         return true;
       }
     }
