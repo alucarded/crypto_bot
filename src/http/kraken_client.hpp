@@ -193,7 +193,12 @@ public:
       BOOST_LOG_TRIVIAL(error) << "Error getting account balance for " << GetExchange() << ": " << res.errmsg;
       return Result<AccountBalance>(res.response, res.errmsg);
     }
-    json response_json = json::parse(res.response);
+    json response_json;
+    try {
+      response_json = json::parse(res.response);
+    } catch(json::exception e) {
+      BOOST_LOG_TRIVIAL(error) << "Error parsing Kraken response body from " << GET_ACCOUNT_BALANCE_PATH << ": " << res.response;
+    }
     BOOST_LOG_TRIVIAL(debug) << "GetAccountBalance() response: " << response_json;
     if (response_json["error"].size() > 0) {
       // TODO: propagate all errors ?
