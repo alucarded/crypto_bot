@@ -15,7 +15,7 @@
 class AccountManager : public ExchangeClient, public UserDataListener {
 public:
   AccountManager(ExchangeClient* exchange_client)
-      : m_client(exchange_client), m_account_refresher(this) {
+      : m_client(exchange_client), m_account_refresher(this), m_is_account_synced(false) {
   }
 
   virtual ~AccountManager() {
@@ -47,7 +47,8 @@ public:
     std::scoped_lock<std::mutex> order_lock{m_order_mutex};
     auto res = m_client->GetAccountBalance();
     if (!res) {
-      throw std::runtime_error("Failed getting account balance for " + GetExchange());
+      BOOST_LOG_TRIVIAL(warning) << "Failed getting account balance for " + GetExchange();
+      m_is_account_synced = false;
     }
     m_account_balance_lock.lock();
     m_account_balance = std::move(res.Get());
@@ -66,6 +67,7 @@ public:
     m_account_balance_lock.lock();
     BOOST_LOG_TRIVIAL(debug) << GetExchange() + " - account balance after refresh: " << m_account_balance;
     m_account_balance_lock.unlock();
+    m_is_account_synced = true;
   }
 
   virtual std::string GetExchange() override {
@@ -204,6 +206,10 @@ public:
     double ret = m_account_balance.GetTotalBalance(symbol_id);
     m_account_balance_lock.unlock();
     return ret;
+  }
+
+  bool IsAccountSynced() const {
+    return m_is_account_synced;
   }
 protected:
   // m_our_orders_lock should be locked
@@ -365,4 +371,5 @@ protected:
   // 4. The balance has locked amount, which will never be freed.
   std::mutex m_order_mutex;
   AccountRefresher m_account_refresher;
+  std::atomic<bool> m_is_account_synced;
 };

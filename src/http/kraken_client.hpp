@@ -198,6 +198,7 @@ public:
       response_json = json::parse(res.response);
     } catch(json::exception e) {
       BOOST_LOG_TRIVIAL(error) << "Error parsing Kraken response body from " << GET_ACCOUNT_BALANCE_PATH << ": " << res.response;
+      return Result<AccountBalance>(res.response, res.errmsg);
     }
     BOOST_LOG_TRIVIAL(debug) << "GetAccountBalance() response: " << response_json;
     if (response_json["error"].size() > 0) {

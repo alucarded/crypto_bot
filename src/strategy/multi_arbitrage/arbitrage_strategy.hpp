@@ -138,9 +138,15 @@ public:
           return;
         }
 
+        if (!m_account_managers[best_bid_exchange]->IsAccountSynced() || !m_account_managers[best_ask_exchange]->IsAccountSynced()) {
+          BOOST_LOG_TRIVIAL(warning) << "Accounts not synced.";
+          return;
+        }
+
         std::unique_lock<std::mutex> lock_obj(m_orders_mutex, std::defer_lock);
         // Only one thread can send orders at any given point,
         // skip if another thread is currently sending orders.
+        // TODO: check if account is synced with AccountManager::IsAccountSynced
         if (lock_obj.try_lock()) {
 #ifdef WITH_MEAN_REVERSION_SIGNAL
           Prediction prediction = m_mrs[current_symbol_id].Predict(best_bid_ticker.m_bid, best_ask_ticker.m_ask);
