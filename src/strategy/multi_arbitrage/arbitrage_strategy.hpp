@@ -143,10 +143,14 @@ public:
           return;
         }
 
+        if (HasOpenOrders(current_symbol_id)) {
+          BOOST_LOG_TRIVIAL(warning) << "Not doing basic arbitrage since there are already open orders for " << current_symbol_id;
+          return;
+        }
+
         std::unique_lock<std::mutex> lock_obj(m_orders_mutex, std::defer_lock);
         // Only one thread can send orders at any given point,
         // skip if another thread is currently sending orders.
-        // TODO: check if account is synced with AccountManager::IsAccountSynced
         if (lock_obj.try_lock()) {
 #ifdef WITH_MEAN_REVERSION_SIGNAL
           Prediction prediction = m_mrs[current_symbol_id].Predict(best_bid_ticker.m_bid, best_ask_ticker.m_ask);
@@ -172,11 +176,6 @@ public:
               break;
             case PriceOutlook::NEUTRAL: {
 #endif
-                if (HasOpenOrders(current_symbol_id)) {
-                  BOOST_LOG_TRIVIAL(warning) << "Not doing basic arbitrage since there are already open orders for " << current_symbol_id;
-                  lock_obj.unlock();
-                  return;
-                }
                 SendBasicArbitrageOrders(best_bid_ticker, best_ask_ticker, order_size);
 #ifdef WITH_MEAN_REVERSION_SIGNAL
               }

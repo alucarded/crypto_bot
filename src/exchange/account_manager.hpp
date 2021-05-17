@@ -79,7 +79,9 @@ public:
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
     std::scoped_lock<std::mutex> order_lock{m_order_mutex};
     // TODO: register all order ids (so that we know, which ones do we manage, how many our open orders are there etc)
-    // TODO: FIXME: pass expected price as not all exchanges will respond with filled quote amount or price (eg. Kraken)
+    // TODO: pass expected price as not all exchanges will respond with filled quote amount or price (eg. Kraken)
+    // Account is not synced until we got a response (we do not know if and when exactly it will be placed)
+    m_is_account_synced = false;
     auto res = m_client->MarketOrder(symbol, side, qty);
     if (res) {
       auto& order = res.Get();
@@ -89,11 +91,13 @@ public:
       AddLockedBalance(order);
       BOOST_LOG_TRIVIAL(trace) << "Account balance after placing market order: " << m_account_balance;
     }
+    m_is_account_synced = true;
     return res;
   }
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
     std::scoped_lock<std::mutex> order_lock{m_order_mutex};
+    m_is_account_synced = false;
     auto res = m_client->LimitOrder(symbol, side, qty, price);
     if (res) {
       auto& order = res.Get();
@@ -104,6 +108,7 @@ public:
       AddLockedBalance(order);
       BOOST_LOG_TRIVIAL(trace) << "Account balance after placing limit order: " << m_account_balance;
     }
+    m_is_account_synced = true;
     return res;
   }
 
