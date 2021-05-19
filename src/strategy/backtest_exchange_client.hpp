@@ -1,9 +1,11 @@
 #include "exchange/exchange_client.h"
 #include "exchange/exchange_listener.h"
 
+#include <iostream>
 #include <fstream>
 #include <map>
 #include <sstream>
+#include <string>
 #include <unordered_map>
 
 struct BacktestSettings {
@@ -55,11 +57,11 @@ public:
         throw std::runtime_error("Not enough qty for current bid price."
             "Implement strategy, so that there is no order with quantity higher than there is available order book for best ask/bid.");
       }
-      if (m_balances.at(base_asset_id) < qty) {
-        BOOST_LOG_TRIVIAL(warning) << "Not enough qty of " << base_asset_id << " available.";
-        return Result<Order>("", "");
-      }
-      cost = qty*(m_ticker.m_bid - m_settings.m_slippage)*(1.0 - m_settings.m_fee);
+      // if (m_balances.at(base_asset_id) < qty) {
+      //   BOOST_LOG_TRIVIAL(warning) << "Not enough qty of " << base_asset_id << " available.";
+      //   return Result<Order>("", "");
+      // }
+      cost = qty*(price - m_settings.m_slippage)*(1.0 - m_settings.m_fee);
       m_balances[quote_asset_id] = m_balances.at(quote_asset_id) + cost;
       m_balances[base_asset_id] = m_balances.at(base_asset_id) - qty;
     } else { // Buying
@@ -69,11 +71,11 @@ public:
         throw std::runtime_error("Not enough qty for current ask price."
             "Implement strategy, so that there is no order with quantity higher than there is available order book for best ask/bid.");
       }
-      cost = qty*(m_ticker.m_ask + m_settings.m_slippage)*(1.0 + m_settings.m_fee);
-      if (m_balances[quote_asset_id] < cost) {
-        BOOST_LOG_TRIVIAL(warning) << "Not enough " << quote_asset_id;
-        return Result<Order>("", "");
-      }
+      cost = qty*(price + m_settings.m_slippage)*(1.0 + m_settings.m_fee);
+      // if (m_balances[quote_asset_id] < cost) {
+      //   BOOST_LOG_TRIVIAL(warning) << "Not enough " << quote_asset_id;
+      //   return Result<Order>("", "");
+      // }
       m_balances[quote_asset_id] = m_balances[quote_asset_id] - cost;
       m_balances[base_asset_id] = m_balances[base_asset_id] + qty;
     }
@@ -158,15 +160,17 @@ public:
     }
   }
 
-  void PrintBalances() const {
+  void PrintBalances() {
     const size_t sz = m_balances.size();
     for (auto it = m_balances.begin(); it != m_balances.end(); ++it) {
       const SymbolId& spid = it->first;
+      // TODO: FIXME: set correct precision!!
+      std::string b = std::to_string(m_balances.at(spid));
+      m_results_file << b;
       if (std::next(it) != m_balances.end()) {
-        // TDOO: FIXME: set correct precision!!
-        m_results_file << std::to_string(m_balances.at(spid)) << ",";
+        m_results_file << ",";
       } else {
-        m_results_file << std::to_string(m_balances.at(spid)) << "\n";
+        m_results_file << "\n";
       }
     }
     m_results_file.flush();
