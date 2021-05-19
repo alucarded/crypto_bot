@@ -177,7 +177,7 @@ public:
   Order& operator=(const Order& o) {
     m_id = o.m_id;
     m_client_id = o.m_client_id;
-    m_symbol_id = o.m_symbol_id;;
+    m_symbol_id = o.m_symbol_id;
     m_side = o.m_side;
     m_order_type = o.m_order_type;
     m_quantity = o.m_quantity;
@@ -191,7 +191,7 @@ public:
   Order& operator=(Order&& o) {
     m_id = std::move(o.m_id);
     m_client_id = std::move(o.m_client_id);
-    m_symbol_id = o.m_symbol_id;;
+    m_symbol_id = o.m_symbol_id;
     m_side = o.m_side;
     m_order_type = o.m_order_type;
     m_quantity = o.m_quantity;

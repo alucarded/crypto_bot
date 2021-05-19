@@ -10,12 +10,15 @@ GTESTS=src/strategy/multi_arbitrage/arbitrage_strategy_matcher_unittest.cc \
 
 COMMON_SRC=src/model/order.cc \
 			 src/model/symbol.cc \
+			 src/model/ticker.cc \
 			 src/model/account_balance.cc \
 			 src/exchange/account_refresher.cc
-ARBITRAGE_MAIN_SRC=src/arbitrage_strategy_main.cc
+ARBITRAGE_MAIN_SRC=src/arbitrage_strategy_main.cc \
+			 src/strategy/multi_arbitrage/arbitrage_order_calculator.cc
 ARBITRAGE_BACKTEST_SRC=src/arbitrage_strategy_backtest.cc \
 			 src/db/mongo_client.hpp \
 			 src/producer/mongo_ticker_producer.hpp
+# ARBITRAGE_FLAGS=-DWITH_MEAN_REVERSION_SIGNAL
 
 collector:
 	g++ -pipe src/collector.cc -o collector $(CFLAGS) $(LDFLAGS)
@@ -40,7 +43,7 @@ integration_tests:
 	g++ -pipe src/http/kraken_client_test.cc -o kraken_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 arbitrage_main:
-	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_MAIN_SRC) -o arbitrage_main $(CFLAGS) $(LDFLAGS) -DWITH_MEAN_REVERSION_SIGNAL
+	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_MAIN_SRC) -o arbitrage_main $(CFLAGS) $(LDFLAGS)
 
 arbitrage_finder:
 	g++ -pipe src/arbitrage_finder_main.cc -o arbitrage_finder_main $(CFLAGS) $(LDFLAGS)

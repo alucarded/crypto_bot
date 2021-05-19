@@ -62,8 +62,6 @@ int main(int argc, char* argv[]) {
   strategy_opts.m_max_ticker_age_us = 1000000; // 1s
   strategy_opts.m_max_ticker_delay_us = 1200000; // 1s
   strategy_opts.m_min_trade_interval_us = 0;
-  strategy_opts.m_base_currency_ratio = 0.5;
-  strategy_opts.m_allowed_deviation = 0.3;
 
   BinanceClient* binance_client = new BinanceClient();
   AccountManager* binance_account_manager = new AccountManager(binance_client);
