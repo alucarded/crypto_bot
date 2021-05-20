@@ -29,7 +29,7 @@ using namespace std::chrono;
 class ArbitrageStrategy : public TradingStrategy, public ExchangeListener {
 public:
     ArbitrageStrategy(const ArbitrageStrategyOptions& opts)
-      : m_opts(opts), m_matcher(opts.m_exchange_params), m_last_trade_us(0) {
+      : m_opts(opts), m_matcher(opts.m_exchange_params), m_last_trade_us(0), m_order_calculator(opts) {
         // Validations
         if (m_opts.m_exchange_params.size() < 2) {
           throw std::invalid_argument("Parameters for at least 2 exchanges required");
@@ -43,13 +43,13 @@ public:
 
   // For testing
   ArbitrageStrategy(const ArbitrageStrategyOptions& opts, const ArbitrageStrategyMatcher& matcher)
-    : m_opts(opts), m_matcher(matcher), m_last_trade_us(0) {
+    : m_opts(opts), m_matcher(matcher), m_last_trade_us(0), m_order_calculator(opts) {
   }
 
-  // For testing
-  ArbitrageStrategy() : m_last_trade_us(0) {
+  // // For testing
+  // ArbitrageStrategy() : m_last_trade_us(0) {
 
-  }
+  // }
 
   void Initialize() {
     for (const auto& p : m_account_managers) {
@@ -116,9 +116,12 @@ public:
       BOOST_LOG_TRIVIAL(trace) << "Got account manager for best bid (" << best_bid_exchange << "): " << best_bid_count;
       BOOST_LOG_TRIVIAL(trace) << "Got account manager for best ask (" << best_ask_exchange << "): " << best_ask_count;
       if (best_bid_count > 0 && best_ask_count > 0) {
-        double order_size = CalculateOrderSize(best_bid_ticker, best_ask_ticker);
+        double base_balance = GetBaseBalance(best_bid_ticker.m_exchange, current_symbol_id);
+        double quote_balance = GetQuoteBalance(best_ask_ticker.m_exchange, current_symbol_id);
+        ArbitrageOrders orders = m_order_calculator.Calculate(best_bid_ticker, best_ask_ticker, base_balance, quote_balance);
+        double order_qty = orders.buy_order.GetQuantity();
         // Make sure the amount is above minimum
-        if (order_size < m_opts.m_min_amount[current_symbol_pair.GetBaseAsset()]) {
+        if (order_qty < m_opts.m_min_amount[current_symbol_pair.GetBaseAsset()]) {
           BOOST_LOG_TRIVIAL(warning) << "Order amount below minimum.";
           return;
         }
@@ -144,14 +147,14 @@ public:
                 // Use limit order tilted by fee
                 double fee = m_opts.m_exchange_params.at(best_bid_exchange).m_fee;
                 auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
-                    current_symbol_id, Side::SELL, order_size, (1.0 - fee) * best_bid_ticker.m_bid);
+                    current_symbol_id, Side::SELL, order_qty, (1.0 - fee) * best_bid_ticker.m_bid);
                 auto f1_res = f1.get();
                 if (!f1_res) {
                   BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
                   std::exit(1);
                 }
                 auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
-                    current_symbol_id, Side::BUY, order_size, prediction.target_price);
+                    current_symbol_id, Side::BUY, order_qty, prediction.target_price);
                 auto f2_res = f2.get();
                 if (!f2_res) {
                   BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
@@ -161,7 +164,7 @@ public:
               break;
             case PriceOutlook::NEUTRAL: {
 #endif
-                SendBasicArbitrageOrders(best_bid_ticker, best_ask_ticker, order_size);
+                SendBasicArbitrageOrders(best_bid_ticker, best_ask_ticker, order_qty);
 #ifdef WITH_MEAN_REVERSION_SIGNAL
               }
               break;
@@ -169,14 +172,14 @@ public:
                 // Use limit order tilted by fee
                 double fee = m_opts.m_exchange_params.at(best_ask_exchange).m_fee;
                 auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
-                    current_symbol_id, Side::BUY, order_size, (1.0 + fee) * best_ask_ticker.m_ask);
+                    current_symbol_id, Side::BUY, order_qty, (1.0 + fee) * best_ask_ticker.m_ask);
                 auto f1_res = f1.get();
                 if (!f1_res) {
                   BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
                   std::exit(1);
                 }
                 auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
-                    current_symbol_id, Side::SELL, order_size, prediction.target_price);
+                    current_symbol_id, Side::SELL, order_qty, prediction.target_price);
                 auto f2_res = f2.get();
                 if (!f2_res) {
                   BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_ask_exchange << ": " << f2_res.GetErrorMsg();
@@ -244,41 +247,6 @@ private:
     return m_account_managers.at(exchange_name)->GetFreeBalance(symbol_id);
   }
 
-  double CalculateOrderSize(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker) const {
-    SymbolPair sp = best_bid_ticker.m_symbol;
-    // Find maximum volume for arbitrage
-    // Set constraints on traded amount based on book volumes
-    assert(best_bid_ticker.m_bid_vol.has_value());
-    assert(best_ask_ticker.m_ask_vol.has_value());
-    double book_bid_vol = best_bid_ticker.m_bid_vol.value();
-    double book_ask_vol = best_ask_ticker.m_ask_vol.value();
-    // 1. Allow maximum 20% of smaller amount from the books, but not less than default amount (if possible)
-    // This is to decrease risk of not being filled immedaitely (or almost immediately)
-    double base_vol = std::min(book_bid_vol, book_ask_vol);
-    BOOST_LOG_TRIVIAL(debug) << "Available for arbitrage: " << base_vol << " " << sp;
-    double default_vol = m_opts.m_default_amount.at(sp.GetBaseAsset());
-    if (base_vol > default_vol) {
-      base_vol = std::max(0.2 * base_vol, default_vol);
-    }
-
-    double base_asset_balance = GetBaseBalance(best_bid_ticker.m_exchange, sp);
-    double quote_asset_balance = GetQuoteBalance(best_ask_ticker.m_exchange, sp);
-    BOOST_LOG_TRIVIAL(debug) << best_bid_ticker.m_exchange << " - base asset account balance: " << base_asset_balance;
-    BOOST_LOG_TRIVIAL(debug) << best_ask_ticker.m_exchange << " - quote asset account balance: " << quote_asset_balance;
-    // 2. Allow maximum 90% of actual balance to be traded
-    // This is to decrease risk of order failure due to insufficient funds (workaround inaccurate balance or not taking fee into account)
-    double tradable_base_balance = 0.90 * base_asset_balance;
-    double tradable_quote_balance = 0.90 * quote_asset_balance;
-    // Check with available balances
-    double quote_vol = std::min(base_vol * best_ask_ticker.m_ask, tradable_quote_balance);
-    // Maximum volume available for arbitrage
-    base_vol = std::min({base_vol, quote_vol/best_ask_ticker.m_ask, tradable_base_balance});
-    BOOST_LOG_TRIVIAL(debug) << "tradable_base_balance=" << tradable_base_balance << ", tradable_quote_balance=" << tradable_quote_balance
-        << ", quote_vol=" << quote_vol << ", base_vol=" << base_vol;
-
-    return base_vol;
-  }
-
   bool HasOpenOrders(SymbolPairId pair_id) const {
     for (const auto& p : m_account_managers) {
       const auto& manager_ptr = p.second;
@@ -297,4 +265,5 @@ private:
   std::mutex m_orders_mutex;
   cryptobot::spinlock m_tickers_lock;
   std::atomic<int64_t> m_last_trade_us;
+  ArbitrageOrderCalculator m_order_calculator;
 };

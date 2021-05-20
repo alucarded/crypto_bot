@@ -148,6 +148,10 @@ public:
     return Builder();
   }
 
+  Order() {
+
+  }
+
   Order(const std::string& id, const std::string& client_id, SymbolPairId symbol_id, Side side, OrderType order_type, double quantity)
     : m_id(id), m_client_id(client_id), m_symbol_id(symbol_id), m_side(side), m_order_type(order_type),
       m_quantity(quantity), m_price(0), m_status(OrderStatus::UNKNOWN), m_executed_quantity(0), m_total_cost(0) {
@@ -171,6 +175,10 @@ public:
       : m_id(std::move(o.m_id)), m_client_id(std::move(o.m_client_id)), m_symbol_id(o.m_symbol_id), m_side(o.m_side), m_order_type(o.m_order_type),
       m_quantity(o.m_quantity), m_price(o.m_price), m_status(o.m_status),
       m_executed_quantity(o.m_executed_quantity), m_total_cost(o.m_total_cost) {
+
+  }
+
+  ~Order() {
 
   }
 

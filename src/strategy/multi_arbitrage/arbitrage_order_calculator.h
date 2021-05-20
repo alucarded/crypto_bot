@@ -13,10 +13,16 @@ class ArbitrageOrderCalculator {
 public:
   ArbitrageOrderCalculator(const ArbitrageStrategyOptions& options);
 
-  ArbitrageOrders Calculate(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker) const;
+  ArbitrageOrders Calculate(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker, double base_balance, double quote_balance) const;
 
-// private:
-//   double CalculateOrderSize(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker) const;
+private:
+  struct ArbitragePrices {
+    double sell_price;
+    double buy_price;
+  };
+
+  double CalculateQuantity(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker, double base_balance, double quote_balance) const;
+  ArbitragePrices CalculatePrices(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker) const;
 
 private:
   ArbitrageStrategyOptions m_opts;
