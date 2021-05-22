@@ -3,12 +3,12 @@
 #include <string>
 
 struct ExchangeParams {
-  ExchangeParams(const std::string& exchange_name, double slippage, double fee)
-    : m_exchange_name(exchange_name), m_slippage(slippage), m_fee(fee) {
+  ExchangeParams(const std::string& exchange_name_, double slippage_, double fee_)
+    : exchange_name(exchange_name_), slippage(slippage_), fee(fee_) {
 
   }
 
-  std::string m_exchange_name;
-  double m_slippage;
-  double m_fee;
+  std::string exchange_name;
+  double slippage;
+  double fee;
 };

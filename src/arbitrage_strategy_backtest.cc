@@ -43,12 +43,12 @@ int main(int argc, char* argv[]) {
 
   BacktestSettings binance_backtest_settings;
   // TODO: FIXME: slippage value per pair
-  binance_backtest_settings.m_slippage = 0;
-  binance_backtest_settings.m_fee = 0.00075;
+  binance_backtest_settings.slippage = 0;
+  binance_backtest_settings.fee = 0.00075;
   BacktestExchangeClient* binance_backtest_client = new BacktestExchangeClient(binance_backtest_settings, "binance_backtest_results.csv");
   BacktestSettings kraken_backtest_settings;
-  kraken_backtest_settings.m_slippage = 0;
-  kraken_backtest_settings.m_fee = 0.0024;
+  kraken_backtest_settings.slippage = 0;
+  kraken_backtest_settings.fee = 0.0024;
   BacktestExchangeClient* kraken_backtest_client = new BacktestExchangeClient(kraken_backtest_settings, "kraken_backtest_results.csv");
 
   AccountManager* binance_account_manager = new AccountManager(binance_backtest_client);

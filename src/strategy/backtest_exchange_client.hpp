@@ -11,8 +11,8 @@
 struct BacktestSettings {
   std::string m_exchange;
   std::vector<SymbolPairId> symbol_pairs;
-  double m_fee;
-  double m_slippage;
+  double fee;
+  double slippage;
   double m_min_qty;
 };
 
@@ -61,7 +61,7 @@ public:
       //   BOOST_LOG_TRIVIAL(warning) << "Not enough qty of " << base_asset_id << " available.";
       //   return Result<Order>("", "");
       // }
-      cost = qty*(price - m_settings.m_slippage)*(1.0 - m_settings.m_fee);
+      cost = qty*(price - m_settings.slippage)*(1.0 - m_settings.fee);
       m_balances[quote_asset_id] = m_balances.at(quote_asset_id) + cost;
       m_balances[base_asset_id] = m_balances.at(base_asset_id) - qty;
     } else { // Buying
@@ -71,7 +71,7 @@ public:
         throw std::runtime_error("Not enough qty for current ask price."
             "Implement strategy, so that there is no order with quantity higher than there is available order book for best ask/bid.");
       }
-      cost = qty*(price + m_settings.m_slippage)*(1.0 + m_settings.m_fee);
+      cost = qty*(price + m_settings.slippage)*(1.0 + m_settings.fee);
       // if (m_balances[quote_asset_id] < cost) {
       //   BOOST_LOG_TRIVIAL(warning) << "Not enough " << quote_asset_id;
       //   return Result<Order>("", "");
@@ -136,7 +136,7 @@ public:
           if (m_ticker.m_bid >= order.GetPrice()) {
             // Fill
             // TODO: implement partial fill ?
-            double cost = m_ticker.m_bid * order.GetQuantity() * (1.0 - m_settings.m_fee);
+            double cost = m_ticker.m_bid * order.GetQuantity() * (1.0 - m_settings.fee);
             m_balances[quote_asset_id] = m_balances.at(quote_asset_id) + cost;
             m_balances[base_asset_id] = m_balances.at(base_asset_id) - order.GetQuantity();
             m_limit_orders.erase(m_limit_orders.begin() + i);
@@ -147,7 +147,7 @@ public:
           if (m_ticker.m_ask <= order.GetPrice()) {
             // Fill
             // TODO: implement partial fill ?
-            double cost = m_ticker.m_ask * order.GetQuantity() * (1.0 + m_settings.m_fee);
+            double cost = m_ticker.m_ask * order.GetQuantity() * (1.0 + m_settings.fee);
             m_balances[quote_asset_id] = m_balances.at(quote_asset_id) - cost;
             m_balances[base_asset_id] = m_balances.at(base_asset_id) + order.GetQuantity();
             m_limit_orders.erase(m_limit_orders.begin() + i);

@@ -106,7 +106,7 @@ private:
     }
     const auto& bid_side_params = m_exchange_params.at(best_bid_ticker.m_exchange);
     const auto& ask_side_params = m_exchange_params.at(best_ask_ticker.m_exchange);
-    return (1.0 - bid_side_params.m_fee)*(best_bid_ticker.m_bid - bid_side_params.m_slippage) - (1.0 + ask_side_params.m_fee)*(best_ask_ticker.m_ask + ask_side_params.m_slippage);
+    return (1.0 - bid_side_params.fee)*(best_bid_ticker.m_bid - bid_side_params.slippage) - (1.0 + ask_side_params.fee)*(best_ask_ticker.m_ask + ask_side_params.slippage);
   }
 
   std::unordered_map<std::string, ExchangeParams> m_exchange_params;

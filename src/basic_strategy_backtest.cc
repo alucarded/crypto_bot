@@ -21,8 +21,8 @@ int main(int argc, char* argv[]) {
     strategy_opts.m_trading_exchange = "binance";
     strategy_opts.m_required_exchanges = 5;
     BacktestSettings backtest_settings;
-    backtest_settings.m_slippage = 5;
-    backtest_settings.m_fee = 0.0025;
+    backtest_settings.slippage = 5;
+    backtest_settings.fee = 0.0025;
     BacktestExchangeClient exchange_client(backtest_settings, "backtest_results.csv");
     BasicStrategy basic_strategy(strategy_opts, &exchange_client);
     MongoTickerProducer mongo_producer(mongo_client, "findata", "BtcUsdTicker_v4", &basic_strategy);

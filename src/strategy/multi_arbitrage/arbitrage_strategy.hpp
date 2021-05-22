@@ -145,7 +145,7 @@ public:
           switch(prediction.price_outlook) {
             case PriceOutlook::BEARISH: {
                 // Use limit order tilted by fee
-                double fee = m_opts.m_exchange_params.at(best_bid_exchange).m_fee;
+                double fee = m_opts.m_exchange_params.at(best_bid_exchange).fee;
                 auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
                     current_symbol_id, Side::SELL, order_qty, (1.0 - fee) * best_bid_ticker.m_bid);
                 auto f1_res = f1.get();
@@ -170,7 +170,7 @@ public:
               break;
             case PriceOutlook::BULLISH: {
                 // Use limit order tilted by fee
-                double fee = m_opts.m_exchange_params.at(best_ask_exchange).m_fee;
+                double fee = m_opts.m_exchange_params.at(best_ask_exchange).fee;
                 auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
                     current_symbol_id, Side::BUY, order_qty, (1.0 + fee) * best_ask_ticker.m_ask);
                 auto f1_res = f1.get();
