@@ -37,7 +37,7 @@ double ArbitrageOrderCalculator::CalculateQuantity(const Ticker& best_bid_ticker
   // This is to decrease risk of not being filled immedaitely (or almost immediately)
   double base_vol = std::min(book_bid_vol, book_ask_vol);
   BOOST_LOG_TRIVIAL(debug) << "Available for arbitrage: " << base_vol << " " << sp;
-  double default_vol = m_opts.m_default_amount.at(sp.GetBaseAsset());
+  double default_vol = m_opts.default_amount.at(sp.GetBaseAsset());
   if (base_vol > default_vol) {
     base_vol = std::max(0.2 * base_vol, default_vol);
   }

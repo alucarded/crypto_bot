@@ -39,11 +39,11 @@ int main(int argc, char* argv[]) {
   BOOST_LOG_TRIVIAL(info) << "Boost logging configured";
 
   ArbitrageStrategyOptions strategy_opts;
-  strategy_opts.m_exchange_params = {
+  strategy_opts.exchange_params = {
     { "binance", ExchangeParams("binance", 0.0, 0.00075) },
     { "kraken", ExchangeParams("kraken", 0.0, 0.0026) }
   };
-  strategy_opts.m_default_amount = {
+  strategy_opts.default_amount = {
     {SymbolId::ADA, 50},
     {SymbolId::BTC, 0.001},
     {SymbolId::DOT, 1.5},
@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
     {SymbolId::EOS, 12},
     {SymbolId::XLM, 100},
   };
-  strategy_opts.m_min_amount = {
+  strategy_opts.min_amount = {
     {SymbolId::ADA, 25},
     {SymbolId::BTC, 0.0002},
     {SymbolId::DOT, 0.5},
@@ -59,9 +59,9 @@ int main(int argc, char* argv[]) {
     {SymbolId::EOS, 2.5},
     {SymbolId::XLM, 20},
   };
-  strategy_opts.m_max_ticker_age_us = 1000000; // 1s
-  strategy_opts.m_max_ticker_delay_us = 1200000; // 1s
-  strategy_opts.m_min_trade_interval_us = 0;
+  strategy_opts.max_ticker_age_us = 1000000; // 1s
+  strategy_opts.max_ticker_delay_us = 1200000; // 1s
+  strategy_opts.min_trade_interval_us = 0;
 
   BinanceClient* binance_client = new BinanceClient();
   AccountManager* binance_account_manager = new AccountManager(binance_client);

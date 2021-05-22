@@ -36,17 +36,15 @@ int main(int argc, char* argv[]) {
   BOOST_LOG_TRIVIAL(info) << "Boost logging configured";
   try {
     ArbitrageStrategyOptions strategy_opts;
-    strategy_opts.m_exchange_params = {
+    strategy_opts.exchange_params = {
       { "binance", ExchangeParams("binance", 0.0, 0.00075) },
       { "kraken", ExchangeParams("kraken", 0.0, 0.0026) }
     };
-    strategy_opts.m_default_amount = 0.001;
-    strategy_opts.m_min_amount = 0.0002;
-    strategy_opts.m_max_ticker_age_us = 1000000; // 1s
-    strategy_opts.m_max_ticker_delay_us = 1000000; // 500 ms
-    strategy_opts.m_min_trade_interval_us = 0;
-    strategy_opts.m_base_currency_ratio = 0.5;
-    strategy_opts.m_allowed_deviation = 0.3;
+    strategy_opts.default_amount = 0.001;
+    strategy_opts.min_amount = 0.0002;
+    strategy_opts.max_ticker_age_us = 1000000; // 1s
+    strategy_opts.max_ticker_delay_us = 1000000; // 500 ms
+    strategy_opts.min_trade_interval_us = 0;
     ArbitrageStrategy arbitrage_strategy(strategy_opts);
     arbitrage_strategy.RegisterExchangeClient("binance", new ArbitrageFinderClient("binance"));
     arbitrage_strategy.RegisterExchangeClient("kraken", new DummyClient());

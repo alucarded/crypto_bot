@@ -12,11 +12,11 @@ class ArbitrageStrategyFixture : public testing::Test {
 public:
   ArbitrageStrategyFixture() {
     ArbitrageStrategyOptions options;
-    options.m_exchange_params = {
+    options.exchange_params = {
       {"A", ExchangeParams("A", 0.01, 0.01)},
       {"B", ExchangeParams("B", 0.01, 0.02)}
     };
-    options.m_default_amount = 0.0005;
+    options.default_amount = 0.0005;
     MockMatcher mock_matcher;
     arbitrage_strategy = ArbitrageStrategy(options, mock_matcher);
   }

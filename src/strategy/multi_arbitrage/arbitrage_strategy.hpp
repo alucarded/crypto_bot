@@ -29,12 +29,12 @@ using namespace std::chrono;
 class ArbitrageStrategy : public TradingStrategy, public ExchangeListener {
 public:
     ArbitrageStrategy(const ArbitrageStrategyOptions& opts)
-      : m_opts(opts), m_matcher(opts.m_exchange_params), m_last_trade_us(0), m_order_calculator(opts) {
+      : m_opts(opts), m_matcher(opts.exchange_params), m_last_trade_us(0), m_order_calculator(opts) {
         // Validations
-        if (m_opts.m_exchange_params.size() < 2) {
+        if (m_opts.exchange_params.size() < 2) {
           throw std::invalid_argument("Parameters for at least 2 exchanges required");
         }
-        for (const auto& p : m_opts.m_default_amount) {
+        for (const auto& p : m_opts.default_amount) {
           if (p.second < 0.0) {
             throw std::invalid_argument("Invalid order amount, please check configuration or change hardcoded limits");
           }
@@ -88,11 +88,11 @@ public:
             << " - " << best_bid_ticker.m_symbol << "): " << std::to_string(best_bid_ticker_age)
             << ", best ask ticker age (" << best_ask_exchange
             << " - " << best_ask_ticker.m_symbol << "): " << std::to_string(best_ask_ticker_age);
-      if (best_bid_ticker_age > m_opts.m_max_ticker_age_us) {
+      if (best_bid_ticker_age > m_opts.max_ticker_age_us) {
         BOOST_LOG_TRIVIAL(debug) << "Ticker " << best_bid_ticker.m_exchange << " " << best_bid_ticker.m_symbol << " is too old";
         return;
       }
-      if (best_ask_ticker_age > m_opts.m_max_ticker_age_us) {
+      if (best_ask_ticker_age > m_opts.max_ticker_age_us) {
         BOOST_LOG_TRIVIAL(debug) << "Ticker " << best_ask_ticker.m_exchange << " " << best_ask_ticker.m_symbol << " is too old";
         return;
       }
@@ -104,8 +104,8 @@ public:
       BOOST_LOG_TRIVIAL(info) << "Best bid ticker delay (" << best_bid_exchange
             << "): " << std::to_string(best_bid_ticker_delay) << ", best ask ticker delay (" << best_ask_exchange
             << "): " << std::to_string(best_ask_ticker_delay);
-      if (best_bid_ticker_delay > m_opts.m_max_ticker_delay_us
-          || best_ask_ticker_delay > m_opts.m_max_ticker_delay_us) {
+      if (best_bid_ticker_delay > m_opts.max_ticker_delay_us
+          || best_ask_ticker_delay > m_opts.max_ticker_delay_us) {
         BOOST_LOG_TRIVIAL(warning) << "Ticker arrived with too big delay";
         return;
       }
@@ -121,7 +121,7 @@ public:
         ArbitrageOrders orders = m_order_calculator.Calculate(best_bid_ticker, best_ask_ticker, base_balance, quote_balance);
         double order_qty = orders.buy_order.GetQuantity();
         // Make sure the amount is above minimum
-        if (order_qty < m_opts.m_min_amount[current_symbol_pair.GetBaseAsset()]) {
+        if (order_qty < m_opts.min_amount[current_symbol_pair.GetBaseAsset()]) {
           BOOST_LOG_TRIVIAL(warning) << "Order amount below minimum.";
           return;
         }
@@ -145,7 +145,7 @@ public:
           switch(prediction.price_outlook) {
             case PriceOutlook::BEARISH: {
                 // Use limit order tilted by fee
-                double fee = m_opts.m_exchange_params.at(best_bid_exchange).fee;
+                double fee = m_opts.exchange_params.at(best_bid_exchange).fee;
                 auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
                     current_symbol_id, Side::SELL, order_qty, (1.0 - fee) * best_bid_ticker.m_bid);
                 auto f1_res = f1.get();
@@ -170,7 +170,7 @@ public:
               break;
             case PriceOutlook::BULLISH: {
                 // Use limit order tilted by fee
-                double fee = m_opts.m_exchange_params.at(best_ask_exchange).fee;
+                double fee = m_opts.exchange_params.at(best_ask_exchange).fee;
                 auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
                     current_symbol_id, Side::BUY, order_qty, (1.0 + fee) * best_ask_ticker.m_ask);
                 auto f1_res = f1.get();
