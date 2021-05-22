@@ -164,7 +164,7 @@ public:
               break;
             case PriceOutlook::NEUTRAL: {
 #endif
-                SendBasicArbitrageOrders(best_bid_ticker, best_ask_ticker, order_qty);
+                SendBasicArbitrageOrders(best_bid_ticker, best_ask_ticker, order_qty, orders.sell_order.GetPrice(), orders.buy_order.GetPrice());
 #ifdef WITH_MEAN_REVERSION_SIGNAL
               }
               break;
@@ -217,14 +217,14 @@ public:
 
 private:
 
-  void SendBasicArbitrageOrders(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker, double vol) {
+  void SendBasicArbitrageOrders(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker, double vol, double sell_price, double buy_price) {
     const auto& best_bid_exchange = best_bid_ticker.m_exchange;
     const auto& best_ask_exchange = best_ask_ticker.m_exchange;
     SymbolPairId current_symbol_id = SymbolPairId(best_bid_ticker.m_symbol); 
     auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
-        current_symbol_id, Side::SELL, vol, best_bid_ticker.m_bid);
+        current_symbol_id, Side::SELL, vol, sell_price);
     auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
-        current_symbol_id, Side::BUY, vol, best_ask_ticker.m_ask);
+        current_symbol_id, Side::BUY, vol, buy_price);
     auto f1_res = f1.get();
     if (!f1_res) {
       BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();

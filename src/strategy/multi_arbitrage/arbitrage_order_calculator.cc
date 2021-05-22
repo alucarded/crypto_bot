@@ -6,19 +6,20 @@ ArbitrageOrderCalculator::ArbitrageOrderCalculator(const ArbitrageStrategyOption
 
 ArbitrageOrders ArbitrageOrderCalculator::Calculate(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker, double base_balance, double quote_balance) const {
   double qty = CalculateQuantity(best_bid_ticker, best_ask_ticker, base_balance, quote_balance);
+  ArbitragePrices prices = CalculatePrices(best_bid_ticker, best_ask_ticker);
 
   ArbitrageOrders res;
   res.sell_order = Order::CreateBuilder()
       .Symbol(best_bid_ticker.m_symbol)
       .Quantity(qty)
-      .Price(best_bid_ticker.m_bid)
+      .Price(prices.sell_price)
       .Side_(Side::SELL)
       .OrderType_(OrderType::LIMIT)
       .Build();
   res.buy_order = Order::CreateBuilder()
       .Symbol(best_ask_ticker.m_symbol)
       .Quantity(qty)
-      .Price(best_ask_ticker.m_ask)
+      .Price(prices.buy_price)
       .Side_(Side::BUY)
       .OrderType_(OrderType::LIMIT)
       .Build();
@@ -60,9 +61,20 @@ double ArbitrageOrderCalculator::CalculateQuantity(const Ticker& best_bid_ticker
 
 ArbitrageOrderCalculator::ArbitragePrices ArbitrageOrderCalculator::CalculatePrices(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker) const {
   ArbitragePrices res;
-  // TODO: calculate profit margin and apply partly to best ask and partly to best bid prices
-  // TODO: which price gets bigger buffer?
-  res.buy_price = best_ask_ticker.m_ask;
-  res.sell_price = best_bid_ticker.m_bid;
+  const auto& best_bid_exchange_params = m_opts.exchange_params.at(best_bid_ticker.m_exchange);
+  const auto& best_ask_exchange_params = m_opts.exchange_params.at(best_ask_ticker.m_exchange);
+  double best_bid_exchange_fee = best_bid_exchange_params.fee;
+  double best_ask_exchange_fee = best_ask_exchange_params.fee;
+  // Part of quote currency sum received when selling
+  double sell_cost_coeff = 1.0 - best_bid_exchange_fee;
+  // Part of quote currency sum paid when buying
+  double buy_cost_coeff = 1.0 + best_ask_exchange_fee;
+  double max_buy_price = (sell_cost_coeff / buy_cost_coeff) * best_bid_ticker.m_bid;
+  double min_sell_price = (buy_cost_coeff / sell_cost_coeff) * best_ask_ticker.m_ask;
+  // Apply proportional price margin to both buy and sell side
+  // Worst case is 0 profit
+  // TODO: should prices get different margins?
+  res.buy_price = (best_ask_ticker.m_ask + max_buy_price) / 2.0;
+  res.sell_price = (best_bid_ticker.m_bid + min_sell_price) / 2.0;
   return res;
 }

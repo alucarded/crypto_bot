@@ -31,11 +31,12 @@ arbitrage_backtest:
 
 unit_tests:
 	# g++ -pipe $(GTESTS) -o unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe src/strategy/multi_arbitrage/arbitrage_strategy_matcher_unittest.cc -o arbitrage_strategy_matcher_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe src/model/order_book_unittest.cc -o order_book_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe src/exchange/account_manager_unittest.cc -o account_manager_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe src/strategy/indicator/simple_moving_average_unittest.cc -o simple_moving_average_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe src/utils/string_unittest.cc -o string_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe $(COMMON_SRC) src/strategy/multi_arbitrage/arbitrage_strategy_matcher_unittest.cc -o arbitrage_strategy_matcher_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe $(COMMON_SRC) src/strategy/multi_arbitrage/arbitrage_order_calculator.cc src/strategy/multi_arbitrage/arbitrage_order_calculator_unittest.cc -o arbitrage_order_calculator_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe $(COMMON_SRC) src/model/order_book_unittest.cc -o order_book_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe $(COMMON_SRC) src/exchange/account_manager_unittest.cc -o account_manager_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe $(COMMON_SRC) src/strategy/indicator/simple_moving_average_unittest.cc -o simple_moving_average_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe $(COMMON_SRC) src/utils/string_unittest.cc -o string_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 integration_tests:
 	g++ -pipe src/http/http_client_test.cc -o http_client_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
