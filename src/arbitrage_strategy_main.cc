@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
   ArbitrageStrategyOptions strategy_opts;
   strategy_opts.exchange_params = {
     { "binance", ExchangeParams("binance", 0.0, 0.00075) },
-    { "kraken", ExchangeParams("kraken", 0.0, 0.0026) }
+    { "kraken", ExchangeParams("kraken", 0.0, 0.0024) }
   };
   strategy_opts.default_amount = {
     {SymbolId::ADA, 50},
