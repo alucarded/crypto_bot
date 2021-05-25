@@ -256,6 +256,10 @@ private:
       return false;
     }
 
+    // Optimize socket
+    boost::asio::ip::tcp::no_delay no_delay_option(true);
+    ssl_stream.next_layer().set_option(no_delay_option);
+
     ssl_stream.handshake(boost::asio::ssl::stream_base::client, ec);
     if ( ec ) {
       BOOST_LOG_TRIVIAL(error) << "Handshake error: " << ec.message();

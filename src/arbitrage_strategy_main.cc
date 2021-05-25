@@ -40,8 +40,8 @@ int main(int argc, char* argv[]) {
 
   ArbitrageStrategyOptions strategy_opts;
   strategy_opts.exchange_params = {
-    { "binance", ExchangeParams("binance", 0.0, 0.00075) },
-    { "kraken", ExchangeParams("kraken", 0.0, 0.0024) }
+    { "binance", ExchangeParams("binance", 0.0, 0.00075, 52506572519) },
+    { "kraken", ExchangeParams("kraken", 0.0, 0.0020, 3404118345) }
   };
   strategy_opts.default_amount = {
     {SymbolId::ADA, 50},
@@ -51,16 +51,17 @@ int main(int argc, char* argv[]) {
     {SymbolId::EOS, 12},
     {SymbolId::XLM, 100},
   };
+  // TODO: Pull this from endpoints dynamically!
   strategy_opts.min_amount = {
     {SymbolId::ADA, 25},
-    {SymbolId::BTC, 0.0002},
-    {SymbolId::DOT, 0.5},
-    {SymbolId::ETH, 0.005},
-    {SymbolId::EOS, 2.5},
-    {SymbolId::XLM, 20},
+    {SymbolId::BTC, 0.0004},
+    {SymbolId::DOT, 1.0},
+    {SymbolId::ETH, 0.01},
+    {SymbolId::EOS, 4},
+    {SymbolId::XLM, 30},
   };
   strategy_opts.max_ticker_age_us = 1000000; // 1s
-  strategy_opts.max_ticker_delay_us = 1200000; // 1s
+  strategy_opts.max_ticker_delay_us = 1000000; // 1s
   strategy_opts.min_trade_interval_us = 0;
 
   BinanceClient* binance_client = new BinanceClient();
@@ -99,6 +100,8 @@ int main(int argc, char* argv[]) {
   kraken_future.wait();
 
   auto wait_time = 500ms;
+  // TODO: subscribe with a single request, pass all symbols as initializer_list with single method, before starting
+  // See https://github.com/binance/binance-spot-api-docs/blob/master/web-socket-streams.md#subscribe-to-a-stream
   binance_websocket_client.SubscribeTicker("btcusdt");
   std::this_thread::sleep_for(wait_time);
   binance_websocket_client.SubscribeTicker("adausdt");
@@ -118,10 +121,6 @@ int main(int argc, char* argv[]) {
   binance_websocket_client.SubscribeTicker("eoseth");
   std::this_thread::sleep_for(wait_time);
   binance_websocket_client.SubscribeTicker("ethbtc");
-  std::this_thread::sleep_for(wait_time);
-  binance_websocket_client.SubscribeTicker("xlmbtc");
-  //std::this_thread::sleep_for(wait_time);
-  //binance_websocket_client.SubscribeTicker("dogeusdt");
 
   kraken_websocket_client.SubscribeOrderBook("XBT/USDT");
   std::this_thread::sleep_for(wait_time);
@@ -142,10 +141,6 @@ int main(int argc, char* argv[]) {
   kraken_websocket_client.SubscribeOrderBook("EOS/ETH");
   std::this_thread::sleep_for(wait_time);
   kraken_websocket_client.SubscribeOrderBook("ETH/XBT");
-  std::this_thread::sleep_for(wait_time);
-  kraken_websocket_client.SubscribeOrderBook("XLM/XBT");
-  //std::this_thread::sleep_for(wait_time);
-  //kraken_websocket_client.SubscribeTicker("XDG/USDT");
 
   std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
 }

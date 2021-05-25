@@ -9,12 +9,12 @@
 #include <unordered_map>
 
 static std::unordered_map<std::string, ExchangeParams> g_exchange_params = {
-  { "binance", ExchangeParams("binance", 10.0, 0.001) },
-  { "kraken", ExchangeParams("kraken", 10.0, 0.002) },
-  { "bitbay", ExchangeParams("bitbay", 10.0, 0.001) },
-  { "poloniex", ExchangeParams("poloniex", 10.0, 0.00125) },
-  { "huobiglobal", ExchangeParams("huobiglobal", 10.0, 0.002) },
-  { "ftx", ExchangeParams("ftx", 10.0, 0.0007) }
+  { "binance", ExchangeParams("binance", 10.0, 0.001, 1) },
+  { "kraken", ExchangeParams("kraken", 10.0, 0.002, 1) },
+  { "bitbay", ExchangeParams("bitbay", 10.0, 0.001, 1) },
+  { "poloniex", ExchangeParams("poloniex", 10.0, 0.00125, 1) },
+  { "huobiglobal", ExchangeParams("huobiglobal", 10.0, 0.002, 1) },
+  { "ftx", ExchangeParams("ftx", 10.0, 0.0007, 1) }
   // TODO:
 };
 
@@ -106,7 +106,7 @@ private:
     }
     const auto& bid_side_params = m_exchange_params.at(best_bid_ticker.m_exchange);
     const auto& ask_side_params = m_exchange_params.at(best_ask_ticker.m_exchange);
-    return (1.0 - bid_side_params.fee)*(best_bid_ticker.m_bid - bid_side_params.slippage) - (1.0 + ask_side_params.fee)*(best_ask_ticker.m_ask + ask_side_params.slippage);
+    return (1 - bid_side_params.fee)*(best_bid_ticker.m_bid - bid_side_params.slippage) - (1 + ask_side_params.fee)*(best_ask_ticker.m_ask + ask_side_params.slippage);
   }
 
   std::unordered_map<std::string, ExchangeParams> m_exchange_params;

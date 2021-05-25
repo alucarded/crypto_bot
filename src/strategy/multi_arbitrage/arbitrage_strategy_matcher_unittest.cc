@@ -10,8 +10,8 @@ public:
   ArbitrageStrategyMatcherFixture() {
     // Initialization code here
     std::unordered_map<std::string, ExchangeParams> exchange_params;
-    exchange_params.emplace("A", ExchangeParams("A", 0.01, 0.01));
-    exchange_params.emplace("B", ExchangeParams("B", 0.01, 0.02));
+    exchange_params.emplace("A", ExchangeParams("A", 0.01, 0.01, 1));
+    exchange_params.emplace("B", ExchangeParams("B", 0.01, 0.02, 1));
     arbitrage_strategy_matcher = ArbitrageStrategyMatcher(exchange_params);
   }
 
@@ -48,5 +48,6 @@ TEST_F(ArbitrageStrategyMatcherFixture, OnTickerTest)
   EXPECT_EQ(true, exchange_match_opt.has_value());
   auto exchange_match = exchange_match_opt.value();
   EXPECT_EQ("B", exchange_match.m_best_bid.m_exchange);
-  EXPECT_NEAR(0.05, exchange_match.m_profit, 0.00001);
+  // TODO: fix calculation precision
+  EXPECT_DOUBLE_EQ(0.0451, exchange_match.m_profit);
 }

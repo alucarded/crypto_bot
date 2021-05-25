@@ -54,6 +54,8 @@ public:
   void Initialize() {
     for (const auto& p : m_account_managers) {
       p.second->Initialize();
+      // TODO: get minimum order amount
+      
     }
   }
 

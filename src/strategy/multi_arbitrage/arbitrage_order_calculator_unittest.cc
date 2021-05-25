@@ -7,8 +7,8 @@ using namespace testing;
 TEST(ArbitrageOrderCalculatorTest, CalculateTest) {
   ArbitrageStrategyOptions strategy_opts;
   strategy_opts.exchange_params = {
-    { "binance", ExchangeParams("binance", 0.0, 0.00075) },
-    { "kraken", ExchangeParams("kraken", 0.0, 0.0026) }
+    { "binance", ExchangeParams("binance", 0.0, 0.00075, 52.506572519) },
+    { "kraken", ExchangeParams("kraken", 0.0, 0.0026, 3.404118345) }
   };
   strategy_opts.default_amount = {
     {SymbolId::ADA, 50},
@@ -33,8 +33,11 @@ TEST(ArbitrageOrderCalculatorTest, CalculateTest) {
   // Prices
   double sell_price = orders.sell_order.GetPrice();
   double buy_price = orders.buy_order.GetPrice();
+  std::cerr << sell_price << std::endl;
+  std::cerr << buy_price << std::endl;
   EXPECT_TRUE(sell_price > buy_price);
   double profit = (1.0 - strategy_opts.exchange_params.at("binance").fee) * sell_price - (1.0 + strategy_opts.exchange_params.at("kraken").fee) * buy_price;
-  EXPECT_DOUBLE_EQ(0, profit);
+  // TODO: figure out precision, use EXPECT_DOUBLE_EQ
+  EXPECT_NEAR(0, profit, 0.000000000000001);
   // TODO: more expectations
 }

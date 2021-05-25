@@ -68,10 +68,16 @@ ArbitrageOrderCalculator::ArbitragePrices ArbitrageOrderCalculator::CalculatePri
   double buy_cost_coeff = 1.0 + best_ask_exchange_fee;
   double max_buy_price = (sell_cost_coeff / buy_cost_coeff) * best_bid_ticker.m_bid;
   double min_sell_price = (buy_cost_coeff / sell_cost_coeff) * best_ask_ticker.m_ask;
-  // Apply proportional price margin to both buy and sell side
+  // Here we use existing profit margin of arbitrage opportunity to reduce risk of not filling order immediately
+  // We give more space for filling order on the side of less liquid exchange
+  // The amount of margin added to current book price is inversely proportional to daily volume of an exchange
+  // This is due to the fact that arbitrage opportunities arise because of large orders pushing the market on more liquid exchange
   // Worst case is 0 profit
-  // TODO: should prices get different margins?
-  res.buy_price = (best_ask_ticker.m_ask + max_buy_price) / 2.0;
-  res.sell_price = (best_bid_ticker.m_bid + min_sell_price) / 2.0;
+  // TODO: next step - use trade ticker to better calculate price
+  double best_bid_exchange_daily_vol = best_bid_exchange_params.daily_volume;
+  double best_ask_exchange_daily_vol = best_ask_exchange_params.daily_volume;
+  double daily_vol_sum = best_ask_exchange_daily_vol + best_bid_exchange_daily_vol;
+  res.buy_price = (best_ask_ticker.m_ask * best_ask_exchange_daily_vol + max_buy_price * best_bid_exchange_daily_vol) / daily_vol_sum;
+  res.sell_price = (best_bid_ticker.m_bid * best_bid_exchange_daily_vol + min_sell_price * best_ask_exchange_daily_vol) / daily_vol_sum;
   return res;
 }
