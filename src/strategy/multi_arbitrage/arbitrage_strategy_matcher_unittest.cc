@@ -12,7 +12,7 @@ public:
     std::unordered_map<std::string, ExchangeParams> exchange_params;
     exchange_params.emplace("A", ExchangeParams("A", 0.01, 0.01, 1));
     exchange_params.emplace("B", ExchangeParams("B", 0.01, 0.02, 1));
-    arbitrage_strategy_matcher = ArbitrageStrategyMatcher(exchange_params);
+    arbitrage_strategy_matcher = ArbitrageStrategyMatcher(exchange_params, 0);
   }
 
   virtual void SetUp() override {

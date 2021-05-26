@@ -39,9 +39,19 @@ int main(int argc, char* argv[]) {
   BOOST_LOG_TRIVIAL(info) << "Boost logging configured";
 
   ArbitrageStrategyOptions strategy_opts;
+  ExchangeParams binance_params;
+  binance_params.exchange_name = "binance";
+  binance_params.slippage = 0;
+  binance_params.fee = 0.00075;
+  binance_params.daily_volume = 52.506572519;
+  ExchangeParams kraken_params;
+  kraken_params.exchange_name = "kraken";
+  kraken_params.slippage = 0;
+  kraken_params.fee = 0.0020;
+  kraken_params.daily_volume = 3.404118345;
   strategy_opts.exchange_params = {
-    { "binance", ExchangeParams("binance", 0.0, 0.00075, 52506572519) },
-    { "kraken", ExchangeParams("kraken", 0.0, 0.0020, 3404118345) }
+    { "binance", binance_params },
+    { "kraken", kraken_params }
   };
   strategy_opts.default_amount = {
     {SymbolId::ADA, 50},
@@ -63,6 +73,7 @@ int main(int argc, char* argv[]) {
   strategy_opts.max_ticker_age_us = 1000000; // 1s
   strategy_opts.max_ticker_delay_us = 1000000; // 1s
   strategy_opts.min_trade_interval_us = 0;
+  strategy_opts.arbitrage_match_profit_margin = 0.0002;
 
   BinanceClient* binance_client = new BinanceClient();
   AccountManager* binance_account_manager = new AccountManager(binance_client);

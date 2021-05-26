@@ -29,7 +29,7 @@ using namespace std::chrono;
 class ArbitrageStrategy : public TradingStrategy, public ExchangeListener {
 public:
     ArbitrageStrategy(const ArbitrageStrategyOptions& opts)
-      : m_opts(opts), m_matcher(opts.exchange_params), m_last_trade_us(0), m_order_calculator(opts) {
+      : m_opts(opts), m_matcher(opts.exchange_params, opts.arbitrage_match_profit_margin), m_last_trade_us(0), m_order_calculator(opts) {
         // Validations
         if (m_opts.exchange_params.size() < 2) {
           throw std::invalid_argument("Parameters for at least 2 exchanges required");
@@ -55,7 +55,7 @@ public:
     for (const auto& p : m_account_managers) {
       p.second->Initialize();
       // TODO: get minimum order amount
-      
+
     }
   }
 

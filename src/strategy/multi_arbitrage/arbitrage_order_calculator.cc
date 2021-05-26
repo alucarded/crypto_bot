@@ -74,10 +74,16 @@ ArbitrageOrderCalculator::ArbitragePrices ArbitrageOrderCalculator::CalculatePri
   // This is due to the fact that arbitrage opportunities arise because of large orders pushing the market on more liquid exchange
   // Worst case is 0 profit
   // TODO: next step - use trade ticker to better calculate price
+  // Also, take into consideration volumes for best ask and bid prices in the book
+  double book_bid_vol = best_bid_ticker.m_bid_vol.value();
+  double book_ask_vol = best_ask_ticker.m_ask_vol.value();
+  double vol_sum = book_bid_vol + book_ask_vol;
   double best_bid_exchange_daily_vol = best_bid_exchange_params.daily_volume;
   double best_ask_exchange_daily_vol = best_ask_exchange_params.daily_volume;
   double daily_vol_sum = best_ask_exchange_daily_vol + best_bid_exchange_daily_vol;
-  res.buy_price = (best_ask_ticker.m_ask * best_ask_exchange_daily_vol + max_buy_price * best_bid_exchange_daily_vol) / daily_vol_sum;
-  res.sell_price = (best_bid_ticker.m_bid * best_bid_exchange_daily_vol + min_sell_price * best_ask_exchange_daily_vol) / daily_vol_sum;
+  double ask_coeff = (best_ask_exchange_daily_vol / daily_vol_sum + book_ask_vol / vol_sum) / 2;
+  double bid_coeff = (best_bid_exchange_daily_vol / daily_vol_sum + book_bid_vol / vol_sum) / 2;
+  res.buy_price = best_ask_ticker.m_ask * ask_coeff + max_buy_price * bid_coeff;
+  res.sell_price = best_bid_ticker.m_bid * bid_coeff + min_sell_price * ask_coeff;
   return res;
 }

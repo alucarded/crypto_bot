@@ -39,12 +39,12 @@ std::ostream &operator<<(std::ostream &os, const ArbitrageStrategyMatch &match) 
 
 class ArbitrageStrategyMatcher {
 public:
-  ArbitrageStrategyMatcher() : ArbitrageStrategyMatcher(g_exchange_params){
+  ArbitrageStrategyMatcher() : ArbitrageStrategyMatcher(g_exchange_params, 0){
 
   }
 
-  // TODO: load exchange params from JSON
-  ArbitrageStrategyMatcher(const std::unordered_map<std::string, ExchangeParams>& exchange_params) : m_exchange_params(exchange_params) {
+  ArbitrageStrategyMatcher(const std::unordered_map<std::string, ExchangeParams>& exchange_params, double profit_margin) : m_exchange_params(exchange_params),
+      m_profit_margin(profit_margin) {
 
   }
 
@@ -106,9 +106,10 @@ private:
     }
     const auto& bid_side_params = m_exchange_params.at(best_bid_ticker.m_exchange);
     const auto& ask_side_params = m_exchange_params.at(best_ask_ticker.m_exchange);
-    return (1 - bid_side_params.fee)*(best_bid_ticker.m_bid - bid_side_params.slippage) - (1 + ask_side_params.fee)*(best_ask_ticker.m_ask + ask_side_params.slippage);
+    return (1 - bid_side_params.fee - m_profit_margin)*(best_bid_ticker.m_bid - bid_side_params.slippage) - (1 + ask_side_params.fee + m_profit_margin)*(best_ask_ticker.m_ask + ask_side_params.slippage);
   }
 
+private:
   std::unordered_map<std::string, ExchangeParams> m_exchange_params;
-  //std::unordered_map<SymbolPairId, ArbitrageStrategyMatch> m_best_matches;
+  double m_profit_margin;
 };

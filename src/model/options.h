@@ -3,6 +3,7 @@
 #include <string>
 
 struct ExchangeParams {
+  ExchangeParams() { }
   ExchangeParams(const std::string& exchange_name_, double slippage_, double fee_, double daily_volume_)
     : exchange_name(exchange_name_), slippage(slippage_), fee(fee_), daily_volume(daily_volume_) {
 
@@ -11,6 +12,6 @@ struct ExchangeParams {
   std::string exchange_name;
   double slippage;
   double fee;
-  // Daily exchange traded volume in billions
+  // Daily exchange traded volume in billion USD
   double daily_volume;
 };
