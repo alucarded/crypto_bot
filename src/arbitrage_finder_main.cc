@@ -1,7 +1,7 @@
 #include "exchange/exchange_listener.h"
 #include "exchange/arbitrage_finder_client.hpp"
 #include "exchange/dummy_client.hpp"
-#include "strategy/multi_arbitrage/arbitrage_strategy.hpp"
+#include "strategy/arbitrage/arbitrage_strategy.hpp"
 #include "websocket/binance_websocket_client.hpp"
 #include "websocket/kraken_websocket_client.hpp"
 

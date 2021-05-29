@@ -4,7 +4,6 @@
 
 #include "exchange/exchange_client.h"
 #include "exchange/exchange_listener.h"
-#include "consumer/consumer.h"
 #include "model/options.h"
 #include "strategy/mean_reversion_signal.hpp"
 #include "strategy/trading_strategy.h"

@@ -1,9 +1,9 @@
 #include "exchange/exchange_client.h"
 #include "http/binance_client.hpp"
 #include "db/mongo_client.hpp"
-#include "producer/mongo_ticker_producer.hpp"
-#include "strategy/backtest_exchange_client.hpp"
-#include "strategy/multi_arbitrage/arbitrage_strategy.hpp"
+#include "db/mongo_ticker_producer.hpp"
+#include "backtest/backtest_exchange_client.hpp"
+#include "strategy/arbitrage/arbitrage_strategy.hpp"
 #include "utils/config.hpp"
 
 #include "json/json.hpp"

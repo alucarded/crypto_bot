@@ -3,7 +3,7 @@ LDFLAGS=-Lboost/boost_1_75_0/build/lib boost/boost_1_75_0/build/lib/libboost_log
 TEST_FLAGS=-Ithird_party/googletest/googletest/include/ -Ithird_party/googletest/googlemock/include/ third_party/googletest/build/lib/libgtest.a third_party/googletest/build/lib/libgtest_main.a third_party/googletest/build/lib/libgmock.a -lpthread
 
 # TODO: separate declaration (headers) from definition (source files) and compile all unit tests into one binary
-GTESTS=src/strategy/multi_arbitrage/arbitrage_strategy_matcher_unittest.cc \
+GTESTS=src/strategy/arbitrage/arbitrage_strategy_matcher_unittest.cc \
        src/model/order_book_unittest.cc \
        src/exchange/account_manager_unittest.cc \
        src/strategy/indicator/simple_moving_average_unittest.cc
@@ -14,26 +14,26 @@ COMMON_SRC=src/model/order.cc \
 			 src/model/account_balance.cc \
 			 src/exchange/account_refresher.cc
 ARBITRAGE_MAIN_SRC=src/arbitrage_strategy_main.cc \
-			 src/strategy/multi_arbitrage/arbitrage_order_calculator.cc
+			 src/strategy/arbitrage/arbitrage_order_calculator.cc
 ARBITRAGE_BACKTEST_SRC=src/arbitrage_strategy_backtest.cc \
-       src/strategy/multi_arbitrage/arbitrage_order_calculator.cc \
+       src/strategy/arbitrage/arbitrage_order_calculator.cc \
 			 src/db/mongo_client.hpp \
-			 src/producer/mongo_ticker_producer.hpp
+			 src/db/mongo_ticker_producer.hpp
 # ARBITRAGE_FLAGS=-DWITH_MEAN_REVERSION_SIGNAL
 
 collector:
 	g++ -pipe src/collector.cc -o collector $(CFLAGS) $(LDFLAGS)
 
 basic_backtest:
-	g++ -pipe src/basic_strategy_backtest.cc src/db/mongo_client.hpp src/producer/mongo_ticker_producer.hpp -o basic_backtest $(CFLAGS) $(LDFLAGS)
+	g++ -pipe src/basic_strategy_backtest.cc src/db/mongo_client.hpp src/db/mongo_ticker_producer.hpp -o basic_backtest $(CFLAGS) $(LDFLAGS)
 
 arbitrage_backtest:
 	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_BACKTEST_SRC) -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
 
 unit_tests:
 	# g++ -pipe $(GTESTS) -o unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe $(COMMON_SRC) src/strategy/multi_arbitrage/arbitrage_strategy_matcher_unittest.cc -o arbitrage_strategy_matcher_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe $(COMMON_SRC) src/strategy/multi_arbitrage/arbitrage_order_calculator.cc src/strategy/multi_arbitrage/arbitrage_order_calculator_unittest.cc -o arbitrage_order_calculator_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe $(COMMON_SRC) src/strategy/arbitrage/arbitrage_strategy_matcher_unittest.cc -o arbitrage_strategy_matcher_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe $(COMMON_SRC) src/strategy/arbitrage/arbitrage_order_calculator.cc src/strategy/arbitrage/arbitrage_order_calculator_unittest.cc -o arbitrage_order_calculator_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 	g++ -pipe $(COMMON_SRC) src/model/order_book_unittest.cc -o order_book_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 	g++ -pipe $(COMMON_SRC) src/exchange/account_manager_unittest.cc -o account_manager_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 	g++ -pipe $(COMMON_SRC) src/strategy/indicator/simple_moving_average_unittest.cc -o simple_moving_average_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)

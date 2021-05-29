@@ -1,7 +1,6 @@
 #include "db/mongo_client.hpp"
 #include "model/ticker.h"
 #include "websocket/websocket_client.hpp"
-#include "consumer/consumer.h"
 
 #include <chrono>
 #include <cstdint>

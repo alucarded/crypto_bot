@@ -1,6 +1,6 @@
 #include "db/mongo_client.hpp"
-#include "producer/mongo_ticker_producer.hpp"
-#include "strategy/backtest_exchange_client.hpp"
+#include "db/mongo_ticker_producer.hpp"
+#include "backtest/backtest_exchange_client.hpp"
 #include "strategy/basic_strategy.hpp"
 
 #include <iostream>

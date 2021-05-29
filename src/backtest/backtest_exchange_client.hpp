@@ -113,21 +113,22 @@ public:
   }
 
   virtual Result<AccountBalance> GetAccountBalance() override {
-    // Assume there are always some coins available
-    std::unordered_map<SymbolId, double> asset_balances = {
-      {SymbolId::BTC, 0.2},
-      {SymbolId::ADA, 5000.0},
-      {SymbolId::ETH, 1.0},
-      {SymbolId::DOT, 100.0},
-      {SymbolId::EOS, 1000.0},
-      {SymbolId::USDT, 10000.0}
-    };
+    // // Assume there are always some coins available
+    // std::unordered_map<SymbolId, double> asset_balances = {
+    //   {SymbolId::BTC, 0.2},
+    //   {SymbolId::ADA, 5000.0},
+    //   {SymbolId::ETH, 1.0},
+    //   {SymbolId::DOT, 100.0},
+    //   {SymbolId::EOS, 1000.0},
+    //   {SymbolId::USDT, 10000.0}
+    // };
+    std::unordered_map<SymbolId, double> asset_balances(m_balances);
     AccountBalance account_balance{std::move(asset_balances)};
     return Result<AccountBalance>("", std::move(account_balance));
   }
 
   virtual Result<std::vector<Order>> GetOpenOrders() override {
-    return Result<std::vector<Order>>("", std::vector<Order>());
+    return Result<std::vector<Order>>("", m_limit_orders);
   }
 
   virtual void CancelAllOrders() override {
@@ -208,7 +209,7 @@ private:
 
 private:
   const BacktestSettings m_settings;
-  std::map<SymbolId, double> m_balances;
+  std::unordered_map<SymbolId, double> m_balances;
   std::vector<Order> m_limit_orders;
   std::unordered_map<SymbolPairId, Ticker> m_tickers;
   std::ofstream m_results_file;
