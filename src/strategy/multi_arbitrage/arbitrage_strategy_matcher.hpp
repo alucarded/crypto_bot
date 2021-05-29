@@ -78,7 +78,6 @@ public:
     const Ticker& best_bid_ticker = tickers.at(best_bid_ex);
     const Ticker& best_ask_ticker = tickers.at(best_ask_ex);
     double profit = CalculateProfit(best_bid_ticker, best_ask_ticker);
-    auto best_match = ArbitrageStrategyMatch(best_bid_ticker, best_ask_ticker, profit);
     // auto bit = m_best_matches.find(symbol);
     // if (bit == m_best_matches.end()) {
     //   m_best_matches.emplace(symbol, best_match);
@@ -91,6 +90,9 @@ public:
     //   }
     // }
     if (profit >= 0) {
+      // BOOST_LOG_TRIVIAL(debug) << "best bid: " << best_bid_ticker << ", best ask: " << best_ask_ticker;
+      // BOOST_LOG_TRIVIAL(debug) << profit;
+      auto best_match = ArbitrageStrategyMatch(best_bid_ticker, best_ask_ticker, profit);
       return std::optional<ArbitrageStrategyMatch>{best_match};
     }
     return std::nullopt;

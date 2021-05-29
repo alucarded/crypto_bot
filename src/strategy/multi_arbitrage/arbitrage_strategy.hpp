@@ -120,6 +120,7 @@ public:
       if (best_bid_count > 0 && best_ask_count > 0) {
         double base_balance = GetBaseBalance(best_bid_ticker.m_exchange, current_symbol_id);
         double quote_balance = GetQuoteBalance(best_ask_ticker.m_exchange, current_symbol_id);
+        BOOST_LOG_TRIVIAL(info) << current_symbol_id << ": base balance: " << base_balance << ", quote balance: " << quote_balance;
         ArbitrageOrders orders = m_order_calculator.Calculate(best_bid_ticker, best_ask_ticker, base_balance, quote_balance);
         double order_qty = orders.buy_order.GetQuantity();
         // Make sure the amount is above minimum

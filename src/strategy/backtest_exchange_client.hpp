@@ -49,11 +49,14 @@ public:
     SymbolPair sp{symbol};
     SymbolId base_asset_id = sp.GetBaseAsset();
     SymbolId quote_asset_id = sp.GetQuoteAsset();
+    assert(m_tickers.find(symbol) != m_tickers.end());
+    const Ticker& ticker = m_tickers.at(symbol);
     double price, cost;
     if (side == Side::SELL) {
-      price = m_ticker.m_bid;
-      if (m_ticker.m_bid_vol && m_ticker.m_bid_vol.value() < qty) {
-        //qty = m_ticker.m_bid_vol.value();
+      price = ticker.m_bid;
+      BOOST_LOG_TRIVIAL(info) << "Current ticker " << ticker << ", selling " << qty;
+      if (ticker.m_bid_vol && ticker.m_bid_vol.value() < qty) {
+        //qty = ticker.m_bid_vol.value();
         throw std::runtime_error("Not enough qty for current bid price."
             "Implement strategy, so that there is no order with quantity higher than there is available order book for best ask/bid.");
       }
@@ -64,10 +67,13 @@ public:
       cost = qty*(price - m_settings.slippage)*(1.0 - m_settings.fee);
       m_balances[quote_asset_id] = m_balances.at(quote_asset_id) + cost;
       m_balances[base_asset_id] = m_balances.at(base_asset_id) - qty;
+      BOOST_LOG_TRIVIAL(info) << "Sold " << qty << " for " << cost;
+
     } else { // Buying
-      price = m_ticker.m_ask;
-      if (m_ticker.m_ask_vol && m_ticker.m_ask_vol.value() < qty) {
-        //qty = m_ticker.m_ask_vol.value();
+      price = ticker.m_ask;
+      BOOST_LOG_TRIVIAL(info) << "Current ticker " << ticker << ", buying " << qty;
+      if (ticker.m_ask_vol && ticker.m_ask_vol.value() < qty) {
+        //qty = ticker.m_ask_vol.value();
         throw std::runtime_error("Not enough qty for current ask price."
             "Implement strategy, so that there is no order with quantity higher than there is available order book for best ask/bid.");
       }
@@ -78,6 +84,7 @@ public:
       // }
       m_balances[quote_asset_id] = m_balances[quote_asset_id] - cost;
       m_balances[base_asset_id] = m_balances[base_asset_id] + qty;
+      BOOST_LOG_TRIVIAL(info) << "Bought " << qty << " for " << cost;
     }
     PrintBalances();
     return Result<Order>("", Order("ABC", "ABC", symbol, side, OrderType::MARKET, qty));
@@ -87,16 +94,18 @@ public:
     SymbolPair sp{symbol};
     SymbolId base_asset_id = sp.GetBaseAsset();
     SymbolId quote_asset_id = sp.GetQuoteAsset();
+    assert(m_tickers.find(symbol) != m_tickers.end());
+    const Ticker& ticker = m_tickers.at(symbol);
     double current_price;
     if (side == Side::SELL) {
-      current_price = m_ticker.m_bid;
+      current_price = ticker.m_bid;
       if (price <= current_price) {
         return MarketOrder(symbol, side, qty);
       }
       return AddLimitOrder(symbol, side, qty, price);
     }
     // BUY
-    current_price = m_ticker.m_ask;
+    current_price = ticker.m_ask;
     if (price >= current_price) {
       return MarketOrder(symbol, side, qty);
     }
@@ -109,6 +118,8 @@ public:
       {SymbolId::BTC, 0.2},
       {SymbolId::ADA, 5000.0},
       {SymbolId::ETH, 1.0},
+      {SymbolId::DOT, 100.0},
+      {SymbolId::EOS, 1000.0},
       {SymbolId::USDT, 10000.0}
     };
     AccountBalance account_balance{std::move(asset_balances)};
@@ -124,19 +135,21 @@ public:
   }
 
   virtual void OnBookTicker(const Ticker& ticker) override {
+    //BOOST_LOG_TRIVIAL(trace) << "BacktestExchangeClient::OnBookTicker, ticker: " << ticker;
     if (m_settings.m_exchange == ticker.m_exchange) {
-      m_ticker = ticker;
+      m_tickers.insert_or_assign(ticker.m_symbol, ticker);
+
       // Check if any limit order got filled
-      SymbolId base_asset_id = m_ticker.m_symbol.GetBaseAsset();
-      SymbolId quote_asset_id = m_ticker.m_symbol.GetQuoteAsset();
+      SymbolId base_asset_id = ticker.m_symbol.GetBaseAsset();
+      SymbolId quote_asset_id = ticker.m_symbol.GetQuoteAsset();
       size_t i = 0;
       while (i < m_limit_orders.size()) {
         const Order& order = m_limit_orders[i];
         if (order.GetSide() == Side::SELL) {
-          if (m_ticker.m_bid >= order.GetPrice()) {
+          if (ticker.m_bid >= order.GetPrice()) {
             // Fill
             // TODO: implement partial fill ?
-            double cost = m_ticker.m_bid * order.GetQuantity() * (1.0 - m_settings.fee);
+            double cost = ticker.m_bid * order.GetQuantity() * (1.0 - m_settings.fee);
             m_balances[quote_asset_id] = m_balances.at(quote_asset_id) + cost;
             m_balances[base_asset_id] = m_balances.at(base_asset_id) - order.GetQuantity();
             m_limit_orders.erase(m_limit_orders.begin() + i);
@@ -144,10 +157,10 @@ public:
             continue;
           }
         } else { // BUY
-          if (m_ticker.m_ask <= order.GetPrice()) {
+          if (ticker.m_ask <= order.GetPrice()) {
             // Fill
             // TODO: implement partial fill ?
-            double cost = m_ticker.m_ask * order.GetQuantity() * (1.0 + m_settings.fee);
+            double cost = ticker.m_ask * order.GetQuantity() * (1.0 + m_settings.fee);
             m_balances[quote_asset_id] = m_balances.at(quote_asset_id) - cost;
             m_balances[base_asset_id] = m_balances.at(base_asset_id) + order.GetQuantity();
             m_limit_orders.erase(m_limit_orders.begin() + i);
@@ -197,6 +210,6 @@ private:
   const BacktestSettings m_settings;
   std::map<SymbolId, double> m_balances;
   std::vector<Order> m_limit_orders;
-  Ticker m_ticker;
+  std::unordered_map<SymbolPairId, Ticker> m_tickers;
   std::ofstream m_results_file;
 };

@@ -50,7 +50,7 @@ double ArbitrageOrderCalculator::CalculateQuantity(const Ticker& best_bid_ticker
   double quote_vol = std::min(base_vol * best_ask_ticker.m_ask, tradable_quote_balance);
   // Maximum volume available for arbitrage
   base_vol = std::min({base_vol, quote_vol/best_ask_ticker.m_ask, tradable_base_balance});
-  BOOST_LOG_TRIVIAL(debug) << "tradable_base_balance=" << tradable_base_balance << ", tradable_quote_balance=" << tradable_quote_balance
+  BOOST_LOG_TRIVIAL(info) << "tradable_base_balance=" << tradable_base_balance << ", tradable_quote_balance=" << tradable_quote_balance
       << ", quote_vol=" << quote_vol << ", base_vol=" << base_vol;
   
   return base_vol;
@@ -83,6 +83,7 @@ ArbitrageOrderCalculator::ArbitragePrices ArbitrageOrderCalculator::CalculatePri
   double daily_vol_sum = best_ask_exchange_daily_vol + best_bid_exchange_daily_vol;
   double ask_coeff = (best_ask_exchange_daily_vol / daily_vol_sum + book_ask_vol / vol_sum) / 2;
   double bid_coeff = (best_bid_exchange_daily_vol / daily_vol_sum + book_bid_vol / vol_sum) / 2;
+  BOOST_LOG_TRIVIAL(debug) << "Ask coeff: " << ask_coeff << ", bid coeff: " << bid_coeff;
   res.buy_price = best_ask_ticker.m_ask * ask_coeff + max_buy_price * bid_coeff;
   res.sell_price = best_bid_ticker.m_bid * bid_coeff + min_sell_price * ask_coeff;
   return res;

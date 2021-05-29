@@ -16,6 +16,7 @@ COMMON_SRC=src/model/order.cc \
 ARBITRAGE_MAIN_SRC=src/arbitrage_strategy_main.cc \
 			 src/strategy/multi_arbitrage/arbitrage_order_calculator.cc
 ARBITRAGE_BACKTEST_SRC=src/arbitrage_strategy_backtest.cc \
+       src/strategy/multi_arbitrage/arbitrage_order_calculator.cc \
 			 src/db/mongo_client.hpp \
 			 src/producer/mongo_ticker_producer.hpp
 # ARBITRAGE_FLAGS=-DWITH_MEAN_REVERSION_SIGNAL

@@ -43,10 +43,12 @@ int main(int argc, char* argv[]) {
 
   BacktestSettings binance_backtest_settings;
   // TODO: FIXME: slippage value per pair
+  binance_backtest_settings.m_exchange = "binance";
   binance_backtest_settings.slippage = 0;
   binance_backtest_settings.fee = 0.00075;
   BacktestExchangeClient* binance_backtest_client = new BacktestExchangeClient(binance_backtest_settings, "binance_backtest_results.csv");
   BacktestSettings kraken_backtest_settings;
+  kraken_backtest_settings.m_exchange = "kraken";
   kraken_backtest_settings.slippage = 0;
   kraken_backtest_settings.fee = 0.0024;
   BacktestExchangeClient* kraken_backtest_client = new BacktestExchangeClient(kraken_backtest_settings, "kraken_backtest_results.csv");
@@ -55,9 +57,17 @@ int main(int argc, char* argv[]) {
   AccountManager* kraken_account_manager = new AccountManager(kraken_backtest_client);
 
   ArbitrageStrategyOptions strategy_opts;
+  ExchangeParams binance_params;
+  binance_params.slippage = 0.0;
+  binance_params.fee = 0.00075;
+  binance_params.daily_volume = 10.0;
+  ExchangeParams kraken_params;
+  kraken_params.slippage = 0.0;
+  kraken_params.fee = 0.0026;
+  kraken_params.daily_volume = 2.0;
   strategy_opts.exchange_params = {
-    { "binance", ExchangeParams("binance", 0.0, 0.00075) },
-    { "kraken", ExchangeParams("kraken", 0.0, 0.0026) }
+    { "binance", binance_params },
+    { "kraken", kraken_params }
   };
   strategy_opts.default_amount = {
     {SymbolId::ADA, 50},
@@ -76,8 +86,9 @@ int main(int argc, char* argv[]) {
     {SymbolId::XLM, 20},
   };
   strategy_opts.max_ticker_age_us = 1000000; // 1s
-  strategy_opts.max_ticker_delay_us = 1200000; // 1s
+  strategy_opts.max_ticker_delay_us = 1000000; // 1s
   strategy_opts.min_trade_interval_us = 0;
+  strategy_opts.arbitrage_match_profit_margin = 0;
   strategy_opts.time_provider_fcn = [](const Ticker& ticker) { return ticker.m_arrived_ts; };
   ArbitrageStrategy arbitrage_strategy(strategy_opts);
   arbitrage_strategy.RegisterExchangeClient("binance", binance_account_manager);
