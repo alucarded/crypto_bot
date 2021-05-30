@@ -11,7 +11,7 @@
 #include <mutex>
 #include <unordered_set>
 
-// TODO: AccountManager specializations for exchanges
+// TODO: AccountManager specializations for exchanges ?
 class AccountManager : public ExchangeClient, public UserDataListener {
 public:
   AccountManager(ExchangeClient* exchange_client)
@@ -89,7 +89,7 @@ public:
       m_our_orders.insert_or_assign(order.GetId(), std::move(order));
       m_our_orders_lock.unlock();
       AddLockedBalance(order);
-      BOOST_LOG_TRIVIAL(trace) << "Account balance after placing market order: " << m_account_balance;
+      BOOST_LOG_TRIVIAL(debug) << "Account balance after placing market order: " << m_account_balance;
     }
     m_is_account_synced = true;
     return res;
@@ -106,7 +106,7 @@ public:
       m_our_orders.insert_or_assign(order.GetId(), std::move(order));
       m_our_orders_lock.unlock();
       AddLockedBalance(order);
-      BOOST_LOG_TRIVIAL(trace) << "Account balance after placing limit order: " << m_account_balance;
+      BOOST_LOG_TRIVIAL(debug) << "Account balance after placing limit order: " << m_account_balance;
     }
     m_is_account_synced = true;
     return res;
@@ -141,12 +141,12 @@ public:
   }
 
   virtual void OnAccountBalanceUpdate(const AccountBalance& account_balance) override {
-    std::scoped_lock<std::mutex> order_lock{m_order_mutex};
-    BOOST_LOG_TRIVIAL(info) << "AccountManager::OnAccountBalanceUpdate " + GetExchange();
-    BOOST_LOG_TRIVIAL(info) << "Account balance: " << account_balance << std::endl;
-    m_account_balance_lock.lock();
-    m_account_balance.UpdateTotalBalance(account_balance);
-    m_account_balance_lock.unlock();
+    // std::scoped_lock<std::mutex> order_lock{m_order_mutex};
+    // BOOST_LOG_TRIVIAL(info) << "AccountManager::OnAccountBalanceUpdate " + GetExchange();
+    // BOOST_LOG_TRIVIAL(info) << "Account balance: " << account_balance << std::endl;
+    // m_account_balance_lock.lock();
+    // m_account_balance.UpdateTotalBalance(account_balance);
+    // m_account_balance_lock.unlock();
   }
 
   virtual void OnOrderUpdate(const Order& order_update) override {
