@@ -13,20 +13,20 @@ using namespace std::chrono;
 
 class BinanceUserDataStream : public WebsocketClient {
 public:
-  static BinanceUserDataStream Create(UserDataListener* user_data_listener) {
-    BinanceClient* binance_client = new BinanceClient();
+  static BinanceUserDataStream Create(std::shared_ptr<UserDataListener> user_data_listener) {
+    std::unique_ptr<BinanceClient> binance_client = std::make_unique<BinanceClient>();
     auto res = binance_client->StartUserDataStream();
     if (!res.has_value()) {
       BOOST_LOG_TRIVIAL(error) << "Error getting user data stream listen key";
     }
-    return BinanceUserDataStream(res.value(), binance_client, user_data_listener);
+    return BinanceUserDataStream(res.value(), std::move(binance_client), std::move(user_data_listener));
   }
 
 protected:
-  BinanceUserDataStream(const std::string& listen_key, BinanceClient* binance_client, UserDataListener* user_data_listener)
+  BinanceUserDataStream(const std::string& listen_key, std::unique_ptr<BinanceClient>&& binance_client, std::shared_ptr<UserDataListener>&& user_data_listener)
       : WebsocketClient("wss://stream.binance.com:9443/ws/" + listen_key, "binance_user_data"),
         m_listen_key(listen_key),
-        m_binance_client(binance_client),
+        m_binance_client(std::move(binance_client)),
         m_user_data_listener(user_data_listener),
         m_last_keepalive(duration_cast<microseconds>(system_clock::now().time_since_epoch()).count()),
         m_keepalive_interval(1800 * 1000 * 1000) {
@@ -121,7 +121,7 @@ private:
 private:
   std::string m_listen_key;
   std::unique_ptr<BinanceClient> m_binance_client;
-  UserDataListener* m_user_data_listener;
+  std::shared_ptr<UserDataListener> m_user_data_listener;
   uint64_t m_last_keepalive;
   uint64_t m_keepalive_interval;
 };

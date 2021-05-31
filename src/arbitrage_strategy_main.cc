@@ -75,10 +75,10 @@ int main(int argc, char* argv[]) {
   strategy_opts.min_trade_interval_us = 0;
   strategy_opts.arbitrage_match_profit_margin = 0.0002;
 
-  BinanceClient* binance_client = new BinanceClient();
-  AccountManager* binance_account_manager = new AccountManager(binance_client);
-  KrakenClient* kraken_client = new KrakenClient();
-  AccountManager* kraken_account_manager = new AccountManager(kraken_client);
+  BinanceClient binance_client;
+  std::shared_ptr<AccountManager> binance_account_manager = std::make_shared<AccountManager>(&binance_client);
+  KrakenClient kraken_client;
+  std::shared_ptr<AccountManager> kraken_account_manager = std::make_shared<AccountManager>(&kraken_client);
 
   BinanceUserDataStream binance_stream = BinanceUserDataStream::Create(binance_account_manager);
   std::promise<void> binance_stream_promise;
@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
   binance_stream.start(std::move(binance_stream_promise));
   binance_user_future.wait();
 
-  KrakenUserDataStream kraken_stream(new KrakenClient(), kraken_account_manager);
+  KrakenUserDataStream kraken_stream(std::make_unique<KrakenClient>(), kraken_account_manager);
   std::promise<void> kraken_stream_promise;
   std::future<void> kraken_user_future = kraken_stream_promise.get_future();
   kraken_stream.start(std::move(kraken_stream_promise));

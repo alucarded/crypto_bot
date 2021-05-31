@@ -7,8 +7,8 @@
 
 class TradingStrategy {
 public:
-  void RegisterExchangeClient(const std::string& exchange_name, AccountManager* account_manager) {
-    m_account_managers.insert(std::make_pair(exchange_name, std::shared_ptr<AccountManager>(account_manager)));
+  void RegisterExchangeClient(const std::string& exchange_name, std::shared_ptr<AccountManager> account_manager) {
+    m_account_managers.insert(std::make_pair(exchange_name, std::move(account_manager)));
   }
 protected:
   std::unordered_map<std::string, std::shared_ptr<AccountManager>> m_account_managers;

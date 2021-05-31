@@ -14,11 +14,11 @@ using namespace std::chrono;
 
 class KrakenUserDataStream : public WebsocketClient {
 public:
-  KrakenUserDataStream(KrakenClient* kraken_client, UserDataListener* user_data_listener)
+  KrakenUserDataStream(std::unique_ptr<KrakenClient> kraken_client, std::shared_ptr<UserDataListener> user_data_listener)
       : WebsocketClient("wss://ws-auth.kraken.com", "kraken_user_data"),
         m_listen_key(kraken_client->GetWebSocketsToken()),
-        m_kraken_client(kraken_client),
-        m_user_data_listener(user_data_listener) {
+        m_kraken_client(std::move(kraken_client)),
+        m_user_data_listener(std::move(user_data_listener)) {
   }
 
 private:
@@ -106,5 +106,5 @@ private:
 private:
   std::string m_listen_key;
   std::unique_ptr<KrakenClient> m_kraken_client;
-  UserDataListener* m_user_data_listener;
+  std::shared_ptr<UserDataListener> m_user_data_listener;
 };
