@@ -71,7 +71,7 @@ int main(int argc, char* argv[]) {
     {SymbolId::XLM, 30},
   };
   strategy_opts.max_ticker_age_us = 1000000; // 1s
-  strategy_opts.max_ticker_delay_us = 1000000; // 1s
+  strategy_opts.max_ticker_delay_us = 10000000; // 10s
   strategy_opts.min_trade_interval_us = 0;
   strategy_opts.arbitrage_match_profit_margin = 0.0002;
 

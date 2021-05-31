@@ -203,7 +203,10 @@ public:
   }
 
   virtual void OnOrderBookUpdate(const OrderBook& order_book) {
-    OnBookTicker(ExchangeListener::TickerFromOrderBook(order_book));
+    Ticker ticker = ExchangeListener::TickerFromOrderBook(order_book);
+    assert(ticker.m_ask_vol.has_value());
+    assert(ticker.m_bid_vol.has_value());
+    OnBookTicker(ticker);
   }
 
   virtual void OnConnectionOpen(const std::string& name) override {
