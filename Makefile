@@ -9,13 +9,16 @@ GTESTS=src/strategy/arbitrage/arbitrage_strategy_matcher_unittest.cc \
        src/strategy/indicator/simple_moving_average_unittest.cc
 
 COMMON_SRC=src/model/order.cc \
+       src/model/order_book.cc \
 			 src/model/symbol.cc \
 			 src/model/ticker.cc \
 			 src/model/account_balance.cc \
-			 src/exchange/account_refresher.cc
+			 src/exchange/account_refresher.cc \
+			 src/utils/math.cc
 ARBITRAGE_MAIN_SRC=src/arbitrage_strategy_main.cc \
 			 src/strategy/arbitrage/arbitrage_order_calculator.cc
 ARBITRAGE_BACKTEST_SRC=src/arbitrage_strategy_backtest.cc \
+       src/backtest/backtest_results_processor.cc \
        src/strategy/arbitrage/arbitrage_order_calculator.cc \
 			 src/db/mongo_client.hpp \
 			 src/db/mongo_ticker_producer.hpp

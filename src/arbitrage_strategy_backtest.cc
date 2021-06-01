@@ -1,4 +1,5 @@
 #include "backtest/backtest_exchange_client.hpp"
+#include "backtest/backtest_results_processor.h"
 #include "exchange/exchange_client.h"
 #include "http/binance_client.hpp"
 #include "db/mongo_client.hpp"
@@ -42,17 +43,18 @@ int main(int argc, char* argv[]) {
   std::cout << "Created Mongo client pool" << std::endl;
   pass.clear();
 
+  BacktestResultsProcessor backtest_results_processor("backtest_results.csv");
   BacktestSettings binance_backtest_settings;
   // TODO: FIXME: slippage value per pair
-  binance_backtest_settings.m_exchange = "binance";
+  binance_backtest_settings.exchange = "binance";
   binance_backtest_settings.slippage = 0;
   binance_backtest_settings.fee = 0.00075;
-  BacktestExchangeClient binance_backtest_client(binance_backtest_settings, "binance_backtest_results.csv");
+  BacktestExchangeClient binance_backtest_client(binance_backtest_settings, backtest_results_processor);
   BacktestSettings kraken_backtest_settings;
-  kraken_backtest_settings.m_exchange = "kraken";
+  kraken_backtest_settings.exchange = "kraken";
   kraken_backtest_settings.slippage = 0;
   kraken_backtest_settings.fee = 0.0020;
-  BacktestExchangeClient kraken_backtest_client(kraken_backtest_settings, "kraken_backtest_results.csv");
+  BacktestExchangeClient kraken_backtest_client(kraken_backtest_settings, backtest_results_processor);
 
   std::shared_ptr<AccountManager> binance_account_manager = std::make_shared<AccountManager>(&binance_backtest_client);
   std::shared_ptr<AccountManager> kraken_account_manager = std::make_shared<AccountManager>(&kraken_backtest_client);
@@ -94,7 +96,6 @@ int main(int argc, char* argv[]) {
   ArbitrageStrategy arbitrage_strategy(strategy_opts);
   arbitrage_strategy.RegisterExchangeClient("binance", binance_account_manager);
   arbitrage_strategy.RegisterExchangeClient("kraken", kraken_account_manager);
-  arbitrage_strategy.Initialize();
 
   MongoTickerProducer mongo_producer(mongo_client, config_json["db"].get<std::string>(), config_json["collection"].get<std::string>());
   // First register clients, so that execution price is same as seen price
@@ -104,9 +105,8 @@ int main(int argc, char* argv[]) {
 
   int64_t count = mongo_producer.Produce();
   std::cout << "Produced " + std::to_string(count) + " tickers" << std::endl;
-  //arbitrage_strategy.PrintStats();
 
-  // BacktestAnalyser backtest_analyser{binance_backtest_client, kraken_backtest_client};
-  // backtest_analyser.CalculateAccountValue(SymbolId::USDT);
+  backtest_results_processor.GetCumulativeBalances();
+
   return 0;
 }

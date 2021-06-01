@@ -95,8 +95,6 @@ int main(int argc, char* argv[]) {
   ArbitrageStrategy arbitrage_strategy(strategy_opts);
   arbitrage_strategy.RegisterExchangeClient("binance", binance_account_manager);
   arbitrage_strategy.RegisterExchangeClient("kraken", kraken_account_manager);
-  // Initialization is done when user data stream connection is opened
-  // arbitrage_strategy.Initialize();
 
   BinanceWebsocketClient binance_websocket_client(&arbitrage_strategy);
   KrakenWebsocketClient kraken_websocket_client(&arbitrage_strategy);

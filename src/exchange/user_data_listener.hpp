@@ -7,6 +7,7 @@
 
 #include <string>
 
+// TODO: split into interfaces
 class UserDataListener {
 public:
   virtual void OnConnectionOpen(const std::string& name) {

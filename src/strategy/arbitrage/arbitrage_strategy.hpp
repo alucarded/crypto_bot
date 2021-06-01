@@ -7,7 +7,7 @@
 #include "model/options.h"
 #include "strategy/mean_reversion_signal.hpp"
 #include "strategy/trading_strategy.h"
-#include "utils/math.hpp"
+#include "utils/math.h"
 #include "utils/spinlock.hpp"
 
 #include <boost/log/trivial.hpp>
@@ -45,17 +45,8 @@ public:
     : m_opts(opts), m_matcher(matcher), m_last_trade_us(0), m_order_calculator(opts) {
   }
 
-  // // For testing
-  // ArbitrageStrategy() : m_last_trade_us(0) {
-
-  // }
-
   void Initialize() {
-    for (const auto& p : m_account_managers) {
-      p.second->Initialize();
-      // TODO: get minimum order amount
-
-    }
+    // TODO: get minimum order amount
   }
 
   virtual void OnBookTicker(const Ticker& ticker) override {

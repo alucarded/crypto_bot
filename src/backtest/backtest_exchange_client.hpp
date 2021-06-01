@@ -1,3 +1,6 @@
+#pragma once
+
+#include "exchange/account_balance_listener.h"
 #include "exchange/exchange_client.h"
 #include "exchange/exchange_listener.h"
 
@@ -9,30 +12,19 @@
 #include <unordered_map>
 
 struct BacktestSettings {
-  std::string m_exchange;
-  std::vector<SymbolPairId> symbol_pairs;
+  std::string exchange;
   double fee;
   double slippage;
-  double m_min_qty;
 };
 
 class BacktestExchangeClient : public ExchangeClient, public ExchangeListener {
 public:
-  BacktestExchangeClient(const BacktestSettings& settings, const std::string& results_file) : m_settings(settings),
-      m_results_file(results_file, std::ios::out | std::ios::app | std::ios::binary) {
-    m_balances[SymbolId::ADA] = 10000.0;
-    m_balances[SymbolId::BTC] = 1.0;
-    m_balances[SymbolId::ETH] = 10.0;
-    m_balances[SymbolId::USDT] = 24000;
-    std::ostringstream oss;
-    for (const auto p : m_balances) {
-      SymbolId sid = p.first;
-      oss << sid << ",";
-    }
-    std::string header = oss.str();
-    // Remove ',' from the end
-    header.pop_back();
-    m_results_file << header + "\n";
+  BacktestExchangeClient(const BacktestSettings& settings, AccountBalanceListener& balance_listener) : m_settings(settings),
+  m_account_balance(settings.exchange), m_balance_listener(balance_listener) {
+    m_account_balance.SetTotalBalance(SymbolId::ADA, 10000.0);
+    m_account_balance.SetTotalBalance(SymbolId::BTC, 1.0);
+    m_account_balance.SetTotalBalance(SymbolId::ETH, 10.0);
+    m_account_balance.SetTotalBalance(SymbolId::USDT, 24000);
   }
 
   virtual ~BacktestExchangeClient() {
@@ -40,7 +32,7 @@ public:
   }
 
   virtual std::string GetExchange() override {
-    return "backtest";
+    return m_settings.exchange;
   }
 
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
@@ -65,8 +57,8 @@ public:
       //   return Result<Order>("", "");
       // }
       cost = qty*(price - m_settings.slippage)*(1.0 - m_settings.fee);
-      m_balances[quote_asset_id] = m_balances.at(quote_asset_id) + cost;
-      m_balances[base_asset_id] = m_balances.at(base_asset_id) - qty;
+      m_account_balance.AddBalance(quote_asset_id, cost);
+      m_account_balance.AddBalance(base_asset_id, -qty);
       BOOST_LOG_TRIVIAL(info) << "Sold " << qty << " for " << cost;
 
     } else { // Buying
@@ -82,11 +74,11 @@ public:
       //   BOOST_LOG_TRIVIAL(warning) << "Not enough " << quote_asset_id;
       //   return Result<Order>("", "");
       // }
-      m_balances[quote_asset_id] = m_balances[quote_asset_id] - cost;
-      m_balances[base_asset_id] = m_balances[base_asset_id] + qty;
+      m_account_balance.AddBalance(quote_asset_id, -cost);
+      m_account_balance.AddBalance(base_asset_id, qty);
       BOOST_LOG_TRIVIAL(info) << "Bought " << qty << " for " << cost;
     }
-    PrintBalances();
+    m_balance_listener.OnBalanceUpdate(m_account_balance);
     return Result<Order>("", Order("ABC", "ABC", symbol, side, OrderType::MARKET, qty));
   }
 
@@ -113,18 +105,7 @@ public:
   }
 
   virtual Result<AccountBalance> GetAccountBalance() override {
-    // // Assume there are always some coins available
-    // std::unordered_map<SymbolId, double> asset_balances = {
-    //   {SymbolId::BTC, 0.2},
-    //   {SymbolId::ADA, 5000.0},
-    //   {SymbolId::ETH, 1.0},
-    //   {SymbolId::DOT, 100.0},
-    //   {SymbolId::EOS, 1000.0},
-    //   {SymbolId::USDT, 10000.0}
-    // };
-    std::unordered_map<SymbolId, double> asset_balances(m_balances);
-    AccountBalance account_balance{std::move(asset_balances)};
-    return Result<AccountBalance>("", std::move(account_balance));
+    return Result<AccountBalance>("", m_account_balance);
   }
 
   virtual Result<std::vector<Order>> GetOpenOrders() override {
@@ -137,7 +118,7 @@ public:
 
   virtual void OnBookTicker(const Ticker& ticker) override {
     //BOOST_LOG_TRIVIAL(trace) << "BacktestExchangeClient::OnBookTicker, ticker: " << ticker;
-    if (m_settings.m_exchange == ticker.m_exchange) {
+    if (m_settings.exchange == ticker.m_exchange) {
       m_tickers.insert_or_assign(ticker.m_symbol, ticker);
 
       // Check if any limit order got filled
@@ -146,48 +127,35 @@ public:
       size_t i = 0;
       while (i < m_limit_orders.size()) {
         const Order& order = m_limit_orders[i];
+        double order_price = order.GetPrice();
         if (order.GetSide() == Side::SELL) {
-          if (ticker.m_bid >= order.GetPrice()) {
+          if (ticker.m_bid >= order_price) {
             // Fill
             // TODO: implement partial fill ?
-            double cost = ticker.m_bid * order.GetQuantity() * (1.0 - m_settings.fee);
-            m_balances[quote_asset_id] = m_balances.at(quote_asset_id) + cost;
-            m_balances[base_asset_id] = m_balances.at(base_asset_id) - order.GetQuantity();
+            BOOST_LOG_TRIVIAL(info) << "Filled sell limit order: " << order;
+            double cost = order_price * order.GetQuantity() * (1.0 - m_settings.fee);
+            m_account_balance.AddBalance(quote_asset_id, cost);
+            m_account_balance.AddBalance(base_asset_id, -order.GetQuantity());
             m_limit_orders.erase(m_limit_orders.begin() + i);
-            PrintBalances();
+            m_balance_listener.OnBalanceUpdate(m_account_balance);
             continue;
           }
         } else { // BUY
-          if (ticker.m_ask <= order.GetPrice()) {
+          if (ticker.m_ask <= order_price) {
             // Fill
             // TODO: implement partial fill ?
-            double cost = ticker.m_ask * order.GetQuantity() * (1.0 + m_settings.fee);
-            m_balances[quote_asset_id] = m_balances.at(quote_asset_id) - cost;
-            m_balances[base_asset_id] = m_balances.at(base_asset_id) + order.GetQuantity();
+            BOOST_LOG_TRIVIAL(info) << "Filled buy limit order: " << order;
+            double cost = order_price * order.GetQuantity() * (1.0 + m_settings.fee);
+            m_account_balance.AddBalance(quote_asset_id, -cost);
+            m_account_balance.AddBalance(base_asset_id, order.GetQuantity());
             m_limit_orders.erase(m_limit_orders.begin() + i);
-            PrintBalances();
+            m_balance_listener.OnBalanceUpdate(m_account_balance);
             continue;
           }
         }
         ++i;
       }
     }
-  }
-
-  void PrintBalances() {
-    const size_t sz = m_balances.size();
-    for (auto it = m_balances.begin(); it != m_balances.end(); ++it) {
-      const SymbolId& spid = it->first;
-      // TODO: FIXME: set correct precision!!
-      std::string b = std::to_string(m_balances.at(spid));
-      m_results_file << b;
-      if (std::next(it) != m_balances.end()) {
-        m_results_file << ",";
-      } else {
-        m_results_file << "\n";
-      }
-    }
-    m_results_file.flush();
   }
 
 private:
@@ -208,9 +176,10 @@ private:
   }
 
 private:
-  const BacktestSettings m_settings;
-  std::unordered_map<SymbolId, double> m_balances;
+  BacktestSettings m_settings;
+  AccountBalance m_account_balance;
   std::vector<Order> m_limit_orders;
   std::unordered_map<SymbolPairId, Ticker> m_tickers;
   std::ofstream m_results_file;
+  AccountBalanceListener& m_balance_listener;
 };

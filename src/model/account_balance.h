@@ -8,10 +8,19 @@
 
 struct AccountBalance {
   AccountBalance() {
-    // TODO: remove
+  }
+
+  AccountBalance(const std::string& exchange) : m_exchange(exchange) {
+  }
+
+  ~AccountBalance() {
   }
 
   AccountBalance(std::unordered_map<SymbolId, double>&& asset_balance_map)
+      : m_asset_balance_map(std::move(asset_balance_map)) {
+  }
+
+  AccountBalance(const std::unordered_map<SymbolId, double>& asset_balance_map)
       : m_asset_balance_map(std::move(asset_balance_map)) {
   }
 
@@ -69,8 +78,19 @@ struct AccountBalance {
     m_locked_balance_map.insert_or_assign(asset_name, val);
   }
 
+  void AddBalance(SymbolId asset_name, double val) {
+    if (m_asset_balance_map.find(asset_name) == m_asset_balance_map.end()) {
+      m_asset_balance_map.emplace(asset_name, val);
+    }
+    m_asset_balance_map[asset_name] += val;
+  }
+
   const std::unordered_map<SymbolId, double>& GetBalanceMap() const {
     return m_asset_balance_map;
+  }
+
+  const std::string& GetExchange() const {
+    return m_exchange;
   }
 
   void UpdateTotalBalance(const AccountBalance& other) {
@@ -85,6 +105,7 @@ struct AccountBalance {
   // TODO:
   std::unordered_map<SymbolId, double> m_locked_balance_map;
   uint64_t m_last_update;
+  std::string m_exchange;
 
   friend std::ostream &operator<<(std::ostream &os, const AccountBalance &res);
 };

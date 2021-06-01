@@ -83,6 +83,7 @@ ArbitrageOrderCalculator::ArbitragePrices ArbitrageOrderCalculator::CalculatePri
   double daily_vol_sum = best_ask_exchange_daily_vol + best_bid_exchange_daily_vol;
   double ask_coeff = (best_ask_exchange_daily_vol / daily_vol_sum + book_ask_vol / vol_sum) / 2;
   double bid_coeff = (best_bid_exchange_daily_vol / daily_vol_sum + book_bid_vol / vol_sum) / 2;
+  // TODO: take latencies into consideration
   BOOST_LOG_TRIVIAL(debug) << "Ask coeff: " << ask_coeff << ", bid coeff: " << bid_coeff;
   res.buy_price = best_ask_ticker.m_ask * ask_coeff + max_buy_price * bid_coeff;
   res.sell_price = best_bid_ticker.m_bid * bid_coeff + min_sell_price * ask_coeff;

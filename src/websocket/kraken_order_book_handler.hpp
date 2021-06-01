@@ -1,6 +1,6 @@
 #include "model/order_book.h"
 #include "model/symbol.h"
-#include "utils/math.hpp"
+#include "utils/math.h"
 #include "utils/string.hpp"
 
 #include <boost/crc.hpp>
@@ -100,7 +100,7 @@ private:
       throw std::runtime_error("Unexpected price precision");
     }
     double price = std::stod(p);
-    price_t price_lvl = price_t(uint64_t(price * quick_pow10(precision_settings.m_price_precision)));
+    price_t price_lvl = price_t(uint64_t(price * cryptobot::quick_pow10(precision_settings.m_price_precision)));
 
     // Parse timestamp
     auto ts = lvl[2].get<std::string>();
@@ -119,12 +119,12 @@ private:
     const auto& asks = ob.GetAsks(); 
     std::transform(asks.rbegin(), asks.rend(), std::back_inserter(partial_input),
         [&](const PriceLevel& pl) -> std::string {
-          return std::to_string(uint64_t(pl.GetPrice())) + std::to_string(uint64_t(pl.GetVolume()*quick_pow10(precision_settings.m_volume_precision)));
+          return std::to_string(uint64_t(pl.GetPrice())) + std::to_string(uint64_t(pl.GetVolume()*cryptobot::quick_pow10(precision_settings.m_volume_precision)));
         });
     const auto& bids = ob.GetBids(); 
     std::transform(bids.rbegin(), bids.rend(), std::back_inserter(partial_input),
         [&](const PriceLevel& pl) -> std::string {
-          return std::to_string(uint64_t(pl.GetPrice())) + std::to_string(uint64_t(pl.GetVolume()*quick_pow10(precision_settings.m_volume_precision)));
+          return std::to_string(uint64_t(pl.GetPrice())) + std::to_string(uint64_t(pl.GetVolume()*cryptobot::quick_pow10(precision_settings.m_volume_precision)));
         });
     std::string res;
     for (const auto &piece : partial_input) res += piece;

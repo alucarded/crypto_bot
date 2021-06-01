@@ -1,4 +1,4 @@
-#pragma once
+namespace cryptobot {
 
 int quick_pow10(int n)
 {
@@ -9,3 +9,5 @@ int quick_pow10(int n)
 
     return pow10[n]; 
 }
+
+} // namespace cryptobot
