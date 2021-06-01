@@ -3,7 +3,7 @@
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
 #include "model/symbol.h"
-#include "utils/string.hpp"
+#include "utils/string.h"
 
 #include "json/json.hpp"
 

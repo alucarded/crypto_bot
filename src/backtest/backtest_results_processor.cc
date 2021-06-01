@@ -1,5 +1,7 @@
 #include "backtest_results_processor.h"
 
+#include "utils/string.h"
+
 BacktestResultsProcessor::BacktestResultsProcessor(const std::string& results_file) : m_results_file(results_file, std::ios::out | std::ios::app | std::ios::binary) {
 }
 
@@ -77,3 +79,10 @@ void BacktestResultsProcessor::OnBalanceUpdate(const AccountBalance& account_bal
 //   }
 //   m_results_file << oss.str();
 // }
+
+std::ostream& operator<<(std::ostream& os, const std::unordered_map<SymbolId, double>& sdmap) {
+  for (const auto& p : sdmap) {
+    os << p.first << ": " << cryptobot::to_string(p.second, 10) << std::endl;
+  }
+  return os;
+}

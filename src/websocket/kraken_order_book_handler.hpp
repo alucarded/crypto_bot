@@ -1,7 +1,7 @@
 #include "model/order_book.h"
 #include "model/symbol.h"
 #include "utils/math.h"
-#include "utils/string.hpp"
+#include "utils/string.h"
 
 #include <boost/crc.hpp>
 #include <boost/log/trivial.hpp>

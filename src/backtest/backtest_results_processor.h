@@ -4,6 +4,7 @@
 #include "model/ticker.h"
 
 #include <initializer_list>
+#include <iostream>
 #include <memory>
 #include <unordered_map>
 
@@ -22,3 +23,5 @@ private:
   std::unordered_map<std::string, std::unordered_map<SymbolId, double>> m_exchange_balances;
   std::ofstream m_results_file;
 };
+
+std::ostream& operator<<(std::ostream& os, const std::unordered_map<SymbolId, double>& sdmap);

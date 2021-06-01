@@ -1,7 +1,7 @@
 #pragma once
 
 #include "symbol_pair_settings.hpp"
-#include "utils/string.hpp"
+#include "utils/string.h"
 
 #include <cassert>
 

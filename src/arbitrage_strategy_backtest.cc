@@ -6,6 +6,7 @@
 #include "db/mongo_ticker_producer.hpp"
 #include "strategy/arbitrage/arbitrage_strategy.hpp"
 #include "utils/config.hpp"
+#include "utils/string.h"
 
 #include "json/json.hpp"
 
@@ -106,7 +107,7 @@ int main(int argc, char* argv[]) {
   int64_t count = mongo_producer.Produce();
   std::cout << "Produced " + std::to_string(count) + " tickers" << std::endl;
 
-  backtest_results_processor.GetCumulativeBalances();
+  std::cout << backtest_results_processor.GetCumulativeBalances();
 
   return 0;
 }

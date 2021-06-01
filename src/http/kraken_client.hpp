@@ -4,7 +4,7 @@
 #include "http_client.hpp"
 #include "model/kraken.h"
 #include "model/symbol.h"
-#include "utils/string.hpp"
+#include "utils/string.h"
 
 #include <boost/log/trivial.hpp>
 #include "json/json.hpp"

@@ -14,7 +14,8 @@ COMMON_SRC=src/model/order.cc \
 			 src/model/ticker.cc \
 			 src/model/account_balance.cc \
 			 src/exchange/account_refresher.cc \
-			 src/utils/math.cc
+			 src/utils/math.cc \
+			 src/utils/string.cc
 ARBITRAGE_MAIN_SRC=src/arbitrage_strategy_main.cc \
 			 src/strategy/arbitrage/arbitrage_order_calculator.cc
 ARBITRAGE_BACKTEST_SRC=src/arbitrage_strategy_backtest.cc \
