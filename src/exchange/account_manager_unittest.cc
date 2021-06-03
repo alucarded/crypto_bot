@@ -1,4 +1,4 @@
-#include "account_manager.hpp"
+#include "account_manager_impl.h"
 
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
@@ -17,7 +17,7 @@ public:
 
 TEST(AccountManagerTest, OnOrderUpdateTest) { 
   std::unique_ptr<MockExchangeClient> mec{new MockExchangeClient()};
-  AccountManager account_manager{mec.get()};
+  AccountManagerImpl account_manager{mec.get()};
 
   Order new_order = Order::CreateBuilder()
       .Id("TEST_ID")

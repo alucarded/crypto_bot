@@ -1,5 +1,6 @@
 #include "backtest/backtest_exchange_client.hpp"
 #include "backtest/backtest_results_processor.h"
+#include "exchange/account_manager_impl.h"
 #include "exchange/exchange_client.h"
 #include "http/binance_client.hpp"
 #include "db/mongo_client.hpp"
@@ -57,8 +58,8 @@ int main(int argc, char* argv[]) {
   kraken_backtest_settings.fee = 0.0020;
   BacktestExchangeClient kraken_backtest_client(kraken_backtest_settings, backtest_results_processor);
 
-  std::shared_ptr<AccountManager> binance_account_manager = std::make_shared<AccountManager>(&binance_backtest_client);
-  std::shared_ptr<AccountManager> kraken_account_manager = std::make_shared<AccountManager>(&kraken_backtest_client);
+  std::shared_ptr<AccountManager> binance_account_manager = std::make_shared<AccountManagerImpl>(&binance_backtest_client);
+  std::shared_ptr<AccountManager> kraken_account_manager = std::make_shared<AccountManagerImpl>(&kraken_backtest_client);
 
   ArbitrageStrategyOptions strategy_opts;
   ExchangeParams binance_params;
@@ -107,7 +108,9 @@ int main(int argc, char* argv[]) {
   int64_t count = mongo_producer.Produce();
   std::cout << "Produced " + std::to_string(count) + " tickers" << std::endl;
 
-  std::cout << backtest_results_processor.GetCumulativeBalances();
+  const auto& balances = backtest_results_processor.GetCumulativeBalances();
+  BOOST_LOG_TRIVIAL(info) << "Balances size: " << balances.size();
+  BOOST_LOG_TRIVIAL(info) << balances;
 
   return 0;
 }

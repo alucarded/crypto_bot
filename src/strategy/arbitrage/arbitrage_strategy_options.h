@@ -17,9 +17,9 @@ struct ArbitrageStrategyOptions {
   std::unordered_map<SymbolId, double> default_amount;
   // TODO: get from exchange info endpoint
   std::unordered_map<SymbolId, double> min_amount;
-  int64_t max_ticker_age_us;
-  int64_t max_ticker_delay_us;
-  int64_t min_trade_interval_us;
+  uint64_t max_ticker_age_us;
+  uint64_t max_ticker_delay_us;
+  uint64_t min_trade_interval_us;
   double arbitrage_match_profit_margin;
-  std::function<uint64_t(const Ticker&)> time_provider_fcn = [](const Ticker& ticker) { return duration_cast<microseconds>(system_clock::now().time_since_epoch()).count(); };
+  std::function<uint64_t(const Ticker&)> time_provider_fcn = [](const Ticker&) { return duration_cast<microseconds>(system_clock::now().time_since_epoch()).count(); };
 };

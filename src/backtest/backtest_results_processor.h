@@ -16,7 +16,7 @@ public:
   std::unordered_map<SymbolId, double> GetCumulativeBalances();
   // double CalculateAssetsValue(const std::unordered_map<SymbolPairId, double>& prices, SymbolId quote_asset);
 
-  virtual void OnBalanceUpdate(const AccountBalance& account_balance) override;
+  virtual void OnAccountBalanceUpdate(const AccountBalance& account_balance) override;
 // private:
 //   void WriteBalanceCsvHeaders();
 private:

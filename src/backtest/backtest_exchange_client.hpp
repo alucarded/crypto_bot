@@ -17,6 +17,7 @@ struct BacktestSettings {
   double slippage;
 };
 
+// TODO: add AccountManager interface to use this in place of AccountManager instance in ArbitrageStrategy
 class BacktestExchangeClient : public ExchangeClient, public ExchangeListener {
 public:
   BacktestExchangeClient(const BacktestSettings& settings, AccountBalanceListener& balance_listener) : m_settings(settings),
@@ -28,7 +29,6 @@ public:
   }
 
   virtual ~BacktestExchangeClient() {
-    m_results_file.close();
   }
 
   virtual std::string GetExchange() override {
@@ -78,14 +78,11 @@ public:
       m_account_balance.AddBalance(base_asset_id, qty);
       BOOST_LOG_TRIVIAL(info) << "Bought " << qty << " for " << cost;
     }
-    m_balance_listener.OnBalanceUpdate(m_account_balance);
+    m_balance_listener.OnAccountBalanceUpdate(m_account_balance);
     return Result<Order>("", Order("ABC", "ABC", symbol, side, OrderType::MARKET, qty));
   }
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
-    SymbolPair sp{symbol};
-    SymbolId base_asset_id = sp.GetBaseAsset();
-    SymbolId quote_asset_id = sp.GetQuoteAsset();
     assert(m_tickers.find(symbol) != m_tickers.end());
     const Ticker& ticker = m_tickers.at(symbol);
     double current_price;
@@ -137,7 +134,7 @@ public:
             m_account_balance.AddBalance(quote_asset_id, cost);
             m_account_balance.AddBalance(base_asset_id, -order.GetQuantity());
             m_limit_orders.erase(m_limit_orders.begin() + i);
-            m_balance_listener.OnBalanceUpdate(m_account_balance);
+            m_balance_listener.OnAccountBalanceUpdate(m_account_balance);
             continue;
           }
         } else { // BUY
@@ -149,7 +146,7 @@ public:
             m_account_balance.AddBalance(quote_asset_id, -cost);
             m_account_balance.AddBalance(base_asset_id, order.GetQuantity());
             m_limit_orders.erase(m_limit_orders.begin() + i);
-            m_balance_listener.OnBalanceUpdate(m_account_balance);
+            m_balance_listener.OnAccountBalanceUpdate(m_account_balance);
             continue;
           }
         }
@@ -180,6 +177,5 @@ private:
   AccountBalance m_account_balance;
   std::vector<Order> m_limit_orders;
   std::unordered_map<SymbolPairId, Ticker> m_tickers;
-  std::ofstream m_results_file;
   AccountBalanceListener& m_balance_listener;
 };

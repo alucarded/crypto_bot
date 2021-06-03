@@ -13,6 +13,7 @@ COMMON_SRC=src/model/order.cc \
 			 src/model/symbol.cc \
 			 src/model/ticker.cc \
 			 src/model/account_balance.cc \
+			 src/exchange/account_manager_impl.cc \
 			 src/exchange/account_refresher.cc \
 			 src/utils/math.cc \
 			 src/utils/string.cc

@@ -4,5 +4,5 @@
 
 class AccountBalanceListener {
 public:
-  virtual void OnBalanceUpdate(const AccountBalance& balance) = 0;
+  virtual void OnAccountBalanceUpdate(const AccountBalance& balance) = 0;
 };

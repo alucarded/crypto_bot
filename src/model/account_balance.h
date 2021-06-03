@@ -81,6 +81,7 @@ struct AccountBalance {
   void AddBalance(SymbolId asset_name, double val) {
     if (m_asset_balance_map.find(asset_name) == m_asset_balance_map.end()) {
       m_asset_balance_map.emplace(asset_name, val);
+      return;
     }
     m_asset_balance_map[asset_name] += val;
   }

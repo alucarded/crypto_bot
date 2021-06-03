@@ -43,12 +43,13 @@ int main(int argc, char* argv[]) {
   binance_params.exchange_name = "binance";
   binance_params.slippage = 0;
   binance_params.fee = 0.00075;
-  binance_params.daily_volume = 52.506572519;
+  // HACK: this is not daily, volume, just experimenting with weights
+  binance_params.daily_volume = 5.0; //52.506572519;
   ExchangeParams kraken_params;
   kraken_params.exchange_name = "kraken";
   kraken_params.slippage = 0;
   kraken_params.fee = 0.0020;
-  kraken_params.daily_volume = 3.404118345;
+  kraken_params.daily_volume = 5.0; //3.404118345;
   strategy_opts.exchange_params = {
     { "binance", binance_params },
     { "kraken", kraken_params }
@@ -71,9 +72,9 @@ int main(int argc, char* argv[]) {
     {SymbolId::XLM, 30},
   };
   strategy_opts.max_ticker_age_us = 1000000; // 1s
-  strategy_opts.max_ticker_delay_us = 10000000; // 10s
+  strategy_opts.max_ticker_delay_us = 1000000; // 1s
   strategy_opts.min_trade_interval_us = 0;
-  strategy_opts.arbitrage_match_profit_margin = 0.0002;
+  strategy_opts.arbitrage_match_profit_margin = 0.00025;
 
   BinanceClient binance_client;
   std::shared_ptr<AccountManager> binance_account_manager = std::make_shared<AccountManager>(&binance_client);

@@ -21,8 +21,8 @@ struct Ticker {
   std::optional<double> m_ask_vol;
   double m_bid;
   std::optional<double> m_bid_vol;
-  std::optional<int64_t> m_source_ts;
-  int64_t m_arrived_ts;
+  std::optional<uint64_t> m_source_ts;
+  uint64_t m_arrived_ts;
   uint64_t m_id;
   std::string m_exchange;
   SymbolPair m_symbol;
@@ -35,8 +35,8 @@ struct RawTicker {
   std::string m_ask_vol;
   std::string m_bid;
   std::string m_bid_vol;
-  int64_t m_source_ts;
-  int64_t m_arrived_ts;
+  uint64_t m_source_ts;
+  uint64_t m_arrived_ts;
   std::string m_exchange;
   std::string m_symbol;
   static uint64_t m_last_ticker_id;

@@ -90,9 +90,9 @@ public:
       }
       // Check tickers source timestamp, if present
       auto best_bid_ticker_delay = best_bid_ticker.m_source_ts.has_value()
-          ? best_bid_ticker.m_arrived_ts - best_bid_ticker.m_source_ts.value() : -1;
+          ? best_bid_ticker.m_arrived_ts - best_bid_ticker.m_source_ts.value() : 0;
       auto best_ask_ticker_delay = best_ask_ticker.m_source_ts.has_value()
-          ? best_ask_ticker.m_arrived_ts - best_ask_ticker.m_source_ts.value() : -1;
+          ? best_ask_ticker.m_arrived_ts - best_ask_ticker.m_source_ts.value() : 0;
       BOOST_LOG_TRIVIAL(info) << "Best bid ticker delay (" << best_bid_exchange
             << "): " << std::to_string(best_bid_ticker_delay) << ", best ask ticker delay (" << best_ask_exchange
             << "): " << std::to_string(best_ask_ticker_delay);

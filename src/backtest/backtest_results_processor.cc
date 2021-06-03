@@ -60,10 +60,11 @@ std::unordered_map<SymbolId, double> BacktestResultsProcessor::GetCumulativeBala
   //   m_results_file.flush();
   // }
 
-void BacktestResultsProcessor::OnBalanceUpdate(const AccountBalance& account_balance) {
+void BacktestResultsProcessor::OnAccountBalanceUpdate(const AccountBalance& account_balance) {
   // Write to file
   // TODO:
   // Update
+  BOOST_LOG_TRIVIAL(info) << "BacktestResultsProcessor::OnBalanceUpdate";
   m_exchange_balances[account_balance.GetExchange()] = account_balance.GetBalanceMap();
 }
 
