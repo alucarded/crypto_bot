@@ -1,7 +1,7 @@
 #pragma once
 
 #include "exchange/account_balance_listener.h"
-#include "exchange/exchange_client.h"
+#include "exchange/account_manager.h"
 #include "exchange/exchange_listener.h"
 
 #include <iostream>
@@ -18,7 +18,7 @@ struct BacktestSettings {
 };
 
 // TODO: add AccountManager interface to use this in place of AccountManager instance in ArbitrageStrategy
-class BacktestExchangeClient : public ExchangeClient, public ExchangeListener {
+class BacktestExchangeClient : public AccountManager, public ExchangeListener {
 public:
   BacktestExchangeClient(const BacktestSettings& settings, AccountBalanceListener& balance_listener) : m_settings(settings),
   m_account_balance(settings.exchange), m_balance_listener(balance_listener) {
@@ -30,6 +30,8 @@ public:
 
   virtual ~BacktestExchangeClient() {
   }
+
+  // ExchangeClient
 
   virtual std::string GetExchange() override {
     return m_settings.exchange;
@@ -112,6 +114,30 @@ public:
   virtual void CancelAllOrders() override {
 
   }
+
+  // AccountManager
+
+  virtual bool HasOpenOrders() override {
+    return false;
+  };
+
+  virtual bool HasOpenOrders(SymbolPairId pair) override {
+    return false;
+  };
+
+  virtual double GetFreeBalance(SymbolId symbol_id) override {
+    return m_account_balance.GetFreeBalance(symbol_id);
+  };
+
+  virtual double GetTotalBalance(SymbolId symbol_id) override {
+    return m_account_balance.GetTotalBalance(symbol_id);
+  };
+
+  virtual bool IsAccountSynced() const override {
+    return true;
+  };
+
+  // ExchangeListener
 
   virtual void OnBookTicker(const Ticker& ticker) override {
     //BOOST_LOG_TRIVIAL(trace) << "BacktestExchangeClient::OnBookTicker, ticker: " << ticker;

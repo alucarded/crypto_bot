@@ -1,6 +1,5 @@
 #include "backtest/backtest_exchange_client.hpp"
 #include "backtest/backtest_results_processor.h"
-#include "exchange/account_manager_impl.h"
 #include "exchange/exchange_client.h"
 #include "http/binance_client.hpp"
 #include "db/mongo_client.hpp"
@@ -58,9 +57,6 @@ int main(int argc, char* argv[]) {
   kraken_backtest_settings.fee = 0.0020;
   BacktestExchangeClient kraken_backtest_client(kraken_backtest_settings, backtest_results_processor);
 
-  std::shared_ptr<AccountManager> binance_account_manager = std::make_shared<AccountManagerImpl>(&binance_backtest_client);
-  std::shared_ptr<AccountManager> kraken_account_manager = std::make_shared<AccountManagerImpl>(&kraken_backtest_client);
-
   ArbitrageStrategyOptions strategy_opts;
   ExchangeParams binance_params;
   binance_params.slippage = 0.0;
@@ -96,8 +92,8 @@ int main(int argc, char* argv[]) {
   strategy_opts.arbitrage_match_profit_margin = 0;
   strategy_opts.time_provider_fcn = [](const Ticker& ticker) { return ticker.m_arrived_ts; };
   ArbitrageStrategy arbitrage_strategy(strategy_opts);
-  arbitrage_strategy.RegisterExchangeClient("binance", binance_account_manager);
-  arbitrage_strategy.RegisterExchangeClient("kraken", kraken_account_manager);
+  arbitrage_strategy.RegisterExchangeClient("binance", &binance_backtest_client);
+  arbitrage_strategy.RegisterExchangeClient("kraken", &kraken_backtest_client);
 
   MongoTickerProducer mongo_producer(mongo_client, config_json["db"].get<std::string>(), config_json["collection"].get<std::string>());
   // First register clients, so that execution price is same as seen price

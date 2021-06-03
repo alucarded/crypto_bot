@@ -25,7 +25,7 @@
 
 using namespace std::chrono;
 
-class ArbitrageStrategy : public TradingStrategy, public ExchangeListener {
+class ArbitrageStrategy : public ExchangeListener {
 public:
     ArbitrageStrategy(const ArbitrageStrategyOptions& opts)
       : m_opts(opts), m_matcher(opts.exchange_params, opts.arbitrage_match_profit_margin), m_last_trade_us(0), m_order_calculator(opts) {
@@ -47,6 +47,10 @@ public:
 
   void Initialize() {
     // TODO: get minimum order amount
+  }
+
+  void RegisterExchangeClient(const std::string& exchange_name, AccountManager* account_manager) {
+    m_account_managers.insert_or_assign(exchange_name, account_manager);
   }
 
   virtual void OnBookTicker(const Ticker& ticker) override {
@@ -139,14 +143,14 @@ public:
             case PriceOutlook::BEARISH: {
                 // Use limit order tilted by fee
                 double fee = m_opts.exchange_params.at(best_bid_exchange).fee;
-                auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
+                auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange],
                     current_symbol_id, Side::SELL, order_qty, (1.0 - fee) * best_bid_ticker.m_bid);
                 auto f1_res = f1.get();
                 if (!f1_res) {
                   BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
                   std::exit(1);
                 }
-                auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
+                auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange],
                     current_symbol_id, Side::BUY, order_qty, prediction.target_price);
                 auto f2_res = f2.get();
                 if (!f2_res) {
@@ -164,14 +168,14 @@ public:
             case PriceOutlook::BULLISH: {
                 // Use limit order tilted by fee
                 double fee = m_opts.exchange_params.at(best_ask_exchange).fee;
-                auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
+                auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange],
                     current_symbol_id, Side::BUY, order_qty, (1.0 + fee) * best_ask_ticker.m_ask);
                 auto f1_res = f1.get();
                 if (!f1_res) {
                   BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
                   std::exit(1);
                 }
-                auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
+                auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange],
                     current_symbol_id, Side::SELL, order_qty, prediction.target_price);
                 auto f2_res = f2.get();
                 if (!f2_res) {
@@ -217,9 +221,9 @@ private:
     const auto& best_bid_exchange = best_bid_ticker.m_exchange;
     const auto& best_ask_exchange = best_ask_ticker.m_exchange;
     SymbolPairId current_symbol_id = SymbolPairId(best_bid_ticker.m_symbol); 
-    auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange].get(),
+    auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange],
         current_symbol_id, Side::SELL, vol, sell_price);
-    auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange].get(),
+    auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange],
         current_symbol_id, Side::BUY, vol, buy_price);
     auto f1_res = f1.get();
     if (!f1_res) {
@@ -252,6 +256,7 @@ private:
     }
     return false;
   }
+
 private:
   ArbitrageStrategyOptions m_opts;
   ArbitrageStrategyMatcher m_matcher;
@@ -262,4 +267,5 @@ private:
   cryptobot::spinlock m_tickers_lock;
   std::atomic<int64_t> m_last_trade_us;
   ArbitrageOrderCalculator m_order_calculator;
+  std::unordered_map<std::string, AccountManager*> m_account_managers;
 };
