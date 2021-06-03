@@ -1,3 +1,4 @@
+#include "exchange/account_manager_impl.h"
 #include "exchange/exchange_listener.h"
 #include "http/binance_client.hpp"
 #include "http/kraken_client.hpp"
@@ -77,9 +78,9 @@ int main(int argc, char* argv[]) {
   strategy_opts.arbitrage_match_profit_margin = 0.00025;
 
   BinanceClient binance_client;
-  std::shared_ptr<AccountManager> binance_account_manager = std::make_shared<AccountManager>(&binance_client);
+  AccountManagerImpl binance_account_manager(&binance_client);
   KrakenClient kraken_client;
-  std::shared_ptr<AccountManager> kraken_account_manager = std::make_shared<AccountManager>(&kraken_client);
+  AccountManagerImpl kraken_account_manager(&kraken_client);
 
   BinanceUserDataStream binance_stream = BinanceUserDataStream::Create(binance_account_manager);
   std::promise<void> binance_stream_promise;
@@ -87,15 +88,15 @@ int main(int argc, char* argv[]) {
   binance_stream.start(std::move(binance_stream_promise));
   binance_user_future.wait();
 
-  KrakenUserDataStream kraken_stream(std::make_unique<KrakenClient>(), kraken_account_manager);
+  KrakenUserDataStream kraken_stream(kraken_account_manager);
   std::promise<void> kraken_stream_promise;
   std::future<void> kraken_user_future = kraken_stream_promise.get_future();
   kraken_stream.start(std::move(kraken_stream_promise));
   kraken_user_future.wait();
 
   ArbitrageStrategy arbitrage_strategy(strategy_opts);
-  arbitrage_strategy.RegisterExchangeClient("binance", binance_account_manager);
-  arbitrage_strategy.RegisterExchangeClient("kraken", kraken_account_manager);
+  arbitrage_strategy.RegisterExchangeClient("binance", &binance_account_manager);
+  arbitrage_strategy.RegisterExchangeClient("kraken", &kraken_account_manager);
 
   BinanceWebsocketClient binance_websocket_client(&arbitrage_strategy);
   KrakenWebsocketClient kraken_websocket_client(&arbitrage_strategy);

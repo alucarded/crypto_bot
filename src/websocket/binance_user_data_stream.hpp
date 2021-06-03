@@ -13,17 +13,17 @@ using namespace std::chrono;
 
 class BinanceUserDataStream : public WebsocketClient {
 public:
-  static BinanceUserDataStream Create(std::shared_ptr<UserDataListener> user_data_listener) {
+  static BinanceUserDataStream Create(UserDataListener& user_data_listener) {
     std::unique_ptr<BinanceClient> binance_client = std::make_unique<BinanceClient>();
     auto res = binance_client->StartUserDataStream();
     if (!res.has_value()) {
       BOOST_LOG_TRIVIAL(error) << "Error getting user data stream listen key";
     }
-    return BinanceUserDataStream(res.value(), std::move(binance_client), std::move(user_data_listener));
+    return BinanceUserDataStream(res.value(), std::move(binance_client), user_data_listener);
   }
 
 protected:
-  BinanceUserDataStream(const std::string& listen_key, std::unique_ptr<BinanceClient>&& binance_client, std::shared_ptr<UserDataListener>&& user_data_listener)
+  BinanceUserDataStream(const std::string& listen_key, std::unique_ptr<BinanceClient>&& binance_client, UserDataListener& user_data_listener)
       : WebsocketClient("wss://stream.binance.com:9443/ws/" + listen_key, "binance_user_data"),
         m_listen_key(listen_key),
         m_binance_client(std::move(binance_client)),
@@ -34,11 +34,11 @@ protected:
 
 private:
   virtual void OnOpen(websocketpp::connection_hdl conn) override {
-    m_user_data_listener->OnConnectionOpen("binance");
+    m_user_data_listener.OnConnectionOpen("binance");
   }
 
   virtual void OnClose(websocketpp::connection_hdl conn) override {
-    m_user_data_listener->OnConnectionClose("binance");
+    m_user_data_listener.OnConnectionClose("binance");
 
     auto res = m_binance_client->StartUserDataStream();
     while (!res.has_value()) {
@@ -87,7 +87,7 @@ private:
         // b["l"] - locked amount
         // TODO: add locked amount too
       }
-      m_user_data_listener->OnAccountBalanceUpdate(AccountBalance(std::move(balances)));
+      m_user_data_listener.OnAccountBalanceUpdate(AccountBalance(std::move(balances)));
     } else if (event_type == "balanceUpdate") {
       BOOST_LOG_TRIVIAL(warning) << "User data stream event " + event_type + " is not supported";
     } else if (event_type == "executionReport") {
@@ -115,13 +115,13 @@ private:
       .Build();
     order.SetExecutedQuantity(std::stod(msg_json["z"].get<std::string>()));
     order.SetTotalCost(std::stod(msg_json["Z"].get<std::string>()));
-    m_user_data_listener->OnOrderUpdate(order);
+    m_user_data_listener.OnOrderUpdate(order);
   }
 
 private:
   std::string m_listen_key;
   std::unique_ptr<BinanceClient> m_binance_client;
-  std::shared_ptr<UserDataListener> m_user_data_listener;
+  UserDataListener& m_user_data_listener;
   uint64_t m_last_keepalive;
   uint64_t m_keepalive_interval;
 };

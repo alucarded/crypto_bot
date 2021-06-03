@@ -14,36 +14,36 @@ using namespace std::chrono;
 
 class KrakenUserDataStream : public WebsocketClient {
 public:
-  KrakenUserDataStream(std::unique_ptr<KrakenClient> kraken_client, std::shared_ptr<UserDataListener> user_data_listener)
+  KrakenUserDataStream(UserDataListener& user_data_listener)
       : WebsocketClient("wss://ws-auth.kraken.com", "kraken_user_data"),
-        m_listen_key(kraken_client->GetWebSocketsToken()),
-        m_kraken_client(std::move(kraken_client)),
-        m_user_data_listener(std::move(user_data_listener)) {
+        m_kraken_client(),
+        m_listen_key(m_kraken_client.GetWebSocketsToken()),
+        m_user_data_listener(user_data_listener) {
   }
 
 private:
 
   void SubscribeOwnTrades() {
-    const std::string message = "{\"event\": \"subscribe\",\"subscription\": {\"name\": \"ownTrades\",\"token\":\"" + m_kraken_client->GetWebSocketsToken() +"\"}}";
+    const std::string message = "{\"event\": \"subscribe\",\"subscription\": {\"name\": \"ownTrades\",\"token\":\"" + m_kraken_client.GetWebSocketsToken() +"\"}}";
     WebsocketClient::send(message);
   }
 
   void SubscribeOpenOrders() {
-    const std::string message = "{\"event\": \"subscribe\",\"subscription\": {\"name\": \"openOrders\",\"token\":\"" + m_kraken_client->GetWebSocketsToken() +"\"}}";
+    const std::string message = "{\"event\": \"subscribe\",\"subscription\": {\"name\": \"openOrders\",\"token\":\"" + m_kraken_client.GetWebSocketsToken() +"\"}}";
     WebsocketClient::send(message);
   }
 
   virtual void OnOpen(websocketpp::connection_hdl conn) override {
-    m_user_data_listener->OnConnectionOpen("kraken");
+    m_user_data_listener.OnConnectionOpen("kraken");
 
     SubscribeOwnTrades();
     SubscribeOpenOrders();
   }
 
   virtual void OnClose(websocketpp::connection_hdl conn) override {
-    m_user_data_listener->OnConnectionClose("kraken");
+    m_user_data_listener.OnConnectionClose("kraken");
 
-    m_listen_key = m_kraken_client->GetWebSocketsToken();
+    m_listen_key = m_kraken_client.GetWebSocketsToken();
   }
 
   virtual bool OnPing(websocketpp::connection_hdl conn, std::string payload) override {
@@ -95,7 +95,7 @@ private:
           Order order = order_builder.Build();
           order.SetExecutedQuantity(std::stod(order_val["vol_exec"].get<std::string>()));
           order.SetTotalCost(std::stod(order_val["cost"].get<std::string>()));
-          m_user_data_listener->OnOrderUpdate(order);
+          m_user_data_listener.OnOrderUpdate(order);
         }
       }
     } else {
@@ -105,6 +105,6 @@ private:
 
 private:
   std::string m_listen_key;
-  std::unique_ptr<KrakenClient> m_kraken_client;
-  std::shared_ptr<UserDataListener> m_user_data_listener;
+  KrakenClient m_kraken_client;
+  UserDataListener& m_user_data_listener;
 };
