@@ -73,9 +73,10 @@ int main(int argc, char* argv[]) {
     {SymbolId::XLM, 30},
   };
   strategy_opts.max_ticker_age_us = 1000000; // 1s
-  strategy_opts.max_ticker_delay_us = 1000000; // 1s
+  strategy_opts.max_ticker_delay_us = 1300000; // 1.3s
   strategy_opts.min_trade_interval_us = 0;
-  strategy_opts.arbitrage_match_profit_margin = 0.00025;
+  // The margin is applied to both sides
+  strategy_opts.arbitrage_match_profit_margin = 0.000125;
 
   BinanceClient binance_client;
   AccountManagerImpl binance_account_manager(&binance_client);
