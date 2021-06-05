@@ -5,18 +5,10 @@
 
 #include <boost/log/trivial.hpp>
 
-// TODO: split into separate interfaces (ExchangeConnectionListener, BookTickerListener, TradeTickerListener, OrderBookListener)
+// TODO: split into separate interfaces (ExchangeConnectionListener, BookTickerListener, TradeTickerListener, OrderBookListener) ??
 // ^ Interface Segregation Principle
-class ExchangeListener {
+class ExchangeListener : public ConnectionListener {
 public:
-  virtual void OnConnectionOpen(const std::string& name) {
-    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnConnectionOpen, name=" + name;
-  }
-
-  virtual void OnConnectionClose(const std::string& name) {
-    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnConnectionClose, name=" + name;
-  }
-
   virtual void OnBookTicker(const Ticker& ticker) {
     BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnBookTicker, ticker=" << ticker;
   }
