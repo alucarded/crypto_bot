@@ -16,9 +16,8 @@ class KrakenUserDataStream : public WebsocketClient {
 public:
   KrakenUserDataStream(UserDataListener& user_data_listener)
       : WebsocketClient("wss://ws-auth.kraken.com", "kraken_user_data"),
-        m_kraken_client(),
-        m_listen_key(m_kraken_client.GetWebSocketsToken()),
         m_user_data_listener(user_data_listener) {
+    m_listen_key = m_kraken_client.GetWebSocketsToken();
   }
 
 private:
