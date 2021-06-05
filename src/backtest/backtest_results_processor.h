@@ -10,7 +10,7 @@
 
 class BacktestResultsProcessor : public AccountBalanceListener {
 public:
-  BacktestResultsProcessor(const std::string& results_file);
+  BacktestResultsProcessor(const std::string& results_file, std::initializer_list<SymbolId> symbols);
   ~BacktestResultsProcessor();
 
   std::unordered_map<SymbolId, double> GetCumulativeBalances();
@@ -20,8 +20,9 @@ public:
 // private:
 //   void WriteBalanceCsvHeaders();
 private:
-  std::unordered_map<std::string, std::unordered_map<SymbolId, double>> m_exchange_balances;
   std::ofstream m_results_file;
+  std::vector<SymbolId> m_symbols;
+  std::unordered_map<std::string, std::unordered_map<SymbolId, double>> m_exchange_balances;
 };
 
 std::ostream& operator<<(std::ostream& os, const std::unordered_map<SymbolId, double>& sdmap);

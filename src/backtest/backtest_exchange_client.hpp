@@ -4,6 +4,7 @@
 #include "exchange/account_manager.h"
 #include "exchange/exchange_listener.h"
 
+#include <chrono>
 #include <iostream>
 #include <fstream>
 #include <map>
@@ -11,10 +12,13 @@
 #include <string>
 #include <unordered_map>
 
+using namespace std::chrono;
+
 struct BacktestSettings {
   std::string exchange;
   double fee;
   double slippage;
+  double latency;
 };
 
 // TODO: add AccountManager interface to use this in place of AccountManager instance in ArbitrageStrategy
@@ -81,6 +85,8 @@ public:
       BOOST_LOG_TRIVIAL(info) << "Bought " << qty << " for " << cost;
     }
     m_balance_listener.OnAccountBalanceUpdate(m_account_balance);
+    // Simulate sending order latency
+    m_blocked_until = ticker.m_arrived_ts + m_settings.latency;
     return Result<Order>("", Order("ABC", "ABC", symbol, side, OrderType::MARKET, qty));
   }
 
@@ -88,6 +94,8 @@ public:
     assert(m_tickers.find(symbol) != m_tickers.end());
     const Ticker& ticker = m_tickers.at(symbol);
     double current_price;
+    // Simulate sending order latency
+    m_blocked_until = ticker.m_arrived_ts + m_settings.latency;
     if (side == Side::SELL) {
       current_price = ticker.m_bid;
       if (price <= current_price) {
@@ -122,7 +130,8 @@ public:
   };
 
   virtual bool HasOpenOrders(SymbolPairId pair) override {
-    return false;
+    const Ticker& ticker = m_tickers.at(pair);
+    return ticker.m_arrived_ts < m_blocked_until;
   };
 
   virtual double GetFreeBalance(SymbolId symbol_id) override {
@@ -204,4 +213,5 @@ private:
   std::vector<Order> m_limit_orders;
   std::unordered_map<SymbolPairId, Ticker> m_tickers;
   AccountBalanceListener& m_balance_listener;
+  uint64_t m_blocked_until;
 };

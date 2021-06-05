@@ -2,7 +2,16 @@
 
 #include "utils/string.h"
 
-BacktestResultsProcessor::BacktestResultsProcessor(const std::string& results_file) : m_results_file(results_file, std::ios::out | std::ios::app | std::ios::binary) {
+BacktestResultsProcessor::BacktestResultsProcessor(const std::string& results_file, std::initializer_list<SymbolId> symbols)
+    : m_results_file(results_file, std::ios::out | std::ios::app | std::ios::binary), m_symbols(symbols) {
+      for (auto it = m_symbols.begin(); it != m_symbols.end(); ++it) {
+        m_results_file << *it;
+        if (std::next(it) != m_symbols.end()) {
+          m_results_file << ",";
+        } else {
+          m_results_file << "\n";
+        }
+      }
 }
 
 BacktestResultsProcessor::~BacktestResultsProcessor() {
@@ -61,11 +70,17 @@ std::unordered_map<SymbolId, double> BacktestResultsProcessor::GetCumulativeBala
   // }
 
 void BacktestResultsProcessor::OnAccountBalanceUpdate(const AccountBalance& account_balance) {
-  // Write to file
-  // TODO:
-  // Update
   BOOST_LOG_TRIVIAL(info) << "BacktestResultsProcessor::OnBalanceUpdate";
   m_exchange_balances[account_balance.GetExchange()] = account_balance.GetBalanceMap();
+  const auto& cumulative_balances = GetCumulativeBalances();
+  for (auto it = m_symbols.begin(); it != m_symbols.end(); ++it) {
+    m_results_file << cryptobot::to_string(cumulative_balances.at(*it), 10);
+    if (std::next(it) != m_symbols.end()) {
+      m_results_file << ",";
+    } else {
+      m_results_file << "\n";
+    }
+  }
 }
 
 // void BacktestResultsProcessor::WriteBalanceCsvHeaders() {

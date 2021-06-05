@@ -6,7 +6,6 @@
 #include "exchange/exchange_listener.h"
 #include "model/options.h"
 #include "strategy/mean_reversion_signal.hpp"
-#include "strategy/trading_strategy.h"
 #include "utils/math.h"
 #include "utils/spinlock.hpp"
 

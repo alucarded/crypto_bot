@@ -44,17 +44,19 @@ int main(int argc, char* argv[]) {
   std::cout << "Created Mongo client pool" << std::endl;
   pass.clear();
 
-  BacktestResultsProcessor backtest_results_processor("backtest_results.csv");
+  BacktestResultsProcessor backtest_results_processor("backtest_results.csv", {SymbolId::USDT, SymbolId::BTC, SymbolId::ETH, SymbolId::ADA});
   BacktestSettings binance_backtest_settings;
   // TODO: FIXME: slippage value per pair
   binance_backtest_settings.exchange = "binance";
   binance_backtest_settings.slippage = 0;
   binance_backtest_settings.fee = 0.00075;
+  binance_backtest_settings.latency = 700000;
   BacktestExchangeClient binance_backtest_client(binance_backtest_settings, backtest_results_processor);
   BacktestSettings kraken_backtest_settings;
   kraken_backtest_settings.exchange = "kraken";
   kraken_backtest_settings.slippage = 0;
   kraken_backtest_settings.fee = 0.0020;
+  binance_backtest_settings.latency = 500000;
   BacktestExchangeClient kraken_backtest_client(kraken_backtest_settings, backtest_results_processor);
 
   ArbitrageStrategyOptions strategy_opts;
