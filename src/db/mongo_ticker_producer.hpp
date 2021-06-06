@@ -1,4 +1,5 @@
 #include "db/mongo_client.hpp"
+#include "exchange/connection_listener.h"
 #include "exchange/exchange_listener.h"
 #include "model/ticker.h"
 

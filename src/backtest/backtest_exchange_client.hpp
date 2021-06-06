@@ -148,6 +148,14 @@ public:
 
   // ExchangeListener
 
+  virtual void OnConnectionOpen(const std::string& name) override {
+    // no-op
+  }
+
+  virtual void OnConnectionClose(const std::string& name) override {
+    // no-op
+  }
+
   virtual void OnBookTicker(const Ticker& ticker) override {
     //BOOST_LOG_TRIVIAL(trace) << "BacktestExchangeClient::OnBookTicker, ticker: " << ticker;
     if (m_settings.exchange == ticker.m_exchange) {

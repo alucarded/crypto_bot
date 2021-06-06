@@ -25,11 +25,10 @@ ARBITRAGE_BACKTEST_SRC=src/backtest/backtest_results_processor.cc \
        src/arbitrage_strategy_backtest.cc
 # ARBITRAGE_FLAGS=-DWITH_MEAN_REVERSION_SIGNAL
 
-.PHONY: arbitrage_main
-
 collector:
 	g++ -pipe src/collector.cc -o collector $(CFLAGS) $(LDFLAGS)
 
+.PHONY: arbitrage_backtest
 arbitrage_backtest:
 	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_SRC) $(ARBITRAGE_BACKTEST_SRC) -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
 
@@ -47,6 +46,7 @@ integration_tests:
 	g++ -pipe src/http/binance_client_test.cc -o binance_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 	g++ -pipe src/http/kraken_client_test.cc -o kraken_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
+.PHONY: arbitrage_main
 arbitrage_main:
 	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_SRC) src/arbitrage_strategy_main.cc -o arbitrage_main $(CFLAGS) $(LDFLAGS)
 
