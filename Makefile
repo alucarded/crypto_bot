@@ -29,20 +29,17 @@ ARBITRAGE_BACKTEST_SRC=src/arbitrage_strategy_backtest.cc \
 collector:
 	g++ -pipe src/collector.cc -o collector $(CFLAGS) $(LDFLAGS)
 
-basic_backtest:
-	g++ -pipe src/basic_strategy_backtest.cc src/db/mongo_client.hpp src/db/mongo_ticker_producer.hpp -o basic_backtest $(CFLAGS) $(LDFLAGS)
-
 arbitrage_backtest:
 	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_BACKTEST_SRC) -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
 
 unit_tests:
-	# g++ -pipe $(GTESTS) -o unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe $(COMMON_SRC) src/strategy/arbitrage/arbitrage_strategy_matcher_unittest.cc -o arbitrage_strategy_matcher_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe $(COMMON_SRC) src/strategy/arbitrage/arbitrage_order_calculator.cc src/strategy/arbitrage/arbitrage_order_calculator_unittest.cc -o arbitrage_order_calculator_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe $(COMMON_SRC) src/model/order_book_unittest.cc -o order_book_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe $(COMMON_SRC) src/exchange/account_manager_unittest.cc -o account_manager_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe $(COMMON_SRC) src/strategy/indicator/simple_moving_average_unittest.cc -o simple_moving_average_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	g++ -pipe $(COMMON_SRC) src/utils/string_unittest.cc -o string_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe $(GTESTS) -o unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	# g++ -pipe $(COMMON_SRC) src/strategy/arbitrage/arbitrage_strategy_matcher_unittest.cc -o arbitrage_strategy_matcher_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	# g++ -pipe $(COMMON_SRC) src/strategy/arbitrage/arbitrage_order_calculator.cc src/strategy/arbitrage/arbitrage_order_calculator_unittest.cc -o arbitrage_order_calculator_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	# g++ -pipe $(COMMON_SRC) src/model/order_book_unittest.cc -o order_book_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	# g++ -pipe $(COMMON_SRC) src/exchange/account_manager_unittest.cc -o account_manager_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	# g++ -pipe $(COMMON_SRC) src/strategy/indicator/simple_moving_average_unittest.cc -o simple_moving_average_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	# g++ -pipe $(COMMON_SRC) src/utils/string_unittest.cc -o string_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 integration_tests:
 	g++ -pipe src/http/http_client_test.cc -o http_client_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
@@ -52,13 +49,10 @@ integration_tests:
 arbitrage_main:
 	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_MAIN_SRC) -o arbitrage_main $(CFLAGS) $(LDFLAGS)
 
-arbitrage_finder:
-	g++ -pipe src/arbitrage_finder_main.cc -o arbitrage_finder_main $(CFLAGS) $(LDFLAGS)
-
 kraken_order_book_main:
 	g++ -pipe src/kraken_order_book_main.cc -o kraken_order_book_main $(CFLAGS) $(LDFLAGS)
 
 clean:
 	if [ -f collector ]; then rm collector; fi; \
-	if [ -f basic_backtest ]; then rm basic_backtest; fi; \
-	if [ -f arbitrage_backtest ]; then rm arbitrage_backtest; fi;
+	if [ -f arbitrage_backtest ]; then rm arbitrage_backtest; fi; \
+	if [ -f arbitrage_main ]; then rm arbitrage_backtest; fi;
