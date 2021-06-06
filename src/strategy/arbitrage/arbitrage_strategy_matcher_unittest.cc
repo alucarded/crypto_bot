@@ -1,4 +1,4 @@
-#include "arbitrage_strategy_matcher.hpp"
+#include "arbitrage_strategy_matcher.h"
 
 #include "gtest/gtest.h"
 
@@ -47,7 +47,7 @@ TEST_F(ArbitrageStrategyMatcherFixture, OnTickerTest)
   auto exchange_match_opt = arbitrage_strategy_matcher.FindMatch(ticker_map);
   EXPECT_EQ(true, exchange_match_opt.has_value());
   auto exchange_match = exchange_match_opt.value();
-  EXPECT_EQ("B", exchange_match.m_best_bid.m_exchange);
+  EXPECT_EQ("B", exchange_match.best_bid.m_exchange);
   // TODO: fix calculation precision
-  EXPECT_DOUBLE_EQ(0.0451, exchange_match.m_profit);
+  EXPECT_DOUBLE_EQ(0.0451, exchange_match.profit);
 }

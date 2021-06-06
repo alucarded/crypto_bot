@@ -1,5 +1,5 @@
 #include "arbitrage_order_calculator.h"
-#include "arbitrage_strategy_matcher.hpp"
+#include "arbitrage_strategy_matcher.h"
 #include "arbitrage_strategy_options.h"
 
 #include "exchange/exchange_client.h"
@@ -71,8 +71,8 @@ public:
     m_tickers_lock.unlock();
     if (match_opt.has_value()) {
       auto match = match_opt.value();
-      const auto& best_bid_ticker = match.m_best_bid;
-      const auto& best_ask_ticker = match.m_best_ask;
+      const auto& best_bid_ticker = match.best_bid;
+      const auto& best_ask_ticker = match.best_ask;
       const auto& best_bid_exchange = best_bid_ticker.m_exchange;
       const auto& best_ask_exchange = best_ask_ticker.m_exchange;
       // Check tickers arrival timestamp

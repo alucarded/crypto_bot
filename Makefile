@@ -17,23 +17,24 @@ COMMON_SRC=src/model/order.cc \
 			 src/exchange/account_refresher.cc \
 			 src/utils/math.cc \
 			 src/utils/string.cc
-ARBITRAGE_MAIN_SRC=src/arbitrage_strategy_main.cc \
-			 src/strategy/arbitrage/arbitrage_order_calculator.cc
-ARBITRAGE_BACKTEST_SRC=src/arbitrage_strategy_backtest.cc \
-       src/backtest/backtest_results_processor.cc \
-       src/strategy/arbitrage/arbitrage_order_calculator.cc \
+ARBITRAGE_SRC=src/strategy/arbitrage/arbitrage_order_calculator.cc \
+			 src/strategy/arbitrage/arbitrage_strategy_matcher.cc
+ARBITRAGE_BACKTEST_SRC=src/backtest/backtest_results_processor.cc \
 			 src/db/mongo_client.hpp \
-			 src/db/mongo_ticker_producer.hpp
+			 src/db/mongo_ticker_producer.hpp \
+       src/arbitrage_strategy_backtest.cc
 # ARBITRAGE_FLAGS=-DWITH_MEAN_REVERSION_SIGNAL
+
+.PHONY: arbitrage_main
 
 collector:
 	g++ -pipe src/collector.cc -o collector $(CFLAGS) $(LDFLAGS)
 
 arbitrage_backtest:
-	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_BACKTEST_SRC) -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
+	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_SRC) $(ARBITRAGE_BACKTEST_SRC) -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
 
 unit_tests:
-	g++ -pipe $(GTESTS) -o unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
+	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_SRC) $(GTESTS) -o unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 	# g++ -pipe $(COMMON_SRC) src/strategy/arbitrage/arbitrage_strategy_matcher_unittest.cc -o arbitrage_strategy_matcher_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 	# g++ -pipe $(COMMON_SRC) src/strategy/arbitrage/arbitrage_order_calculator.cc src/strategy/arbitrage/arbitrage_order_calculator_unittest.cc -o arbitrage_order_calculator_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 	# g++ -pipe $(COMMON_SRC) src/model/order_book_unittest.cc -o order_book_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
@@ -47,7 +48,7 @@ integration_tests:
 	g++ -pipe src/http/kraken_client_test.cc -o kraken_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 arbitrage_main:
-	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_MAIN_SRC) -o arbitrage_main $(CFLAGS) $(LDFLAGS)
+	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_SRC) src/arbitrage_strategy_main.cc -o arbitrage_main $(CFLAGS) $(LDFLAGS)
 
 kraken_order_book_main:
 	g++ -pipe src/kraken_order_book_main.cc -o kraken_order_book_main $(CFLAGS) $(LDFLAGS)
