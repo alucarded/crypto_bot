@@ -2,11 +2,12 @@ CFLAGS=--std=c++17 -g -O3 -Wall -Wextra -Isrc/ -I. $(shell pkg-config --cflags l
 LDFLAGS=-Lboost/boost_1_75_0/build/lib boost/boost_1_75_0/build/lib/libboost_log.a -lboost_filesystem -lboost_thread -lboost_regex -lboost_log_setup -lpthread -latomic -lboost_system -lboost_iostreams -lcrypto -lssl -L/usr/local/lib  $(shell pkg-config --libs libmongocxx) $(shell pkg-config --libs zlib)
 TEST_FLAGS=-Ithird_party/googletest/googletest/include/ -Ithird_party/googletest/googlemock/include/ third_party/googletest/build/lib/libgtest.a third_party/googletest/build/lib/libgtest_main.a third_party/googletest/build/lib/libgmock.a -lpthread
 
-# TODO: separate declaration (headers) from definition (source files) and compile all unit tests into one binary
 GTESTS=src/strategy/arbitrage/arbitrage_strategy_matcher_unittest.cc \
+       src/strategy/arbitrage/arbitrage_order_calculator_unittest.cc \
        src/model/order_book_unittest.cc \
        src/exchange/account_manager_unittest.cc \
-       src/strategy/indicator/simple_moving_average_unittest.cc
+       src/strategy/indicator/simple_moving_average_unittest.cc \
+			 src/utils/string_unittest.cc
 
 COMMON_SRC=src/model/order.cc \
        src/model/order_book.cc \
@@ -34,12 +35,6 @@ arbitrage_backtest:
 
 unit_tests:
 	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_SRC) $(GTESTS) -o unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	# g++ -pipe $(COMMON_SRC) src/strategy/arbitrage/arbitrage_strategy_matcher_unittest.cc -o arbitrage_strategy_matcher_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	# g++ -pipe $(COMMON_SRC) src/strategy/arbitrage/arbitrage_order_calculator.cc src/strategy/arbitrage/arbitrage_order_calculator_unittest.cc -o arbitrage_order_calculator_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	# g++ -pipe $(COMMON_SRC) src/model/order_book_unittest.cc -o order_book_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	# g++ -pipe $(COMMON_SRC) src/exchange/account_manager_unittest.cc -o account_manager_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	# g++ -pipe $(COMMON_SRC) src/strategy/indicator/simple_moving_average_unittest.cc -o simple_moving_average_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
-	# g++ -pipe $(COMMON_SRC) src/utils/string_unittest.cc -o string_unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
 integration_tests:
 	g++ -pipe src/http/http_client_test.cc -o http_client_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)

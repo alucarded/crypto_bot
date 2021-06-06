@@ -8,16 +8,6 @@
 #include <map>
 #include <unordered_map>
 
-// static std::unordered_map<std::string, ExchangeParams> g_exchange_params = {
-//   { "binance", ExchangeParams("binance", 10.0, 0.001, 1) },
-//   { "kraken", ExchangeParams("kraken", 10.0, 0.002, 1) },
-//   { "bitbay", ExchangeParams("bitbay", 10.0, 0.001, 1) },
-//   { "poloniex", ExchangeParams("poloniex", 10.0, 0.00125, 1) },
-//   { "huobiglobal", ExchangeParams("huobiglobal", 10.0, 0.002, 1) },
-//   { "ftx", ExchangeParams("ftx", 10.0, 0.0007, 1) }
-//   // TODO:
-// };
-
 struct ArbitrageStrategyMatch {
   ArbitrageStrategyMatch(const Ticker& best_bid_, const Ticker& best_ask_, double profit_)
     : best_bid(best_bid_), best_ask(best_ask_), profit(profit_)
