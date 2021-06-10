@@ -48,6 +48,7 @@ public:
     auto db = client[m_db_name];
     auto coll = db[m_coll_name];
     mongocxx::options::find opts;
+    // It is best to also make sure there is an ascending index for minute_utc
     opts.sort(document{} << "minute_utc" << 1 << finalize);
     // Get Mongo cursor
     mongocxx::cursor cursor = coll.find(document{} << "minute_utc"
@@ -64,8 +65,11 @@ public:
     mongocxx::client& client = *client_entry;
     auto db = client[m_db_name];
     auto coll = db[m_coll_name];
+    mongocxx::options::find opts;
+    // It is best to also make sure there is an ascending index for minute_utc
+    opts.sort(document{} << "minute_utc" << 1 << finalize);
     // Get Mongo cursor
-    mongocxx::cursor cursor = coll.find({});
+    mongocxx::cursor cursor = coll.find({}, opts);
     return Produce(cursor);
   }
 
@@ -102,8 +106,9 @@ private:
       bsoncxx::document::element tickers_elem = doc["tickers"];
 
       if (minute_utc > prev_min_bucket) {
+        total_tickers += tickers_vec.size();
         BOOST_LOG_TRIVIAL(info) << "Flushing tickers for minute " << prev_min_bucket << "... " << total_tickers;
-        FlushTickers(tickers_vec, total_tickers);
+        FlushTickers(tickers_vec);
       }
 
       bsoncxx::types::b_array arr = tickers_elem.get_array();
@@ -148,8 +153,7 @@ private:
     
   }
 
-  void FlushTickers(std::vector<Ticker>& tickers_vec, int64_t& total_tickers) {
-    total_tickers += tickers_vec.size();
+  void FlushTickers(std::vector<Ticker>& tickers_vec) {
     std::sort(tickers_vec.begin(), tickers_vec.end(), [](const Ticker& a, const Ticker& b) -> bool {
       // Here we assume ticks always arrive in the right order
       // In strategy part we can verify it and compare source timestamps and arrived timestamps

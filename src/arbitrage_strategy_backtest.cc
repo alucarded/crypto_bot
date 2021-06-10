@@ -50,13 +50,27 @@ int main(int argc, char* argv[]) {
   binance_backtest_settings.exchange = "binance";
   binance_backtest_settings.slippage = 0;
   binance_backtest_settings.fee = 0.00075;
-  binance_backtest_settings.latency = 700000;
+  binance_backtest_settings.network_latency_us = 500000;
+  binance_backtest_settings.execution_delay_us = 20000;
+  binance_backtest_settings.initial_balances = {
+    {SymbolId::ADA, 10000.0},
+    {SymbolId::BTC, 1.0},
+    {SymbolId::ETH, 10.0},
+    {SymbolId::USDT, 24000}
+  };
   BacktestExchangeClient binance_backtest_client(binance_backtest_settings, backtest_results_processor);
   BacktestSettings kraken_backtest_settings;
   kraken_backtest_settings.exchange = "kraken";
   kraken_backtest_settings.slippage = 0;
   kraken_backtest_settings.fee = 0.0020;
-  binance_backtest_settings.latency = 500000;
+  kraken_backtest_settings.network_latency_us = 200000;
+  kraken_backtest_settings.execution_delay_us = 20000;
+  kraken_backtest_settings.initial_balances = {
+    {SymbolId::ADA, 10000.0},
+    {SymbolId::BTC, 1.0},
+    {SymbolId::ETH, 10.0},
+    {SymbolId::USDT, 24000}
+  };
   BacktestExchangeClient kraken_backtest_client(kraken_backtest_settings, backtest_results_processor);
 
   ArbitrageStrategyOptions strategy_opts;

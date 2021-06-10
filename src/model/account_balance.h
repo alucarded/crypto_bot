@@ -21,7 +21,11 @@ struct AccountBalance {
   }
 
   AccountBalance(const std::unordered_map<SymbolId, double>& asset_balance_map)
-      : m_asset_balance_map(std::move(asset_balance_map)) {
+      : m_asset_balance_map(asset_balance_map) {
+  }
+
+  AccountBalance(const std::unordered_map<SymbolId, double>& asset_balance_map, const std::string& exchange)
+      : m_asset_balance_map(asset_balance_map), m_exchange(exchange) {
   }
 
   AccountBalance(std::unordered_map<SymbolId, double>&& asset_balance_map, std::unordered_map<SymbolId, double>&& locked_balance_map)
@@ -30,6 +34,10 @@ struct AccountBalance {
 
   AccountBalance(const std::unordered_map<SymbolId, double>& asset_balance_map, const std::unordered_map<SymbolId, double>& locked_balance_map)
       : m_asset_balance_map(asset_balance_map), m_locked_balance_map(locked_balance_map) {
+  }
+
+  AccountBalance(const std::unordered_map<SymbolId, double>& asset_balance_map, const std::unordered_map<SymbolId, double>& locked_balance_map, const std::string& exchange)
+      : m_asset_balance_map(asset_balance_map), m_locked_balance_map(locked_balance_map), m_exchange(exchange) {
   }
 
   AccountBalance(AccountBalance&& b) : AccountBalance(std::move(b.m_asset_balance_map), std::move(b.m_locked_balance_map)) {
