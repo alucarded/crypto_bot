@@ -34,12 +34,12 @@ private:
       auto message = msg_json["message"];
       // TODO: this should be an order book ticker
       RawTicker ticker;
-      ticker.m_bid = message["highestBid"];
-      ticker.m_bid_vol = "";
-      ticker.m_ask = message["lowestAsk"];
-      ticker.m_ask_vol = "";
-      ticker.m_source_ts = std::stoull(message["time"].get<std::string>()) * 1000;
-      ticker.m_exchange = GetConnectionName();
+      ticker.bid = message["highestBid"];
+      ticker.bid_vol = "";
+      ticker.ask = message["lowestAsk"];
+      ticker.ask_vol = "";
+      ticker.source_ts = std::stoull(message["time"].get<std::string>()) * 1000;
+      ticker.exchange = GetConnectionName();
       return std::make_optional(ticker);
   }
 };

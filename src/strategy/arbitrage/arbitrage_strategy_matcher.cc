@@ -23,19 +23,19 @@ std::optional<ArbitrageStrategyMatch> ArbitrageStrategyMatcher::FindMatch(const 
     BOOST_LOG_TRIVIAL(error) << "Empty tickers map!";
     return std::nullopt;
   }
-  const auto& symbol = tickers.begin()->second.m_symbol();
+  const auto& symbol = tickers.begin()->second.symbol();
   std::string best_bid_ex, best_ask_ex;
   double best_bid = 0, best_ask = std::numeric_limits<double>::max();
   for (auto it = tickers.begin(); it != tickers.end(); ++it) {
-    assert(symbol == it->second.m_symbol);
+    assert(symbol == it->second.symbol);
     // TODO: perhaps set some constraints on volume
-    if (best_ask > it->second.m_ask) {
-      best_ask = it->second.m_ask;
-      best_ask_ex = it->second.m_exchange;
+    if (best_ask > it->second.ask) {
+      best_ask = it->second.ask;
+      best_ask_ex = it->second.exchange;
     }
-    if (best_bid < it->second.m_bid) {
-      best_bid = it->second.m_bid;
-      best_bid_ex = it->second.m_exchange;
+    if (best_bid < it->second.bid) {
+      best_bid = it->second.bid;
+      best_bid_ex = it->second.exchange;
     }
   }
   if (best_bid_ex.empty() || best_ask_ex.empty()) {
@@ -66,11 +66,11 @@ std::optional<ArbitrageStrategyMatch> ArbitrageStrategyMatcher::FindMatch(const 
 
 double ArbitrageStrategyMatcher::CalculateProfit(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker) const {
   // TODO: perhaps add some validations and sanity checks eg. this is not the same exchange on both bid and ask side
-  if (0 == m_exchange_params.count(best_bid_ticker.m_exchange)
-    || 0 == m_exchange_params.count(best_ask_ticker.m_exchange)) {
+  if (0 == m_exchange_params.count(best_bid_ticker.exchange)
+    || 0 == m_exchange_params.count(best_ask_ticker.exchange)) {
       return std::numeric_limits<double>::lowest();
   }
-  const auto& bid_side_params = m_exchange_params.at(best_bid_ticker.m_exchange);
-  const auto& ask_side_params = m_exchange_params.at(best_ask_ticker.m_exchange);
-  return (1 - bid_side_params.fee - m_profit_margin)*(best_bid_ticker.m_bid - bid_side_params.slippage) - (1 + ask_side_params.fee + m_profit_margin)*(best_ask_ticker.m_ask + ask_side_params.slippage);
+  const auto& bid_side_params = m_exchange_params.at(best_bid_ticker.exchange);
+  const auto& ask_side_params = m_exchange_params.at(best_ask_ticker.exchange);
+  return (1 - bid_side_params.fee - m_profit_margin)*(best_bid_ticker.bid - bid_side_params.slippage) - (1 + ask_side_params.fee + m_profit_margin)*(best_ask_ticker.ask + ask_side_params.slippage);
 }

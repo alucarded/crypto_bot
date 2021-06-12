@@ -66,23 +66,23 @@ public:
     // TODO: better way of finding target price (perhaps use some stochastic method and create couple of orders)
     double margin = m_atr.Get();
     // TODO: TEST!!!!!
-    if (m_ticker.m_ask < short_sma - 1.5*margin && mid_sma > m_ticker.m_ask && long_sma > m_ticker.m_ask) {
+    if (m_ticker.ask < short_sma - 1.5*margin && mid_sma > m_ticker.ask && long_sma > m_ticker.ask) {
       if (mid_sma_slope > 0 && long_sma_slope > 0) {
         auto take_profit_price = best_ask + std::max(std::abs(mid_sma - best_ask), 1.5*margin);
         BOOST_LOG_TRIVIAL(info) << "Bullish prediction: " << take_profit_price;
         return {PriceOutlook::BULLISH, take_profit_price};
-      } else if (m_ticker.m_ask < short_sma - 2.0*margin) {
+      } else if (m_ticker.ask < short_sma - 2.0*margin) {
         auto take_profit_price = best_ask + 1.5*margin;
         BOOST_LOG_TRIVIAL(info) << "Bullish prediction: " << take_profit_price;
         return {PriceOutlook::BULLISH, take_profit_price};
       }
     }
-    if (m_ticker.m_bid > short_sma + 1.5*margin && mid_sma < m_ticker.m_bid && long_sma < m_ticker.m_bid) {
+    if (m_ticker.bid > short_sma + 1.5*margin && mid_sma < m_ticker.bid && long_sma < m_ticker.bid) {
       if (mid_sma_slope < 0 && long_sma_slope < 0) {
         auto take_profit_price = best_bid - std::max(std::abs(mid_sma - best_bid), 1.5*margin);
         BOOST_LOG_TRIVIAL(info) << "Bearish prediction: " << take_profit_price;
         return {PriceOutlook::BEARISH, take_profit_price};
-      } else if (m_ticker.m_bid > short_sma + 2.0*margin) {
+      } else if (m_ticker.bid > short_sma + 2.0*margin) {
         auto take_profit_price = best_bid - 1.5*margin;
         BOOST_LOG_TRIVIAL(info) << "Bearish prediction: " << take_profit_price;
         return {PriceOutlook::BEARISH, take_profit_price};
@@ -93,7 +93,7 @@ public:
   }
 
   void Consume(const Ticker& ticker) {
-    double mean_price = (ticker.m_bid + ticker.m_ask) / 2;
+    double mean_price = (ticker.bid + ticker.ask) / 2;
     m_candle.Add(mean_price, 0);
 
     auto now = system_clock::now();
@@ -101,7 +101,7 @@ public:
     minutes mins = duration_cast<minutes>(tp);
     auto mins_count = mins.count();
     if (m_minute < mins_count) {
-      BOOST_LOG_TRIVIAL(info) << "Minute close for " << ticker.m_symbol << ": " << mean_price;
+      BOOST_LOG_TRIVIAL(info) << "Minute close for " << ticker.symbol << ": " << mean_price;
       m_closes.push_back(mean_price);
       m_sma_short.Update(m_closes);
       m_sma_mid.Update(m_closes);

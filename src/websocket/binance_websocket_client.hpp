@@ -61,23 +61,23 @@ private:
         return;
       }
       Ticker ticker;
-      ticker.m_bid = std::stod(msg_json["b"].get<std::string>());
-      ticker.m_bid_vol = std::optional<double>(std::stod(msg_json["B"].get<std::string>()));
-      ticker.m_ask = std::stod(msg_json["a"].get<std::string>());
-      ticker.m_ask_vol = std::optional<double>(std::stod(msg_json["A"].get<std::string>()));
+      ticker.bid = std::stod(msg_json["b"].get<std::string>());
+      ticker.bid_vol = std::optional<double>(std::stod(msg_json["B"].get<std::string>()));
+      ticker.ask = std::stod(msg_json["a"].get<std::string>());
+      ticker.ask_vol = std::optional<double>(std::stod(msg_json["A"].get<std::string>()));
       // Transaction time (received in ms)
-      ticker.m_source_ts = std::nullopt;//std::optional<int64_t>(msg_json["T"].get<int64_t>() * 1000);
+      ticker.source_ts = std::nullopt;//std::optional<int64_t>(msg_json["T"].get<int64_t>() * 1000);
       // TODO: perhaps generate timestamp in base class and pass it to this method
       auto now = system_clock::now();
       system_clock::duration tp = now.time_since_epoch();
       microseconds us = duration_cast<microseconds>(tp);
-      ticker.m_arrived_ts = us.count();
-      ticker.m_exchange = NAME;
-      ticker.m_symbol = SymbolPair::FromBinanceString(msg_json["s"].get<std::string>());
+      ticker.arrived_ts = us.count();
+      ticker.exchange = NAME;
+      ticker.symbol = SymbolPair::FromBinanceString(msg_json["s"].get<std::string>());
       // TODO: should be unique across exchange
-      ticker.m_id = 1;
+      ticker.id = 1;
       // TODO: reconnect/resubscribe all websocket clients when they are inactive for too long
-      m_tickers_watcher.Set(SymbolPair(ticker.m_symbol), ticker.m_arrived_ts, ticker.m_arrived_ts);
+      m_tickers_watcher.Set(SymbolPair(ticker.symbol), ticker.arrived_ts, ticker.arrived_ts);
       m_exchange_listener->OnBookTicker(ticker);
   }
 

@@ -31,12 +31,12 @@ private:
         return {};
       }
       RawTicker ticker;
-      ticker.m_bid = data["bids"][0][0];
-      ticker.m_bid_vol = data["bids"][0][1];
-      ticker.m_ask = data["asks"][0][0];
-      ticker.m_ask_vol = data["asks"][0][1];
-      ticker.m_source_ts = std::stoull(data["microtimestamp"].get<std::string>());
-      ticker.m_exchange = GetConnectionName();
+      ticker.bid = data["bids"][0][0];
+      ticker.bid_vol = data["bids"][0][1];
+      ticker.ask = data["asks"][0][0];
+      ticker.ask_vol = data["asks"][0][1];
+      ticker.source_ts = std::stoull(data["microtimestamp"].get<std::string>());
+      ticker.exchange = GetConnectionName();
       return std::make_optional(ticker);
   }
 };

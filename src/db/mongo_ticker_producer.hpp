@@ -118,25 +118,25 @@ private:
           BOOST_LOG_TRIVIAL(warning) << "Bid value does not have double type! The type is " << int(ticker_doc["bid"].type());
           continue;
         }
-        ticker.m_bid = ticker_doc["bid"].get_double();
-        ticker.m_bid_vol = ticker_doc["bid_vol"].get_double();
-        ticker.m_ask = ticker_doc["ask"].get_double();
-        ticker.m_ask_vol = ticker_doc["ask_vol"].get_double();
+        ticker.bid = ticker_doc["bid"].get_double();
+        ticker.bid_vol = ticker_doc["bid_vol"].get_double();
+        ticker.ask = ticker_doc["ask"].get_double();
+        ticker.ask_vol = ticker_doc["ask_vol"].get_double();
         // if (ticker_doc["s_us"].type() == bsoncxx::type::k_int64) {
-        //   ticker.m_source_ts = ticker_doc["s_us"].get_int64().value;
+        //   ticker.source_ts = ticker_doc["s_us"].get_int64().value;
         // } else {
         //   BOOST_LOG_TRIVIAL(debug) << "Source timestamp value does not have int64 type! The type is " << int(ticker_doc["s_us"].type());
         // }
-        ticker.m_source_ts = std::nullopt;
-        ticker.m_arrived_ts = ticker_doc["a_us"].get_int64().value;
-        ticker.m_exchange = exchange_elem.get_value().get_utf8().value.to_string();
-        ticker.m_symbol = SymbolPairId::UNKNOWN;
+        ticker.source_ts = std::nullopt;
+        ticker.arrived_ts = ticker_doc["a_us"].get_int64().value;
+        ticker.exchange = exchange_elem.get_value().get_utf8().value.to_string();
+        ticker.symbol = SymbolPairId::UNKNOWN;
         if (doc["symbol"].type() == bsoncxx::type::k_int32) {
-          ticker.m_symbol = SymbolPairId(doc["symbol"].get_int32().value);
+          ticker.symbol = SymbolPairId(doc["symbol"].get_int32().value);
         } else if (doc["symbol"].type() == bsoncxx::type::k_int64) { 
-          ticker.m_symbol = SymbolPairId(doc["symbol"].get_int64().value);
+          ticker.symbol = SymbolPairId(doc["symbol"].get_int64().value);
         } else if (doc["symbol"].type() == bsoncxx::type::k_utf8) {
-          ticker.m_symbol = SymbolPair(doc["symbol"].get_utf8().value.to_string());
+          ticker.symbol = SymbolPair(doc["symbol"].get_utf8().value.to_string());
         } else {
           BOOST_LOG_TRIVIAL(warning) << "Symbol value has type: " << int(doc["symbol"].type());
         }
@@ -157,7 +157,7 @@ private:
     std::sort(tickers_vec.begin(), tickers_vec.end(), [](const Ticker& a, const Ticker& b) -> bool {
       // Here we assume ticks always arrive in the right order
       // In strategy part we can verify it and compare source timestamps and arrived timestamps
-      return a.m_arrived_ts < b.m_arrived_ts;
+      return a.arrived_ts < b.arrived_ts;
     });
     std::for_each(tickers_vec.begin(), tickers_vec.end(), [&](const Ticker& rt) {
       for (const auto& listener_ptr : m_exchange_listeners) {

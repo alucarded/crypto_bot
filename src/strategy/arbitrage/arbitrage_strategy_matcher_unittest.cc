@@ -34,21 +34,21 @@ protected:
 TEST_F(ArbitrageStrategyMatcherFixture, OnTickerTest)
 {
   Ticker ticker1;
-  ticker1.m_ask = 1.1;
-  ticker1.m_bid = 1.0;
-  ticker1.m_exchange = "A";
+  ticker1.ask = 1.1;
+  ticker1.bid = 1.0;
+  ticker1.exchange = "A";
   Ticker ticker2;
-  ticker2.m_ask = 1.3;
-  ticker2.m_bid = 1.2;
-  ticker2.m_exchange = "B";
+  ticker2.ask = 1.3;
+  ticker2.bid = 1.2;
+  ticker2.exchange = "B";
   std::map<std::string, Ticker> ticker_map = {
-    { ticker1.m_exchange, ticker1 },
-    { ticker2.m_exchange, ticker2 }
+    { ticker1.exchange, ticker1 },
+    { ticker2.exchange, ticker2 }
   };
   auto exchange_match_opt = m_arbitrage_strategy_matcher.FindMatch(ticker_map);
   EXPECT_EQ(true, exchange_match_opt.has_value());
   auto exchange_match = exchange_match_opt.value();
-  EXPECT_EQ("B", exchange_match.best_bid.m_exchange);
+  EXPECT_EQ("B", exchange_match.best_bid.exchange);
   // TODO: fix calculation precision ?
   // EXPECT_DOUBLE_EQ(0.0451, exchange_match.profit);
   EXPECT_NEAR(0.0451, exchange_match.profit, 0.000000000001);

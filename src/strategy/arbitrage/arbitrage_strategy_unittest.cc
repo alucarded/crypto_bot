@@ -39,12 +39,12 @@ protected:
 TEST_F(ArbitrageStrategyFixture, OnTickerTest)
 {
   // Ticker ticker1;
-  // ticker1.m_ask = 1.1;
-  // ticker1.m_bid = 1.0;
+  // ticker1.ask = 1.1;
+  // ticker1.bid = 1.0;
   // ticker1.m_exchange = "A";
   // Ticker ticker2;
-  // ticker2.m_ask = 1.3;
-  // ticker2.m_bid = 1.2;
+  // ticker2.ask = 1.3;
+  // ticker2.bid = 1.2;
   // ticker2.m_exchange = "B";
   // std::map<std::string, Ticker> ticker_map = {
   //   { ticker1.m_exchange, ticker1 },

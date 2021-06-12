@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
   strategy_opts.max_ticker_delay_us = 1000000; // 1s
   strategy_opts.min_trade_interval_us = 0;
   strategy_opts.arbitrage_match_profit_margin = 0;
-  strategy_opts.time_provider_fcn = [](const Ticker& ticker) { return ticker.m_arrived_ts; };
+  strategy_opts.time_provider_fcn = [](const Ticker& ticker) { return ticker.arrived_ts; };
   ArbitrageStrategy arbitrage_strategy(strategy_opts);
   arbitrage_strategy.RegisterExchangeClient("binance", &binance_backtest_client);
   arbitrage_strategy.RegisterExchangeClient("kraken", &kraken_backtest_client);

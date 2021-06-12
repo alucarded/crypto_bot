@@ -53,13 +53,13 @@ private:
       }
       auto data = msg_json["tick"];
       RawTicker ticker;
-      ticker.m_bid = std::to_string(data["bids"][0][0].get<double>());
-      ticker.m_bid_vol = std::to_string(data["bids"][0][1].get<int>());
-      ticker.m_ask = std::to_string(data["asks"][0][0].get<double>());
-      ticker.m_ask_vol = std::to_string(data["asks"][0][1].get<int>());
-      ticker.m_source_ts = data["ts"].get<uint64_t>() * 1000; // to microseconds
-      ticker.m_exchange = GetConnectionName();
-      ticker.m_symbol = "BTC-USDT";
+      ticker.bid = std::to_string(data["bids"][0][0].get<double>());
+      ticker.bid_vol = std::to_string(data["bids"][0][1].get<int>());
+      ticker.ask = std::to_string(data["asks"][0][0].get<double>());
+      ticker.ask_vol = std::to_string(data["asks"][0][1].get<int>());
+      ticker.source_ts = data["ts"].get<uint64_t>() * 1000; // to microseconds
+      ticker.exchange = GetConnectionName();
+      ticker.symbol = "BTC-USDT";
       return std::make_optional(ticker);
   }
 };

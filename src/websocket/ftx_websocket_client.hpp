@@ -37,12 +37,12 @@ private:
       }
       auto data = msg_json["data"];
       RawTicker ticker;
-      ticker.m_bid = utils::to_string(data["bid"].get<double>(), 1);
-      ticker.m_bid_vol = std::to_string(data["bidSize"].get<double>());
-      ticker.m_ask = utils::to_string(data["ask"].get<double>(), 1);
-      ticker.m_ask_vol = std::to_string(data["askSize"].get<double>());
-      ticker.m_source_ts = static_cast<uint64_t>(data["time"].get<double>() * 1000000);
-      ticker.m_exchange = GetConnectionName();
+      ticker.bid = utils::to_string(data["bid"].get<double>(), 1);
+      ticker.bid_vol = std::to_string(data["bidSize"].get<double>());
+      ticker.ask = utils::to_string(data["ask"].get<double>(), 1);
+      ticker.ask_vol = std::to_string(data["askSize"].get<double>());
+      ticker.source_ts = static_cast<uint64_t>(data["time"].get<double>() * 1000000);
+      ticker.exchange = GetConnectionName();
       return std::make_optional(ticker);
   }
 };

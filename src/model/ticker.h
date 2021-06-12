@@ -17,42 +17,42 @@ enum ExchangeId : int {
 };
 
 struct Ticker {
-  double m_ask;
-  std::optional<double> m_ask_vol;
-  double m_bid;
-  std::optional<double> m_bid_vol;
-  std::optional<uint64_t> m_source_ts;
-  uint64_t m_arrived_ts;
-  uint64_t m_id;
-  std::string m_exchange;
-  SymbolPair m_symbol;
+  double ask;
+  std::optional<double> ask_vol;
+  double bid;
+  std::optional<double> bid_vol;
+  std::optional<uint64_t> source_ts;
+  uint64_t arrived_ts;
+  uint64_t id;
+  std::string exchange;
+  SymbolPair symbol;
 
   friend std::ostream &operator<<(std::ostream &os, const Ticker &res);
 };
 
 struct RawTicker {
-  std::string m_ask;
-  std::string m_ask_vol;
-  std::string m_bid;
-  std::string m_bid_vol;
-  uint64_t m_source_ts;
-  uint64_t m_arrived_ts;
-  std::string m_exchange;
-  std::string m_symbol;
-  static uint64_t m_last_ticker_id;
+  std::string ask;
+  std::string ask_vol;
+  std::string bid;
+  std::string bid_vol;
+  uint64_t source_ts;
+  uint64_t arrived_ts;
+  std::string exchange;
+  std::string symbol;
+  static uint64_t last_ticker_id;
 
   static RawTicker Empty(const std::string& exchange) {
     RawTicker empty_ticker;
-    empty_ticker.m_exchange = exchange;
+    empty_ticker.exchange = exchange;
     using namespace std::chrono;
     auto now = system_clock::now();
     system_clock::duration tp = now.time_since_epoch();
     microseconds us = duration_cast<microseconds>(tp);
-    empty_ticker.m_source_ts = us.count();
-    empty_ticker.m_ask = "";
-    empty_ticker.m_ask_vol = "";
-    empty_ticker.m_bid = "";
-    empty_ticker.m_bid_vol = "";
+    empty_ticker.source_ts = us.count();
+    empty_ticker.ask = "";
+    empty_ticker.ask_vol = "";
+    empty_ticker.bid = "";
+    empty_ticker.bid_vol = "";
     return empty_ticker;
   }
 

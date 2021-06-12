@@ -60,24 +60,24 @@ public:
         // Then during backtesting check what was the delay
         // and its impact on order execution.
         std::ostringstream symbol_name_stream;
-        symbol_name_stream << SymbolPairId(ticker.m_symbol);
+        symbol_name_stream << SymbolPairId(ticker.symbol);
         coll.update_one(
             document{}
-                << "exchange" << ticker.m_exchange
+                << "exchange" << ticker.exchange
                 << "symbol" << symbol_name_stream.str()
                 << "minute_utc" << mins.count()
                 << finalize,
             document{}
                 << "$push" << bsoncxx::builder::stream::open_document << "tickers"
                 << bsoncxx::builder::stream::open_document
-                << "bid" << double(ticker.m_bid)
-                << "bid_vol" << (ticker.m_bid_vol.has_value() ? ticker.m_bid_vol.value() : 0.0)
-                << "ask" << ticker.m_ask
-                << "ask_vol" << (ticker.m_ask_vol.has_value() ? ticker.m_ask_vol.value() : 0.0)
+                << "bid" << double(ticker.bid)
+                << "bid_vol" << (ticker.bid_vol.has_value() ? ticker.bid_vol.value() : 0.0)
+                << "ask" << ticker.ask
+                << "ask_vol" << (ticker.ask_vol.has_value() ? ticker.ask_vol.value() : 0.0)
                 // Arrived timestamp in microseconds
                 << "a_us" << us.count()
                 // Source timestamp in microseconds
-                << "s_us" << (ticker.m_source_ts.has_value() ? ticker.m_source_ts.value() : 0.0)
+                << "s_us" << (ticker.source_ts.has_value() ? ticker.source_ts.value() : 0.0)
                 << bsoncxx::builder::stream::close_document
                 << bsoncxx::builder::stream::close_document
                 << finalize,
@@ -108,21 +108,21 @@ public:
     //     // and its impact on order execution.
     //     coll.update_one(
     //         document{}
-    //             << "exchange" << ticker.m_exchange
-    //             << "symbol" << ticker.m_symbol
+    //             << "exchange" << ticker.exchange
+    //             << "symbol" << ticker.symbol
     //             << "minute_utc" << mins.count()
     //             << finalize,
     //         document{}
     //             << "$push" << bsoncxx::builder::stream::open_document << "tickers"
     //             << bsoncxx::builder::stream::open_document
-    //             << "bid" << ticker.m_bid
-    //             << "bid_vol" << ticker.m_bid_vol
-    //             << "ask" << ticker.m_ask
-    //             << "ask_vol" << ticker.m_ask_vol
+    //             << "bid" << ticker.bid
+    //             << "bid_vol" << ticker.bid_vol
+    //             << "ask" << ticker.ask
+    //             << "ask_vol" << ticker.ask_vol
     //             // Arrived timestamp in microseconds
     //             << "a_us" << us.count()
     //             // Source timestamp in microseconds
-    //             << "s_us" << ticker.m_source_ts
+    //             << "s_us" << ticker.source_ts
     //             << bsoncxx::builder::stream::close_document
     //             << bsoncxx::builder::stream::close_document
     //             << finalize,

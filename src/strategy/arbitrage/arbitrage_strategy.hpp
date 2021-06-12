@@ -53,11 +53,11 @@ public:
   }
 
   virtual void OnBookTicker(const Ticker& ticker) override {
-    SymbolPair current_symbol_pair = ticker.m_symbol;
+    SymbolPair current_symbol_pair = ticker.symbol;
     SymbolPairId current_symbol_id = SymbolPairId(current_symbol_pair);
 #ifdef WITH_MEAN_REVERSION_SIGNAL
     // Only one exchange guarantees the block will be run by only one thread
-    if (ticker.m_exchange == "binance") {
+    if (ticker.exchange == "binance") {
       // Update signal
       if (m_mrs.find(current_symbol_id) == m_mrs.end()) {
         m_mrs.emplace(current_symbol_id, MeanReversionSignal(8u, 21u, 55u, 8u));
@@ -66,36 +66,36 @@ public:
     }
 #endif
     m_tickers_lock.lock();
-    m_tickers[current_symbol_id][ticker.m_exchange] = ticker;
+    m_tickers[current_symbol_id][ticker.exchange] = ticker;
     auto match_opt = m_matcher.FindMatch(m_tickers[current_symbol_id]);
     m_tickers_lock.unlock();
     if (match_opt.has_value()) {
       auto match = match_opt.value();
       const auto& best_bid_ticker = match.best_bid;
       const auto& best_ask_ticker = match.best_ask;
-      const auto& best_bid_exchange = best_bid_ticker.m_exchange;
-      const auto& best_ask_exchange = best_ask_ticker.m_exchange;
+      const auto& best_bid_exchange = best_bid_ticker.exchange;
+      const auto& best_ask_exchange = best_ask_ticker.exchange;
       // Check tickers arrival timestamp
       auto now_us = m_opts.time_provider_fcn(ticker);
-      auto best_bid_ticker_age = now_us - best_bid_ticker.m_arrived_ts;
-      auto best_ask_ticker_age = now_us - best_ask_ticker.m_arrived_ts;
+      auto best_bid_ticker_age = now_us - best_bid_ticker.arrived_ts;
+      auto best_ask_ticker_age = now_us - best_ask_ticker.arrived_ts;
       BOOST_LOG_TRIVIAL(debug) << "Best bid ticker age (" << best_bid_exchange
-            << " - " << best_bid_ticker.m_symbol << "): " << std::to_string(best_bid_ticker_age)
+            << " - " << best_bid_ticker.symbol << "): " << std::to_string(best_bid_ticker_age)
             << ", best ask ticker age (" << best_ask_exchange
-            << " - " << best_ask_ticker.m_symbol << "): " << std::to_string(best_ask_ticker_age);
+            << " - " << best_ask_ticker.symbol << "): " << std::to_string(best_ask_ticker_age);
       if (best_bid_ticker_age > m_opts.max_ticker_age_us) {
-        BOOST_LOG_TRIVIAL(debug) << "Ticker " << best_bid_ticker.m_exchange << " " << best_bid_ticker.m_symbol << " is too old";
+        BOOST_LOG_TRIVIAL(debug) << "Ticker " << best_bid_ticker.exchange << " " << best_bid_ticker.symbol << " is too old";
         return;
       }
       if (best_ask_ticker_age > m_opts.max_ticker_age_us) {
-        BOOST_LOG_TRIVIAL(debug) << "Ticker " << best_ask_ticker.m_exchange << " " << best_ask_ticker.m_symbol << " is too old";
+        BOOST_LOG_TRIVIAL(debug) << "Ticker " << best_ask_ticker.exchange << " " << best_ask_ticker.symbol << " is too old";
         return;
       }
       // Check tickers source timestamp, if present
-      auto best_bid_ticker_delay = best_bid_ticker.m_source_ts.has_value()
-          ? best_bid_ticker.m_arrived_ts - best_bid_ticker.m_source_ts.value() : 0;
-      auto best_ask_ticker_delay = best_ask_ticker.m_source_ts.has_value()
-          ? best_ask_ticker.m_arrived_ts - best_ask_ticker.m_source_ts.value() : 0;
+      auto best_bid_ticker_delay = best_bid_ticker.source_ts.has_value()
+          ? best_bid_ticker.arrived_ts - best_bid_ticker.source_ts.value() : 0;
+      auto best_ask_ticker_delay = best_ask_ticker.source_ts.has_value()
+          ? best_ask_ticker.arrived_ts - best_ask_ticker.source_ts.value() : 0;
       BOOST_LOG_TRIVIAL(info) << "Best bid ticker delay (" << best_bid_exchange
             << "): " << std::to_string(best_bid_ticker_delay) << ", best ask ticker delay (" << best_ask_exchange
             << "): " << std::to_string(best_ask_ticker_delay);
@@ -111,8 +111,8 @@ public:
       BOOST_LOG_TRIVIAL(trace) << "Got account manager for best bid (" << best_bid_exchange << "): " << best_bid_count;
       BOOST_LOG_TRIVIAL(trace) << "Got account manager for best ask (" << best_ask_exchange << "): " << best_ask_count;
       if (best_bid_count > 0 && best_ask_count > 0) {
-        double base_balance = GetBaseBalance(best_bid_ticker.m_exchange, current_symbol_id);
-        double quote_balance = GetQuoteBalance(best_ask_ticker.m_exchange, current_symbol_id);
+        double base_balance = GetBaseBalance(best_bid_ticker.exchange, current_symbol_id);
+        double quote_balance = GetQuoteBalance(best_ask_ticker.exchange, current_symbol_id);
         BOOST_LOG_TRIVIAL(info) << current_symbol_id << ": base balance: " << base_balance << ", quote balance: " << quote_balance;
         ArbitrageOrders orders = m_order_calculator.Calculate(best_bid_ticker, best_ask_ticker, base_balance, quote_balance);
         double order_qty = orders.buy_order.GetQuantity();
@@ -137,13 +137,13 @@ public:
         // skip if another thread is currently sending orders.
         if (lock_obj.try_lock()) {
 #ifdef WITH_MEAN_REVERSION_SIGNAL
-          Prediction prediction = m_mrs[current_symbol_id].Predict(best_bid_ticker.m_bid, best_ask_ticker.m_ask);
+          Prediction prediction = m_mrs[current_symbol_id].Predict(best_bid_ticker.bid, best_ask_ticker.ask);
           switch(prediction.price_outlook) {
             case PriceOutlook::BEARISH: {
                 // Use limit order tilted by fee
                 double fee = m_opts.exchange_params.at(best_bid_exchange).fee;
                 auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange],
-                    current_symbol_id, Side::SELL, order_qty, (1.0 - fee) * best_bid_ticker.m_bid);
+                    current_symbol_id, Side::SELL, order_qty, (1.0 - fee) * best_bid_ticker.bid);
                 auto f1_res = f1.get();
                 if (!f1_res) {
                   BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
@@ -168,7 +168,7 @@ public:
                 // Use limit order tilted by fee
                 double fee = m_opts.exchange_params.at(best_ask_exchange).fee;
                 auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange],
-                    current_symbol_id, Side::BUY, order_qty, (1.0 + fee) * best_ask_ticker.m_ask);
+                    current_symbol_id, Side::BUY, order_qty, (1.0 + fee) * best_ask_ticker.ask);
                 auto f1_res = f1.get();
                 if (!f1_res) {
                   BOOST_LOG_TRIVIAL(warning) << "Error sending order for " << best_bid_exchange << ": " << f1_res.GetErrorMsg();
@@ -198,8 +198,8 @@ public:
 
   virtual void OnOrderBookUpdate(const OrderBook& order_book) {
     Ticker ticker = ExchangeListener::TickerFromOrderBook(order_book);
-    assert(ticker.m_ask_vol.has_value());
-    assert(ticker.m_bid_vol.has_value());
+    assert(ticker.ask_vol.has_value());
+    assert(ticker.bid_vol.has_value());
     OnBookTicker(ticker);
   }
 
@@ -217,9 +217,9 @@ public:
 private:
 
   void SendBasicArbitrageOrders(const Ticker& best_bid_ticker, const Ticker& best_ask_ticker, double vol, double sell_price, double buy_price) {
-    const auto& best_bid_exchange = best_bid_ticker.m_exchange;
-    const auto& best_ask_exchange = best_ask_ticker.m_exchange;
-    SymbolPairId current_symbol_id = SymbolPairId(best_bid_ticker.m_symbol); 
+    const auto& best_bid_exchange = best_bid_ticker.exchange;
+    const auto& best_ask_exchange = best_ask_ticker.exchange;
+    SymbolPairId current_symbol_id = SymbolPairId(best_bid_ticker.symbol); 
     auto f1 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_bid_exchange],
         current_symbol_id, Side::SELL, vol, sell_price);
     auto f2 = std::async(std::launch::async, &ExchangeClient::LimitOrder, m_account_managers[best_ask_exchange],

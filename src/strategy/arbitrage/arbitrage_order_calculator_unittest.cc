@@ -20,15 +20,15 @@ TEST(ArbitrageOrderCalculatorTest, CalculateTest) {
   };
   ArbitrageOrderCalculator arbitrage_order_calculator(strategy_opts);
   Ticker best_bid_ticker;
-  best_bid_ticker.m_exchange = "binance";
-  best_bid_ticker.m_bid = 1.7762;
-  best_bid_ticker.m_bid_vol = 30000;
-  best_bid_ticker.m_symbol = SymbolPairId::ADA_USDT;
+  best_bid_ticker.exchange = "binance";
+  best_bid_ticker.bid = 1.7762;
+  best_bid_ticker.bid_vol = 30000;
+  best_bid_ticker.symbol = SymbolPairId::ADA_USDT;
   Ticker best_ask_ticker;
-  best_ask_ticker.m_exchange = "kraken";
-  best_ask_ticker.m_ask = 1.7674;
-  best_ask_ticker.m_ask_vol = 20000;
-  best_ask_ticker.m_symbol = SymbolPairId::ADA_USDT;
+  best_ask_ticker.exchange = "kraken";
+  best_ask_ticker.ask = 1.7674;
+  best_ask_ticker.ask_vol = 20000;
+  best_ask_ticker.symbol = SymbolPairId::ADA_USDT;
   ArbitrageOrders orders = arbitrage_order_calculator.Calculate(best_bid_ticker, best_ask_ticker, 100000, 1000000);
   // Prices
   double sell_price = orders.sell_order.GetPrice();

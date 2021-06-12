@@ -33,12 +33,12 @@ private:
       // }
       // auto data = msg_json[1];
       // RawTicker ticker;
-      // ticker.m_bid = data["b"][0];
-      // ticker.m_bid_vol = data["b"][2];
-      // ticker.m_ask = data["a"][0];
-      // ticker.m_ask_vol = data["a"][2];
-      // ticker.m_source_ts = 0; // not provided
-      // ticker.m_exchange = GetConnectionName();
+      // ticker.bid = data["b"][0];
+      // ticker.bid_vol = data["b"][2];
+      // ticker.ask = data["a"][0];
+      // ticker.ask_vol = data["a"][2];
+      // ticker.source_ts = 0; // not provided
+      // ticker.exchange = GetConnectionName();
       // return std::make_optional(ticker);
       return {};
   }

@@ -36,12 +36,12 @@ private:
       //std::cout << msg->get_payload() << std::endl;
       // TODO: this should be an order book ticker
       RawTicker ticker;
-      ticker.m_bid = data[3];
-      ticker.m_bid_vol = "";
-      ticker.m_ask = data[2];
-      ticker.m_ask_vol = "";
-      ticker.m_source_ts = 0; // not provided
-      ticker.m_exchange = GetConnectionName();
+      ticker.bid = data[3];
+      ticker.bid_vol = "";
+      ticker.ask = data[2];
+      ticker.ask_vol = "";
+      ticker.source_ts = 0; // not provided
+      ticker.exchange = GetConnectionName();
       return std::make_optional(ticker);
   }
 };

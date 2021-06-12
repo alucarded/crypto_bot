@@ -35,7 +35,7 @@ struct OrderRequest {
 class BacktestExchangeClient : public AccountManager, public ExchangeListener {
 public:
   BacktestExchangeClient(const BacktestSettings& settings, AccountBalanceListener& balance_listener) : m_settings(settings),
-  m_account_balance(settings.initial_balances, settings.exchange), m_update_timestamp(0), m_balance_listener(balance_listener), m_last_order_id(0) {
+  m_account_balance(settings.initial_balances, settings.exchange), m_update_timestamp_us(0), m_balance_listener(balance_listener), m_last_order_id(0) {
   }
 
   virtual ~BacktestExchangeClient() {
@@ -119,17 +119,17 @@ public:
   // TODO: using trade tickers as well (and perhaps with partial fill) would make the backtester better
   virtual void OnBookTicker(const Ticker& ticker) override {
     //BOOST_LOG_TRIVIAL(trace) << "BacktestExchangeClient::OnBookTicker, ticker: " << ticker;
-    m_update_timestamp_us = ticker.m_arrived_ts;
-    if (m_settings.exchange == ticker.m_exchange) {
+    m_update_timestamp_us = ticker.arrived_ts;
+    if (m_settings.exchange == ticker.exchange) {
       HandlePendingMarketOrders(ticker);
       HandlePendingLimitOrders(ticker);
       HandleLimitOrders(ticker);
-      // auto it = m_tickers.find(ticker.m_symbol);
+      // auto it = m_tickers.find(ticker.symbol);
       // if (it != m_tickers.end()) {
       //   m_previous_tickers.insert_or_assign(it->first, it->second);
       // }
       // Assign new best ticker after handling orders
-      m_tickers.insert_or_assign(ticker.m_symbol, ticker);
+      m_tickers.insert_or_assign(ticker.symbol, ticker);
     }
   }
 
@@ -158,13 +158,13 @@ private:
   void HandlePendingMarketOrders(const Ticker& ticker) {
     for (size_t i = 0; m_pending_market_orders.size(); ++i) {
       const auto& order_request = m_pending_market_orders[i];
-      if (order_request.order.GetSymbolId() != ticker.m_symbol) {
+      if (order_request.order.GetSymbolId() != ticker.symbol) {
         continue;
       }
       // Take network latency twice: once for incoming data delay and once for sending order delay
-      if (order_request.creation_timestamp_us + 2 * m_settings.network_latency_us + m_settings.execution_delay_us < ticker.m_arrived_ts) {
+      if (order_request.creation_timestamp_us + 2 * m_settings.network_latency_us + m_settings.execution_delay_us < ticker.arrived_ts) {
         // Get ticker before that
-        auto it = m_tickers.find(ticker.m_symbol);
+        auto it = m_tickers.find(ticker.symbol);
         if (it != m_tickers.end()) {
           ExecuteMarketOrder(order_request.order, it->second);
         } else {
@@ -177,17 +177,17 @@ private:
   }
 
   void ExecuteMarketOrder(const Order& order, const Ticker& ticker) {
-    const SymbolPair& sp = ticker.m_symbol;
+    const SymbolPair& sp = ticker.symbol;
     SymbolId base_asset_id = sp.GetBaseAsset();
     SymbolId quote_asset_id = sp.GetQuoteAsset();
     Side side = order.GetSide();
     double qty = order.GetQuantity();
     double price, cost;
     if (side == Side::SELL) {
-      price = ticker.m_bid;
+      price = ticker.bid;
       BOOST_LOG_TRIVIAL(info) << "Current ticker " << ticker << ", market selling " << qty;
       // TODO: FIXME: implement partial fill here
-      if (ticker.m_bid_vol && ticker.m_bid_vol.value() < qty) {
+      if (ticker.bid_vol && ticker.bid_vol.value() < qty) {
         BOOST_LOG_TRIVIAL(info) << "Order quantity above best ticker volume";
       }
       cost = qty*(price - m_settings.slippage)*(1.0 - m_settings.fee);
@@ -195,9 +195,9 @@ private:
       m_account_balance.AddBalance(base_asset_id, -qty);
       BOOST_LOG_TRIVIAL(info) << "Sold " << qty << " for " << cost;
     } else { // Buying
-      price = ticker.m_ask;
+      price = ticker.ask;
       BOOST_LOG_TRIVIAL(info) << "Current ticker " << ticker << ", market buying " << qty;
-      if (ticker.m_ask_vol && ticker.m_ask_vol.value() < qty) {
+      if (ticker.ask_vol && ticker.ask_vol.value() < qty) {
         BOOST_LOG_TRIVIAL(info) << "Order quantity above best ticker volume";
       }
       cost = qty*(price + m_settings.slippage)*(1.0 + m_settings.fee);
@@ -212,21 +212,21 @@ private:
     for (size_t i = 0; m_pending_limit_orders.size(); ++i) {
       const auto& order_request = m_pending_limit_orders[i];
       const auto& order = order_request.order;
-      if (order.GetSymbolId() != ticker.m_symbol) {
+      if (order.GetSymbolId() != ticker.symbol) {
         continue;
       }
       // Take network latency twice: once for incoming data delay and once for sending order delay
-      if (order_request.creation_timestamp_us + 2 * m_settings.network_latency_us + m_settings.execution_delay_us < ticker.m_arrived_ts) {
+      if (order_request.creation_timestamp_us + 2 * m_settings.network_latency_us + m_settings.execution_delay_us < ticker.arrived_ts) {
         double price = order.GetPrice();
         Side side = order.GetSide();
         if (Side::SELL == side) {
-          if (price <= ticker.m_bid) {
+          if (price <= ticker.bid) {
             ExecuteMarketOrder(order, ticker);
           } else {
             m_limit_orders.push_back(order);
           }
         } else { // BUY
-          if (price >= ticker.m_ask) {
+          if (price >= ticker.ask) {
             ExecuteMarketOrder(order, ticker);
           } else {
             m_limit_orders.push_back(order);
@@ -238,20 +238,20 @@ private:
 
   void HandleLimitOrders(const Ticker& ticker) {
     // Check if any limit order got filled
-    SymbolId base_asset_id = ticker.m_symbol.GetBaseAsset();
-    SymbolId quote_asset_id = ticker.m_symbol.GetQuoteAsset();
+    SymbolId base_asset_id = ticker.symbol.GetBaseAsset();
+    SymbolId quote_asset_id = ticker.symbol.GetQuoteAsset();
     for (size_t i = 0; i < m_limit_orders.size(); ++i) {
       const auto& order = m_limit_orders[i];
-      if (order.GetSymbolId() != ticker.m_symbol) {
+      if (order.GetSymbolId() != ticker.symbol) {
         continue;
       }
       double order_price = order.GetPrice();
       if (order.GetSide() == Side::SELL) {
-        if (ticker.m_bid >= order_price) {
+        if (ticker.bid >= order_price) {
           // Fill
           // TODO: implement partial fill ?
           BOOST_LOG_TRIVIAL(info) << "Filled sell limit order: " << order;
-          double cost = ticker.m_bid * order.GetQuantity() * (1.0 - m_settings.fee);
+          double cost = ticker.bid * order.GetQuantity() * (1.0 - m_settings.fee);
           m_account_balance.AddBalance(quote_asset_id, cost);
           m_account_balance.AddBalance(base_asset_id, -order.GetQuantity());
           m_limit_orders.erase(m_limit_orders.begin() + i);
@@ -259,11 +259,11 @@ private:
           continue;
         }
       } else { // BUY
-        if (ticker.m_ask <= order_price) {
+        if (ticker.ask <= order_price) {
           // Fill
           // TODO: implement partial fill ?
           BOOST_LOG_TRIVIAL(info) << "Filled buy limit order: " << order;
-          double cost = ticker.m_ask * order.GetQuantity() * (1.0 + m_settings.fee);
+          double cost = ticker.ask * order.GetQuantity() * (1.0 + m_settings.fee);
           m_account_balance.AddBalance(quote_asset_id, -cost);
           m_account_balance.AddBalance(base_asset_id, order.GetQuantity());
           m_limit_orders.erase(m_limit_orders.begin() + i);

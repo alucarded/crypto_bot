@@ -31,14 +31,14 @@ private:
       }
       // TODO: this should be an order book ticker
       RawTicker ticker;
-      ticker.m_bid = msg_json["best_bid"];
-      ticker.m_bid_vol = "";
-      ticker.m_ask = msg_json["best_ask"];
-      ticker.m_ask_vol = "";
+      ticker.bid = msg_json["best_bid"];
+      ticker.bid_vol = "";
+      ticker.ask = msg_json["best_ask"];
+      ticker.ask_vol = "";
       // TODO: time provided in datetime format, needs parsing https://en.cppreference.com/w/cpp/io/manip/get_time
-      ticker.m_source_ts = 0;
-      ticker.m_exchange = GetConnectionName();
-      ticker.m_symbol = msg_json["product_id"];
+      ticker.source_ts = 0;
+      ticker.exchange = GetConnectionName();
+      ticker.symbol = msg_json["product_id"];
       return std::make_optional(ticker);
   }
 };

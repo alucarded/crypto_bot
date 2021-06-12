@@ -103,21 +103,21 @@ private:
 
   Ticker ParseTicker(json data, const std::string& symbol) {
       Ticker ticker;
-      ticker.m_bid = std::stod(data["b"][0].get<std::string>());
-      ticker.m_bid_vol = std::optional<double>(std::stod(data["b"][2].get<std::string>()));
-      ticker.m_ask = std::stod(data["a"][0].get<std::string>());
-      ticker.m_ask_vol = std::optional<double>(std::stod(data["a"][2].get<std::string>()));
-      ticker.m_source_ts = std::nullopt; // not provided
+      ticker.bid = std::stod(data["b"][0].get<std::string>());
+      ticker.bid_vol = std::optional<double>(std::stod(data["b"][2].get<std::string>()));
+      ticker.ask = std::stod(data["a"][0].get<std::string>());
+      ticker.ask_vol = std::optional<double>(std::stod(data["a"][2].get<std::string>()));
+      ticker.source_ts = std::nullopt; // not provided
       // TODO: perhaps generate timestamp in base class and pass it to this method
       auto now = system_clock::now();
       system_clock::duration tp = now.time_since_epoch();
       microseconds us = duration_cast<microseconds>(tp);
-      ticker.m_arrived_ts = us.count();
-      ticker.m_exchange = NAME;
+      ticker.arrived_ts = us.count();
+      ticker.exchange = NAME;
       static uint64_t last_ticker_id = 0;
-      ticker.m_id = last_ticker_id++;
-      ticker.m_symbol = SymbolPair::FromKrakenString(symbol);
-      m_tickers_watcher.Set(SymbolPair(ticker.m_symbol), ticker.m_arrived_ts, ticker.m_arrived_ts);
+      ticker.id = last_ticker_id++;
+      ticker.symbol = SymbolPair::FromKrakenString(symbol);
+      m_tickers_watcher.Set(SymbolPair(ticker.symbol), ticker.arrived_ts, ticker.arrived_ts);
       return ticker;
   }
 
