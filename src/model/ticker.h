@@ -27,6 +27,19 @@ struct Ticker {
   std::string exchange;
   SymbolPair symbol;
 
+  Ticker& operator=(const Ticker& o) {
+    ask = o.ask;
+    ask_vol = o.ask_vol;
+    bid = o.bid;
+    bid_vol = o.bid_vol;
+    source_ts = o.source_ts;
+    arrived_ts = o.arrived_ts;
+    id = o.id;
+    exchange = o.exchange;
+    symbol = o.symbol;
+    return *this;
+  }
+
   friend std::ostream &operator<<(std::ostream &os, const Ticker &res);
 };
 

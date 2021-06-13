@@ -26,7 +26,6 @@ struct BacktestSettings {
 };
 
 struct OrderRequest {
-
   Order order;
   double creation_timestamp_us;
 };
@@ -48,7 +47,16 @@ public:
   }
 
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
-    Order order(std::to_string(++m_last_order_id), std::to_string(m_last_order_id), symbol, side, OrderType::MARKET, qty);
+    uint64_t order_id = ++m_last_order_id;
+    std::string order_id_str = std::to_string(order_id);
+    Order::Builder order_builder = Order::CreateBuilder();
+    Order order = order_builder.Id(order_id_str)
+        .ClientId(order_id_str)
+        .Symbol(symbol)
+        .Side_(side)
+        .OrderType_(OrderType::MARKET)
+        .Quantity(qty)
+        .Build();
     OrderRequest order_req;
     order_req.order = std::move(order);
     // Here we do not take into account strategy execution delay for simplicity.
@@ -138,25 +146,29 @@ private:
   // TODO: move the private methods to a separate class ? (Backtest)OrderExecutionEngine?
 
   Result<Order> AddLimitOrder(SymbolPairId symbol, Side side, double qty, double price) {
-      Order::Builder order_builder = Order::CreateBuilder();
-      Order order = order_builder.Id(std::to_string(++m_last_order_id))
-          .ClientId(std::to_string(m_last_order_id))
-          .Symbol(symbol)
-          .Side_(side)
-          .OrderType_(OrderType::LIMIT)
-          .Quantity(qty)
-          .Price(price)
-          .OrderStatus_(OrderStatus::NEW)
-          .Build();
-      OrderRequest order_req;
-      order_req.order = std::move(order);
-      order_req.creation_timestamp_us = m_update_timestamp_us;
-      m_pending_limit_orders.push_back(order_req);
-      return Result<Order>("", order);
+    BOOST_LOG_TRIVIAL(trace) << "AddLimitOrder begin";
+    uint64_t order_id = ++m_last_order_id;
+    std::string order_id_str = std::to_string(order_id);
+    Order::Builder order_builder = Order::CreateBuilder();
+    Order order = order_builder.Id(order_id_str)
+        .ClientId(order_id_str)
+        .Symbol(symbol)
+        .Side_(side)
+        .OrderType_(OrderType::LIMIT)
+        .Quantity(qty)
+        .Price(price)
+        .OrderStatus_(OrderStatus::NEW)
+        .Build();
+    OrderRequest order_req;
+    order_req.order = std::move(order);
+    order_req.creation_timestamp_us = m_update_timestamp_us;
+    m_pending_limit_orders.push_back(order_req);
+    BOOST_LOG_TRIVIAL(trace) << "AddLimitOrder end";
+    return Result<Order>("", order);
   }
 
   void HandlePendingMarketOrders(const Ticker& ticker) {
-    for (size_t i = 0; m_pending_market_orders.size(); ++i) {
+    for (size_t i = 0; i < m_pending_market_orders.size(); ++i) {
       const auto& order_request = m_pending_market_orders[i];
       if (order_request.order.GetSymbolId() != ticker.symbol) {
         continue;
@@ -209,24 +221,38 @@ private:
   }
 
   void HandlePendingLimitOrders(const Ticker& ticker) {
-    for (size_t i = 0; m_pending_limit_orders.size(); ++i) {
+    BOOST_LOG_TRIVIAL(trace) << "HandlePendingLimitOrders begin";
+    for (size_t i = 0; i < m_pending_limit_orders.size(); ++i) {
       const auto& order_request = m_pending_limit_orders[i];
       const auto& order = order_request.order;
-      if (order.GetSymbolId() != ticker.symbol) {
+      if (order.GetSymbolId() != SymbolPairId(ticker.symbol)) {
         continue;
       }
       // Take network latency twice: once for incoming data delay and once for sending order delay
       if (order_request.creation_timestamp_us + 2 * m_settings.network_latency_us + m_settings.execution_delay_us < ticker.arrived_ts) {
         double price = order.GetPrice();
+        // Currently for simplicity we assume that limit order will be executed,
+        // if current mid price crosses order's limit price
+        // This will not be accurate for HFT algorithms
+        // TODO: take book volumes and trade tickers into account
+        double mid_price = (ticker.bid + ticker.ask) / 2.0;
         Side side = order.GetSide();
         if (Side::SELL == side) {
-          if (price <= ticker.bid) {
+          if (price <= mid_price) {
+            // TODO: trade ticker should invoke limit order execution
+            // HACK: right now 
+            Ticker limit_ticker = ticker;
+            limit_ticker.bid = price;
             ExecuteMarketOrder(order, ticker);
           } else {
             m_limit_orders.push_back(order);
           }
         } else { // BUY
-          if (price >= ticker.ask) {
+          if (price >= mid_price) {
+            BOOST_LOG_TRIVIAL(trace) << "Ticker limit_ticker = ticker";
+            Ticker limit_ticker = ticker;
+            limit_ticker.ask = price;
+            BOOST_LOG_TRIVIAL(trace) << "ExecuteMarketOrder(order, ticker)";
             ExecuteMarketOrder(order, ticker);
           } else {
             m_limit_orders.push_back(order);
@@ -234,15 +260,17 @@ private:
         }
       }
     }
+    BOOST_LOG_TRIVIAL(trace) << "HandlePendingLimitOrders end";
   }
 
   void HandleLimitOrders(const Ticker& ticker) {
+    BOOST_LOG_TRIVIAL(trace) << "HandleLimitOrders begin";
     // Check if any limit order got filled
     SymbolId base_asset_id = ticker.symbol.GetBaseAsset();
     SymbolId quote_asset_id = ticker.symbol.GetQuoteAsset();
     for (size_t i = 0; i < m_limit_orders.size(); ++i) {
       const auto& order = m_limit_orders[i];
-      if (order.GetSymbolId() != ticker.symbol) {
+      if (order.GetSymbolId() != SymbolPairId(ticker.symbol)) {
         continue;
       }
       double order_price = order.GetPrice();
