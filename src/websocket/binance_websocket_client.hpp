@@ -17,11 +17,11 @@ using namespace std::chrono;
 using json = nlohmann::json;
 
 // TODO: rename to eg. BinanceBookTickerStream
-class BinanceWebsocketClient : public WebsocketClient {
+class BinanceBookTickerStream : public WebsocketClient {
 public:
   inline static const std::string NAME = "binance";
 
-  BinanceWebsocketClient(ExchangeListener* exchange_listener)
+  BinanceBookTickerStream(ExchangeListener* exchange_listener)
       : WebsocketClient("wss://stream.binance.com:9443/ws/bookTicker", NAME), m_exchange_listener(exchange_listener), m_tickers_watcher(30000, NAME, this) {
         m_tickers_watcher.Start();
   }
@@ -88,4 +88,4 @@ private:
   TickersWatcher m_tickers_watcher;
 };
 
-int BinanceWebsocketClient::s_sub_id = 0;
+int BinanceBookTickerStream::s_sub_id = 0;

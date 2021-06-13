@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     pass.clear();
 
     MongoTickerConsumer mongo_consumer(mongo_client, config_json["db"].get<std::string>(), config_json["collection"].get<std::string>());
-    BinanceWebsocketClient binance_websocket_client(&mongo_consumer);
+    BinanceBookTickerStream binance_websocket_client(&mongo_consumer);
     KrakenWebsocketClient kraken_websocket_client(&mongo_consumer);
 
     std::promise<void> binance_promise;

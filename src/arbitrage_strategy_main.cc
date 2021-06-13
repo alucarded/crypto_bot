@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
   arbitrage_strategy.RegisterExchangeClient("binance", &binance_account_manager);
   arbitrage_strategy.RegisterExchangeClient("kraken", &kraken_account_manager);
 
-  BinanceWebsocketClient binance_websocket_client(&arbitrage_strategy);
+  BinanceBookTickerStream binance_websocket_client(&arbitrage_strategy);
   KrakenWebsocketClient kraken_websocket_client(&arbitrage_strategy);
 
   std::promise<void> binance_promise;
