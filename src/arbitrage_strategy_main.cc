@@ -4,7 +4,7 @@
 #include "http/kraken_client.hpp"
 #include "model/symbol.h"
 #include "strategy/arbitrage/arbitrage_strategy.hpp"
-#include "websocket/binance_websocket_client.hpp"
+#include "websocket/binance_book_ticker_stream.hpp"
 #include "websocket/binance_user_data_stream.hpp"
 #include "websocket/kraken_user_data_stream.hpp"
 #include "websocket/kraken_websocket_client.hpp"

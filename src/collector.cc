@@ -1,4 +1,4 @@
-#include "websocket/binance_websocket_client.hpp"
+#include "websocket/binance_book_ticker_stream.hpp"
 #include "websocket/kraken_websocket_client.hpp"
 #include "db/mongo_ticker_consumer.hpp"
 #include "db/mongo_client.hpp"

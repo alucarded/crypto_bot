@@ -14,6 +14,7 @@ COMMON_SRC=src/model/order.cc \
        src/model/order_book.cc \
 			 src/model/symbol.cc \
 			 src/model/ticker.cc \
+			 src/model/trade_ticker.cc \
 			 src/model/account_balance.cc \
 			 src/exchange/account_manager_impl.cc \
 			 src/exchange/account_refresher.cc \
@@ -48,6 +49,10 @@ arbitrage_main:
 
 kraken_order_book_main:
 	g++ -pipe src/kraken_order_book_main.cc -o kraken_order_book_main $(CFLAGS) $(LDFLAGS)
+
+.PHONY: market_making_main
+market_making_main:
+	g++ -pipe $(COMMON_SRC) src/market_making_main.cc -o market_making_main $(CFLAGS) $(LDFLAGS)
 
 clean:
 	if [ -f collector ]; then rm collector; fi; \

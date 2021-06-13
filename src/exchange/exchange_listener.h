@@ -1,5 +1,8 @@
 #pragma once
+#include "connection_listener.h"
+
 #include "model/ticker.h"
+#include "model/trade_ticker.h"
 #include "model/order_book.h"
 #include "utils/math.h"
 
@@ -13,7 +16,7 @@ public:
     BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnBookTicker, ticker=" << ticker;
   }
 
-  virtual void OnTradeTicker(const Ticker& ticker) {
+  virtual void OnTradeTicker(const TradeTicker& ticker) {
     BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnTradeTicker, ticker=" << ticker;
   }
 
