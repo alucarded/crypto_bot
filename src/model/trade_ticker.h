@@ -5,6 +5,7 @@
 #include <string>
 
 struct TradeTicker {
+  std::string exchange;
   uint64_t event_time;
   uint64_t trade_time;
   SymbolPair symbol;

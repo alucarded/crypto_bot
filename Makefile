@@ -29,7 +29,7 @@ ARBITRAGE_BACKTEST_SRC=src/backtest/backtest_results_processor.cc \
 # ARBITRAGE_FLAGS=-DWITH_MEAN_REVERSION_SIGNAL
 
 collector:
-	g++ -pipe src/collector.cc -o collector $(CFLAGS) $(LDFLAGS)
+	g++ -pipe $(COMMON_SRC) src/collector.cc -o collector $(CFLAGS) $(LDFLAGS)
 
 .PHONY: arbitrage_backtest
 arbitrage_backtest:
