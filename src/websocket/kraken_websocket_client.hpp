@@ -33,7 +33,7 @@ public:
   static const std::unordered_map<SymbolPairId, PrecisionSettings> SENT_PRECISIONS;
 
   KrakenWebsocketClient(ExchangeListener* exchange_listener, bool validate = true)
-      : WebsocketClient("wss://ws.kraken.com", NAME), m_exchange_listener(exchange_listener), m_tickers_watcher(30000, NAME, this), m_order_book_handler(validate) {
+      : WebsocketClient("wss://ws.kraken.com", NAME), m_exchange_listener(exchange_listener), m_tickers_watcher(90000, NAME, this), m_order_book_handler(validate) {
     m_tickers_watcher.Start();
   }
 

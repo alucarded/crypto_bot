@@ -45,12 +45,16 @@ int main(int argc, char* argv[]) {
   binance_params.slippage = 0;
   binance_params.fee = 0.00075;
   // HACK: this is not daily, volume, just experimenting with weights
-  binance_params.daily_volume = 5.0; //52.506572519;
+  binance_params.daily_volume = 52.506572519; // 52.506572519;
+  binance_params.max_ticker_age_us = 1000000; // 1s
+  binance_params.max_ticker_delay_us = 1300000; // 1.3s
   ExchangeParams kraken_params;
   kraken_params.exchange_name = "kraken";
   kraken_params.slippage = 0;
-  kraken_params.fee = 0.0020;
-  kraken_params.daily_volume = 5.0; //3.404118345;
+  kraken_params.fee = 0.0022;
+  kraken_params.daily_volume = 3.404118345 * 2; // 3.404118345;
+  kraken_params.max_ticker_age_us = 30000000; // 30s
+  kraken_params.max_ticker_delay_us = 1300000; // 1.3s
   strategy_opts.exchange_params = {
     { "binance", binance_params },
     { "kraken", kraken_params }
@@ -72,11 +76,9 @@ int main(int argc, char* argv[]) {
     {SymbolId::EOS, 4},
     {SymbolId::XLM, 30},
   };
-  strategy_opts.max_ticker_age_us = 1000000; // 1s
-  strategy_opts.max_ticker_delay_us = 1300000; // 1.3s
   strategy_opts.min_trade_interval_us = 0;
   // The margin is applied to both sides
-  strategy_opts.arbitrage_match_profit_margin = 0.000125;
+  strategy_opts.arbitrage_match_profit_margin = 0.0;
 
   BinanceClient binance_client;
   AccountManagerImpl binance_account_manager(&binance_client);

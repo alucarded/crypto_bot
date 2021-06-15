@@ -75,6 +75,8 @@ public:
       const auto& best_ask_ticker = match.best_ask;
       const auto& best_bid_exchange = best_bid_ticker.exchange;
       const auto& best_ask_exchange = best_ask_ticker.exchange;
+      const auto& best_bid_exchange_params = m_opts.exchange_params.at(best_bid_exchange);
+      const auto& best_ask_exchange_params = m_opts.exchange_params.at(best_ask_exchange);
       // Check tickers arrival timestamp
       auto now_us = m_opts.time_provider_fcn(ticker);
       auto best_bid_ticker_age = now_us - best_bid_ticker.arrived_ts;
@@ -83,11 +85,11 @@ public:
             << " - " << best_bid_ticker.symbol << "): " << std::to_string(best_bid_ticker_age)
             << ", best ask ticker age (" << best_ask_exchange
             << " - " << best_ask_ticker.symbol << "): " << std::to_string(best_ask_ticker_age);
-      if (best_bid_ticker_age > m_opts.max_ticker_age_us) {
+      if (best_bid_ticker_age > best_bid_exchange_params.max_ticker_age_us) {
         BOOST_LOG_TRIVIAL(debug) << "Ticker " << best_bid_ticker.exchange << " " << best_bid_ticker.symbol << " is too old";
         return;
       }
-      if (best_ask_ticker_age > m_opts.max_ticker_age_us) {
+      if (best_ask_ticker_age > best_ask_exchange_params.max_ticker_age_us) {
         BOOST_LOG_TRIVIAL(debug) << "Ticker " << best_ask_ticker.exchange << " " << best_ask_ticker.symbol << " is too old";
         return;
       }
@@ -99,8 +101,8 @@ public:
       BOOST_LOG_TRIVIAL(info) << "Best bid ticker delay (" << best_bid_exchange
             << "): " << std::to_string(best_bid_ticker_delay) << ", best ask ticker delay (" << best_ask_exchange
             << "): " << std::to_string(best_ask_ticker_delay);
-      if (best_bid_ticker_delay > m_opts.max_ticker_delay_us
-          || best_ask_ticker_delay > m_opts.max_ticker_delay_us) {
+      if (best_bid_ticker_delay > best_bid_exchange_params.max_ticker_delay_us
+          || best_ask_ticker_delay > best_ask_exchange_params.max_ticker_delay_us) {
         BOOST_LOG_TRIVIAL(warning) << "Ticker arrived with too big delay";
         return;
       }

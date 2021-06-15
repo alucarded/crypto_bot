@@ -14,4 +14,6 @@ struct ExchangeParams {
   double fee;
   // Daily exchange traded volume in billion USD
   double daily_volume;
+  uint64_t max_ticker_age_us;
+  uint64_t max_ticker_delay_us;
 };
