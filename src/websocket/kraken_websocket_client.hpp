@@ -18,14 +18,22 @@ using namespace std::chrono;
 
 using json = nlohmann::json;
 
+enum class KrakenOrderBookDepth : size_t {
+  DEPTH_10 = 10,
+  DEPTH_25 = 25,
+  DEPTH_100 = 100,
+  DEPTH_500 = 500,
+  DEPTH_1000 = 1000
+};
+
 class KrakenWebsocketClient : public WebsocketClient {
 public:
   inline static const std::string NAME = "kraken";
 
   static const std::unordered_map<SymbolPairId, PrecisionSettings> SENT_PRECISIONS;
 
-  KrakenWebsocketClient(ExchangeListener* exchange_listener)
-      : WebsocketClient("wss://ws.kraken.com", NAME), m_exchange_listener(exchange_listener), m_tickers_watcher(30000, NAME, this), m_order_book_handler(false) {
+  KrakenWebsocketClient(ExchangeListener* exchange_listener, bool validate = true)
+      : WebsocketClient("wss://ws.kraken.com", NAME), m_exchange_listener(exchange_listener), m_tickers_watcher(30000, NAME, this), m_order_book_handler(validate) {
     m_tickers_watcher.Start();
   }
 
@@ -35,12 +43,12 @@ public:
     WebsocketClient::send(message);
   }
 
-  void SubscribeOrderBook(const std::string& symbol) {
-    std::string message = OrderBookSubscribeMsg(symbol);
+  void SubscribeOrderBook(const std::string& symbol, KrakenOrderBookDepth requested_depth) {
+    std::string message = OrderBookSubscribeMsg(symbol, requested_depth);
     m_subscription_msg.push_back(message);
-    SymbolPair sp = SymbolPair::FromKrakenString(symbol);;
+    SymbolPair sp = SymbolPair::FromKrakenString(symbol);
     SymbolPairId spid = SymbolPairId(sp);
-    m_order_books.emplace(spid, OrderBook(NAME, spid, 1, SENT_PRECISIONS.at(spid)));
+    m_order_books.emplace(spid, OrderBook(NAME, spid, static_cast<size_t>(requested_depth), SENT_PRECISIONS.at(spid)));
     WebsocketClient::send(message);
   }
 
@@ -51,8 +59,8 @@ public:
 
 private:
 
-  std::string OrderBookSubscribeMsg(const std::string& symbol, bool subscribe = true) {
-    return std::string("{\"event\": \"") + (subscribe ? "subscribe" : "unsubscribe") + "\",\"pair\": [\"" + symbol + "\"],\"subscription\": {\"name\": \"book\",\"depth\": 10}}";
+  std::string OrderBookSubscribeMsg(const std::string& symbol, KrakenOrderBookDepth depth, bool subscribe = true) {
+    return std::string("{\"event\": \"") + (subscribe ? "subscribe" : "unsubscribe") + "\",\"pair\": [\"" + symbol + "\"],\"subscription\": {\"name\": \"book\",\"depth\": " + std::to_string(static_cast<size_t>(depth))  + "}}";
   }
 
   virtual void OnOpen(websocketpp::connection_hdl conn) override {
@@ -96,7 +104,7 @@ private:
       } else {
         // TODO: implement state machine, with subscription class objects in a vector as a state,
         // with which subscriptions can be re-created upon receiving unsubscribed publication
-        WebsocketClient::send(OrderBookSubscribeMsg(symbol));
+        WebsocketClient::send(OrderBookSubscribeMsg(symbol, static_cast<KrakenOrderBookDepth>(ob.GetDepth())));
       }
     }
   }

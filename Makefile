@@ -28,16 +28,24 @@ ARBITRAGE_BACKTEST_SRC=src/backtest/backtest_results_processor.cc \
        src/arbitrage_strategy_backtest.cc
 # ARBITRAGE_FLAGS=-DWITH_MEAN_REVERSION_SIGNAL
 
-collector:
-	g++ -pipe $(COMMON_SRC) src/collector.cc -o collector $(CFLAGS) $(LDFLAGS)
+# TODO: One configurable collector (via file specifying exchanges, assets and data to collect)
+.PHONY: arbitrage_collector
+arbitrage_collector:
+	g++ -pipe $(COMMON_SRC) src/arbitrage_collector.cc -o arbitrage_collector $(CFLAGS) $(LDFLAGS)
+
+.PHONY: market_making_collector
+market_making_collector:
+	g++ -pipe $(COMMON_SRC) src/market_making_collector.cc -o market_making_collector $(CFLAGS) $(LDFLAGS)
 
 .PHONY: arbitrage_backtest
 arbitrage_backtest:
 	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_SRC) $(ARBITRAGE_BACKTEST_SRC) -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
 
+.PHONY: unit_tests
 unit_tests:
 	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_SRC) $(GTESTS) -o unittest $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 
+.PHONY: integration_tests
 integration_tests:
 	g++ -pipe src/http/http_client_test.cc -o http_client_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
 	g++ -pipe src/http/binance_client_test.cc -o binance_test $(CFLAGS) $(LDFLAGS) $(TEST_FLAGS)
@@ -47,8 +55,9 @@ integration_tests:
 arbitrage_main:
 	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_SRC) src/arbitrage_strategy_main.cc -o arbitrage_main $(CFLAGS) $(LDFLAGS)
 
+.PHONY: kraken_order_book_main
 kraken_order_book_main:
-	g++ -pipe src/kraken_order_book_main.cc -o kraken_order_book_main $(CFLAGS) $(LDFLAGS)
+	g++ -pipe $(COMMON_SRC) src/kraken_order_book_main.cc -o kraken_order_book_main $(CFLAGS) $(LDFLAGS)
 
 .PHONY: market_making_main
 market_making_main:

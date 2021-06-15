@@ -4,5 +4,5 @@
   "port": "28888",
   "authSource": "findata",
   "db": "findata",
-  "collection": "BookTickers"
+  "collection": "BookTickersTest"
 }
