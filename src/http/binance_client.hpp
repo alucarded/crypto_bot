@@ -3,6 +3,7 @@
 #include "exchange/exchange_client.h"
 #include "http_client.hpp"
 #include "model/symbol.h"
+#include "model/order_book_update.h"
 #include "utils/string.h"
 
 #include "json/json.hpp"
@@ -66,6 +67,17 @@ std::string hmac_sha256(const char *key, std::size_t klen, const char *data, std
 
 }
 
+enum class BinanceOrderBookDepth : size_t {
+  DEPTH_5 = 5,
+  DEPTH_10 = 10,
+  DEPTH_20 = 20,
+  DEPTH_50 = 50,
+  DEPTH_100 = 100,
+  DEPTH_500 = 500,
+  DEPTH_1000 = 1000,
+  DEPTH_5000 = 5000
+};
+
 // TODO: This should be rather named BinanceRestClient or BinanceHttpClient
 class BinanceClient : public ExchangeClient {
 public:
@@ -76,12 +88,13 @@ public:
   inline static const std::string GET_ACCOUNT_BALANCE_PATH = "/api/v3/account";
   inline static const std::string GET_OPEN_ORDERS_PATH = "/api/v3/openOrders";
   inline static const std::string LISTEN_KEY_PATH = "/api/v3/userDataStream";
+  inline static const std::string DEPTH_PATH = "/api/v3/depth";
 
   BinanceClient()
       : m_last_order_id(0),
         m_http_client(HttpClient::Options("cryptobot-1.0.0", 1)),
         m_timeout(1000),
-        m_binance_settings(GetExchangeInfo()) {
+        m_binance_settings(BinanceSettings::Create(GetExchangeInfo())) {
   }
 
   virtual ~BinanceClient() {
@@ -259,6 +272,20 @@ public:
 
   BinanceSettings GetBinanceSettings() const {
     return m_binance_settings;
+  }
+
+  Result<json> GetOrderBookSnapshot(SymbolPairId symbol_pair_id, BinanceOrderBookDepth depth_limit) {
+    BOOST_LOG_TRIVIAL(debug) << "Getting Binance order book snapshot";
+    HttpClient::Result res = m_http_client.get(HOST, PORT, DEPTH_PATH)
+        .QueryParam("symbol", GetSymbolString(symbol_pair_id))
+        .QueryParam("limit", std::to_string(static_cast<size_t>(depth_limit)))
+        .send();
+    if (!res) {
+      // TODO: implement retrials ?
+      return Result<json>(res.response, res.errmsg);
+    }
+    json response_json = json::parse(res.response);
+    return Result<json>(res.response, response_json);
   }
 private:
 

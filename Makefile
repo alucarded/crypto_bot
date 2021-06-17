@@ -59,6 +59,10 @@ arbitrage_main:
 kraken_order_book_main:
 	g++ -pipe $(COMMON_SRC) src/kraken_order_book_main.cc -o kraken_order_book_main $(CFLAGS) $(LDFLAGS)
 
+.PHONY: binance_order_book_main
+binance_order_book_main:
+	g++ -pipe $(COMMON_SRC) src/binance_order_book_main.cc -o binance_order_book_main $(CFLAGS) $(LDFLAGS)
+
 .PHONY: market_making_main
 market_making_main:
 	g++ -pipe $(COMMON_SRC) src/market_making_main.cc -o market_making_main $(CFLAGS) $(LDFLAGS)

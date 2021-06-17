@@ -13,14 +13,18 @@ using json = nlohmann::json;
 
 class BinanceSettings {
 public:
-  BinanceSettings(const json& payload) {
-    ParseExchangeInfo(payload);
+  static BinanceSettings Create(const json& payload) {
+    return BinanceSettings(payload);
   }
 
   const SymbolPairSettings& GetPairSettings(SymbolPairId spid) const {
     return m_pair_settings.at(spid);
   }
 private:
+  BinanceSettings(const json& payload) {
+    ParseExchangeInfo(payload);
+  }
+
   void ParseExchangeInfo(const json& payload) {
     BOOST_LOG_TRIVIAL(trace) << "Got Binance exchange info payload: " << payload;
     const auto& symbols = payload["symbols"];
