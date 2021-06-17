@@ -55,7 +55,8 @@ private:
         if (m_book_snapshot_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
           json snapshot_json = m_book_snapshot_future.get();
           BOOST_LOG_TRIVIAL(info) << "Got order book snapshot: " << snapshot_json;
-          m_last_update_id = snapshot_json["lastUpdateId"].get<uint64_t>();
+          uint64_t last_update_id = snapshot_json["lastUpdateId"].get<uint64_t>();;
+          m_previous_update_id = last_update_id;
           UpdateOrderBookFromSnapshot(snapshot_json);
           // Replay updates from buffer
           if (!m_depth_updates.empty()) {
@@ -63,7 +64,7 @@ private:
             size_t i = 0;
             uint64_t final_update_id = m_depth_updates[i]["u"].get<uint64_t>();
             uint64_t first_update_id = m_depth_updates[i]["U"].get<uint64_t>();
-            while (!(first_update_id <= m_last_update_id + 1 && final_update_id >= m_last_update_id + 1) && ++i < m_depth_updates.size()) {
+            while (!(first_update_id <= last_update_id + 1 && final_update_id >= last_update_id + 1) && ++i < m_depth_updates.size()) {
               final_update_id = m_depth_updates[i]["u"].get<uint64_t>();
               first_update_id = m_depth_updates[i]["U"].get<uint64_t>();
             }
@@ -73,11 +74,13 @@ private:
             for (; i < m_depth_updates.size(); ++i) {
               const json& depth_update = m_depth_updates[i];
               uint64_t final_update_id = depth_update["u"].get<uint64_t>();
-              if (final_update_id <= m_last_update_id) {
+              if (final_update_id <= last_update_id) {
                 continue;
               }
               UpdateOrderBookFromDiff(depth_update);
+              m_previous_update_id = final_update_id;
             }
+            
           } else {
             BOOST_LOG_TRIVIAL(warning) << "No order book events when requesting snapshot";
           }
@@ -88,12 +91,13 @@ private:
         }
       }
       uint64_t first_update_id = msg_json["U"].get<uint64_t>();
-      if (m_last_update_id + 1 != first_update_id) {
+      if (m_previous_update_id + 1 < first_update_id) {
         BOOST_LOG_TRIVIAL(error) << "Missing order book update!";
         // TODO: request snapshot again ?
+        // FIXME!!
       }
       UpdateOrderBookFromDiff(msg_json);
-      m_last_update_id = msg_json["u"].get<uint64_t>();
+      m_previous_update_id = msg_json["u"].get<uint64_t>();
       //m_tickers_watcher.Set(SymbolPair(ticker.symbol), 0, 0);
       m_exchange_listener->OnOrderBookUpdate(m_order_book);
   }
@@ -157,7 +161,7 @@ private:
   TickersWatcher m_tickers_watcher;
   SymbolPair m_symbol_pair;
   OrderBook m_order_book;
-  uint64_t m_last_update_id;
+  uint64_t m_previous_update_id;
   std::future<json> m_book_snapshot_future;
   std::vector<json> m_depth_updates;
 };
