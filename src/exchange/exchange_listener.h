@@ -13,15 +13,15 @@
 class ExchangeListener : public ConnectionListener {
 public:
   virtual void OnBookTicker(const Ticker& ticker) {
-    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnBookTicker, ticker=" << ticker;
+    BOOST_LOG_TRIVIAL(debug) << "ExchangeListener::OnBookTicker, ticker=" << ticker;
   }
 
   virtual void OnTradeTicker(const TradeTicker& ticker) {
-    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnTradeTicker, ticker=" << ticker;
+    BOOST_LOG_TRIVIAL(debug) << "ExchangeListener::OnTradeTicker, ticker=" << ticker;
   }
 
   virtual void OnOrderBookUpdate(const OrderBook& order_book) {
-    BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnOrderBookUpdate, order_book=" << order_book;
+    BOOST_LOG_TRIVIAL(debug) << "ExchangeListener::OnOrderBookUpdate, order_book=" << order_book;
   }
 
   static Ticker TickerFromOrderBook(const OrderBook& order_book) {

@@ -54,10 +54,11 @@ private:
       if (m_book_snapshot_future.valid()) {
         if (m_book_snapshot_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
           json snapshot_json = m_book_snapshot_future.get();
-          BOOST_LOG_TRIVIAL(info) << "Got order book snapshot: " << snapshot_json;
-          uint64_t last_update_id = snapshot_json["lastUpdateId"].get<uint64_t>();;
+          BOOST_LOG_TRIVIAL(debug) << "Got order book snapshot: " << snapshot_json;
+          uint64_t last_update_id = snapshot_json["lastUpdateId"].get<uint64_t>();
           m_previous_update_id = last_update_id;
-          UpdateOrderBookFromSnapshot(snapshot_json);
+          m_order_book.Update(DeserializeOrderBookSnapshot(snapshot_json));
+          m_exchange_listener->OnOrderBookUpdate(m_order_book);
           // Replay updates from buffer
           if (!m_depth_updates.empty()) {
             // Validation
@@ -77,10 +78,11 @@ private:
               if (final_update_id <= last_update_id) {
                 continue;
               }
-              UpdateOrderBookFromDiff(depth_update);
+              m_order_book.Update(DeserializeOrderBookUpdate(depth_update));
+              m_exchange_listener->OnOrderBookUpdate(m_order_book);
               m_previous_update_id = final_update_id;
             }
-            
+            m_depth_updates.clear();
           } else {
             BOOST_LOG_TRIVIAL(warning) << "No order book events when requesting snapshot";
           }
@@ -92,62 +94,63 @@ private:
       }
       uint64_t first_update_id = msg_json["U"].get<uint64_t>();
       if (m_previous_update_id + 1 < first_update_id) {
-        BOOST_LOG_TRIVIAL(error) << "Missing order book update!";
-        // TODO: request snapshot again ?
-        // FIXME!!
+        BOOST_LOG_TRIVIAL(warning) << "Missing order book update, requesting snapshot";
+        m_order_book.clear();
+        m_book_snapshot_future = std::async(std::launch::async, &BinanceOrderBookStream::GetOrderBookSnapshot, this);
+        return;
       }
-      UpdateOrderBookFromDiff(msg_json);
       m_previous_update_id = msg_json["u"].get<uint64_t>();
       //m_tickers_watcher.Set(SymbolPair(ticker.symbol), 0, 0);
+      m_order_book.Update(DeserializeOrderBookUpdate(msg_json));
       m_exchange_listener->OnOrderBookUpdate(m_order_book);
   }
 
 private:
-  void UpdateOrderBookFromSnapshot(const json& order_book_update) {
-    for (const json& bid : order_book_update["bids"]) {
-      ProcessBid(bid);
+  OrderBookUpdate DeserializeOrderBookSnapshot(const json& snapshot_json) { 
+    OrderBookUpdate ob_update;
+    ob_update.last_update_id = snapshot_json["lastUpdateId"].get<uint64_t>();
+    ob_update.is_snapshot = true;
+    for (const json& bid : snapshot_json["bids"]) {
+      OrderBookUpdate::Level lvl;
+      lvl.price = bid[0].get<std::string>();
+      lvl.volume = bid[1].get<std::string>();
+      ob_update.bids.push_back(std::move(lvl));
     }
-    for (const json& ask : order_book_update["asks"]) {
-      ProcessAsk(ask);
+    for (const json& ask : snapshot_json["asks"]) {
+      OrderBookUpdate::Level lvl;
+      lvl.price = ask[0].get<std::string>();
+      lvl.volume = ask[1].get<std::string>();
+      ob_update.asks.push_back(std::move(lvl));
     }
+    return ob_update;
   }
 
-  void UpdateOrderBookFromDiff(const json& diff_event) {
-    for (const json& bid : diff_event["b"]) {
-      ProcessBid(bid);
+  OrderBookUpdate DeserializeOrderBookUpdate(const json& update_json) { 
+    OrderBookUpdate ob_update;
+    ob_update.last_update_id = update_json["u"].get<uint64_t>();
+    ob_update.is_snapshot = false;
+    for (const json& bid : update_json["b"]) {
+      OrderBookUpdate::Level lvl;
+      lvl.price = bid[0].get<std::string>();
+      lvl.volume = bid[1].get<std::string>();
+      ob_update.bids.push_back(std::move(lvl));
     }
-    for (const json& ask : diff_event["a"]) {
-      ProcessAsk(ask);
+    for (const json& ask : update_json["a"]) {
+      OrderBookUpdate::Level lvl;
+      lvl.price = ask[0].get<std::string>();
+      lvl.volume = ask[1].get<std::string>();
+      ob_update.asks.push_back(std::move(lvl));
     }
-  }
-
-  void ProcessBid(const json& bid) {
-    const auto& precision_settings = m_order_book.GetPrecisionSettings();
-    const auto& price_str = bid[0].get<std::string>();
-    price_t price_lvl = price_t(uint64_t(std::stod(price_str) * cryptobot::quick_pow10(precision_settings.m_price_precision)));
-    double qty = std::stod(bid[1].get<std::string>());
-    if (qty == 0) {
-      m_order_book.DeleteBid(price_lvl);
-    }
-    PriceLevel level(price_lvl, qty, 0);
-    m_order_book.UpsertBid(level);
-  }
-
-  void ProcessAsk(const json& ask) {
-    const auto& precision_settings = m_order_book.GetPrecisionSettings();
-    const auto& price_str = ask[0].get<std::string>();
-    price_t price_lvl = price_t(uint64_t(std::stod(price_str) * cryptobot::quick_pow10(precision_settings.m_price_precision)));
-    double qty = std::stod(ask[1].get<std::string>());
-    if (qty == 0) {
-      m_order_book.DeleteAsk(price_lvl);
-    }
-    PriceLevel level(price_lvl, std::stod(ask[1].get<std::string>()), 0);
-    m_order_book.UpsertAsk(level);
+    return ob_update;
   }
 
   json GetOrderBookSnapshotInitial() {
     // Delay for a second
-    std::this_thread::sleep_for(std::chrono::seconds(5));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    return GetOrderBookSnapshot();
+  }
+
+  json GetOrderBookSnapshot() {
     Result<json> res = m_binance_client->GetOrderBookSnapshot(SymbolPairId(m_symbol_pair), BinanceOrderBookDepth::DEPTH_1000);
     if (!res) {
       // TODO: retrials implemented on http client side

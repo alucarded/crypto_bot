@@ -1,7 +1,9 @@
 #pragma once
 
+#include "order_book_update.h"
 #include "settings.h"
 #include "symbol.h"
+#include "utils/math.h"
 
 #include <algorithm>
 #include <cassert>
@@ -176,6 +178,7 @@ public:
   }
 
   uint64_t GetLatestUpdateTimestamp() const {
+    // TODO: use m_last_update ?
     uint64_t ret = 0;
     std::for_each(m_bids.cbegin(), m_bids.cend(), [&](const PriceLevel& pl) {
       ret = std::max<uint64_t>(ret, pl.GetTimestamp());
@@ -186,10 +189,33 @@ public:
     return ret;
   }
 
+  void Update(const OrderBookUpdate& ob_update) {
+    m_last_update = ob_update;
+    for (const auto& raw_lvl : m_last_update.bids) {
+      price_t price_lvl = price_t(uint64_t(std::stod(raw_lvl.price) * cryptobot::quick_pow10(m_precision_settings.m_price_precision)));
+      double qty = std::stod(raw_lvl.volume);
+      if (qty == 0) {
+        DeleteBid(price_lvl);
+      }
+      PriceLevel level(price_lvl, qty, raw_lvl.timestamp.has_value() ? raw_lvl.timestamp.value() : 0);
+      UpsertBid(level);
+    }
+    for (const auto& raw_lvl : m_last_update.asks) {
+      price_t price_lvl = price_t(uint64_t(std::stod(raw_lvl.price) * cryptobot::quick_pow10(m_precision_settings.m_price_precision)));
+      double qty = std::stod(raw_lvl.volume);
+      if (qty == 0) {
+        DeleteAsk(price_lvl);
+      }
+      PriceLevel level(price_lvl, qty, raw_lvl.timestamp.has_value() ? raw_lvl.timestamp.value() : 0);
+      UpsertAsk(level);
+    }
+  }
+
   inline const std::string& GetExchangeName() const { return m_exchange_name; }
   inline SymbolPairId GetSymbolPairId() const { return m_symbol; }
   inline size_t GetDepth() const { return m_depth; }
   inline const PrecisionSettings& GetPrecisionSettings() const { return m_precision_settings; }
+  inline const OrderBookUpdate& GetLastUpdate() const { return m_last_update; }
 
   friend std::ostream& operator<<(std::ostream& os, const OrderBook& ob);
 
@@ -214,6 +240,7 @@ private:
   const SymbolPairId m_symbol;
   const size_t m_depth;
   const PrecisionSettings m_precision_settings;
+  OrderBookUpdate m_last_update;
 };
 
 std::ostream& operator<<(std::ostream& os, const PriceLevel& pl);

@@ -14,6 +14,7 @@
 #include <bsoncxx/builder/stream/helpers.hpp>
 #include <bsoncxx/builder/stream/document.hpp>
 #include <bsoncxx/builder/stream/array.hpp>
+#include <bsoncxx/types.hpp>
 
 using bsoncxx::builder::stream::close_array;
 using bsoncxx::builder::stream::close_document;
@@ -32,10 +33,10 @@ public:
         auto db = client[m_db_name];
         auto coll = db[m_coll_name];
         document index_builder;
+        index_builder << "minute_utc" << 1;
+        coll.create_index(index_builder.view());
         mongocxx::options::index index_options{};
         index_options.unique(true);
-        index_builder << "minute_utc" << 1;
-        coll.create_index(index_builder.view(), index_options);
         document compound_index_builder;
         compound_index_builder << "exchange" << 1
             << "minute_utc" << 1
@@ -104,11 +105,75 @@ public:
             OnBookTicker(ExchangeListener::TickerFromOrderBook(order_book));
             return;
         }
-        // TODO: else
+        const OrderBookUpdate& ob_update = order_book.GetLastUpdate();
+        mongocxx::pool::entry client_entry = m_mongo_client->Get();
+        mongocxx::client& client = *client_entry;
+        auto db = client[m_db_name];
+        auto coll = db[m_coll_name];
+
+        using namespace std::chrono;
+        // Make sure system clock is adjusted in controlled manner
+        // on the machine where this runs.
+        // TODO: FIXME: set it when receiving message in TickerClient
+        auto now = system_clock::now();
+        system_clock::duration tp = now.time_since_epoch();
+        minutes mins = duration_cast<minutes>(tp);
+        microseconds us = duration_cast<microseconds>(tp);
+        // Save in bucket related to arrival minute (now)
+        // Then during backtesting check what was the delay
+        // and its impact on order execution.
+        std::ostringstream symbol_name_stream;
+        symbol_name_stream << order_book.GetSymbolPairId();
+        // Build bids array
+        auto push_doc = bsoncxx::builder::basic::document{};
+        using bsoncxx::builder::basic::sub_array;
+        using bsoncxx::builder::basic::sub_document;
+        using bsoncxx::builder::basic::kvp;
+        push_doc.append(kvp("$push", [&ob_update, &us](sub_document subdoc) {
+            subdoc.append(kvp("updates", [&ob_update, &us](sub_document subdoc2) {
+                subdoc2.append(
+                    kvp("bids", [&ob_update](sub_array subarr) {
+                        for (const auto& bid : ob_update.bids) {
+                            subarr.append([&bid](sub_array subarr2) {
+                                subarr2.append(bid.price);
+                                subarr2.append(bid.volume);
+                                if (bid.timestamp.has_value()) {
+                                    subarr2.append(static_cast<int64_t>(bid.timestamp.value()));
+                                }
+                            });
+                        }
+                }));
+                subdoc2.append(
+                    kvp("asks", [&ob_update](sub_array subarr) {
+                        for (const auto& ask : ob_update.asks) {
+                            subarr.append([&ask](sub_array subarr2) {
+                                subarr2.append(ask.price);
+                                subarr2.append(ask.volume);
+                                if (ask.timestamp.has_value()) {
+                                    subarr2.append(static_cast<int64_t>(ask.timestamp.value()));
+                                }
+                            });
+                        }
+                }));
+                    subdoc2.append(kvp("a_us", bsoncxx::types::b_int64{us.count()}));
+                    subdoc2.append(kvp("is_snapshot", bsoncxx::types::b_bool{ob_update.is_snapshot}));
+                    subdoc2.append(kvp("last_update_id", bsoncxx::types::b_int64{static_cast<int64_t>(ob_update.last_update_id)}));
+            }));
+        }));
+        BOOST_LOG_TRIVIAL(trace) << "Push: " << bsoncxx::to_json(push_doc.view());
+        coll.update_one(
+            document{}
+                << "exchange" << order_book.GetExchangeName()
+                << "symbol" << symbol_name_stream.str()
+                << "minute_utc" << mins.count()
+                << "type" << "ORDER_BOOK"
+                << finalize,
+            push_doc.view(),
+            mongocxx::options::update().upsert(true));
     }
 
     virtual void OnTradeTicker(const TradeTicker& ticker) {
-        BOOST_LOG_TRIVIAL(info) << "ExchangeListener::OnTradeTicker, ticker: " << ticker;
+        BOOST_LOG_TRIVIAL(debug) << "MongoTickerConsumer::OnTradeTicker, ticker: " << ticker;
         mongocxx::pool::entry client_entry = m_mongo_client->Get();
         mongocxx::client& client = *client_entry;
         auto db = client[m_db_name];
