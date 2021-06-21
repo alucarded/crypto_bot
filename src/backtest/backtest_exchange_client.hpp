@@ -129,9 +129,9 @@ public:
     //BOOST_LOG_TRIVIAL(trace) << "BacktestExchangeClient::OnBookTicker, ticker: " << ticker;
     m_update_timestamp_us = ticker.arrived_ts;
     if (m_settings.exchange == ticker.exchange) {
-      HandlePendingMarketOrders(ticker);
-      HandlePendingLimitOrders(ticker);
-      HandleLimitOrders(ticker);
+      HandlePendingMarketOrders(ticker); // handle on book ticker
+      HandlePendingLimitOrders(ticker); // handle on book ticker
+      HandleLimitOrders(ticker); // handle on trade ticker
       // auto it = m_tickers.find(ticker.symbol);
       // if (it != m_tickers.end()) {
       //   m_previous_tickers.insert_or_assign(it->first, it->second);
@@ -139,6 +139,14 @@ public:
       // Assign new best ticker after handling orders
       m_tickers.insert_or_assign(ticker.symbol, ticker);
     }
+  }
+
+  virtual void OnTradeTicker(const TradeTicker& ticker) override {
+    BOOST_LOG_TRIVIAL(debug) << "BacktestExchangeClient::OnTradeTicker, ticker=" << ticker;
+  }
+
+  virtual void OnOrderBookUpdate(const OrderBook& order_book) override {
+    BOOST_LOG_TRIVIAL(debug) << "BacktestExchangeClient::OnOrderBookUpdate, order_book=" << order_book;
   }
 
 private:
@@ -193,29 +201,30 @@ private:
     SymbolId base_asset_id = sp.GetBaseAsset();
     SymbolId quote_asset_id = sp.GetQuoteAsset();
     Side side = order.GetSide();
-    double qty = order.GetQuantity();
+    double total_qty = order.GetQuantity();
     double price, cost;
     if (side == Side::SELL) {
+      // m_order_book.GetMarketFillPrice(Side::SELL, total_qty);
       price = ticker.bid;
-      BOOST_LOG_TRIVIAL(info) << "Current ticker " << ticker << ", market selling " << qty;
+      BOOST_LOG_TRIVIAL(info) << "Current ticker " << ticker << ", market selling " << total_qty;
       // TODO: FIXME: implement partial fill here
-      if (ticker.bid_vol && ticker.bid_vol.value() < qty) {
+      if (ticker.bid_vol && ticker.bid_vol.value() < total_qty) {
         BOOST_LOG_TRIVIAL(info) << "Order quantity above best ticker volume";
       }
-      cost = qty*(price - m_settings.slippage)*(1.0 - m_settings.fee);
+      cost = total_qty*(price - m_settings.slippage)*(1.0 - m_settings.fee);
       m_account_balance.AddBalance(quote_asset_id, cost);
-      m_account_balance.AddBalance(base_asset_id, -qty);
-      BOOST_LOG_TRIVIAL(info) << "Sold " << qty << " for " << cost;
+      m_account_balance.AddBalance(base_asset_id, -total_qty);
+      BOOST_LOG_TRIVIAL(info) << "Sold " << total_qty << " for " << cost;
     } else { // Buying
       price = ticker.ask;
       BOOST_LOG_TRIVIAL(info) << "Current ticker " << ticker << ", market buying " << qty;
-      if (ticker.ask_vol && ticker.ask_vol.value() < qty) {
+      if (ticker.ask_vol && ticker.ask_vol.value() < total_qty) {
         BOOST_LOG_TRIVIAL(info) << "Order quantity above best ticker volume";
       }
-      cost = qty*(price + m_settings.slippage)*(1.0 + m_settings.fee);
+      cost = total_qty*(price + m_settings.slippage)*(1.0 + m_settings.fee);
       m_account_balance.AddBalance(quote_asset_id, -cost);
-      m_account_balance.AddBalance(base_asset_id, qty);
-      BOOST_LOG_TRIVIAL(info) << "Bought " << qty << " for " << cost;
+      m_account_balance.AddBalance(base_asset_id, total_qty);
+      BOOST_LOG_TRIVIAL(info) << "Bought " << total_qty << " for " << cost;
     }
     m_balance_listener.OnAccountBalanceUpdate(m_account_balance);
   }
