@@ -217,7 +217,7 @@ private:
       BOOST_LOG_TRIVIAL(info) << "Sold " << total_qty << " for " << cost;
     } else { // Buying
       price = ticker.ask;
-      BOOST_LOG_TRIVIAL(info) << "Current ticker " << ticker << ", market buying " << qty;
+      BOOST_LOG_TRIVIAL(info) << "Current ticker " << ticker << ", market buying " << total_qty;
       if (ticker.ask_vol && ticker.ask_vol.value() < total_qty) {
         BOOST_LOG_TRIVIAL(info) << "Order quantity above best ticker volume";
       }

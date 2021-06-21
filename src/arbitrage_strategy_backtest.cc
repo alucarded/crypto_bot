@@ -78,10 +78,14 @@ int main(int argc, char* argv[]) {
   binance_params.slippage = 0.0;
   binance_params.fee = 0.00075;
   binance_params.daily_volume = 10.0;
+  binance_params.max_ticker_age_us = 1000000; // 1s
+  binance_params.max_ticker_delay_us = 1000000; // 1s
   ExchangeParams kraken_params;
   kraken_params.slippage = 0.0;
   kraken_params.fee = 0.0020;
   kraken_params.daily_volume = 2.0;
+  kraken_params.max_ticker_age_us = 1000000; // 1s
+  kraken_params.max_ticker_delay_us = 1000000; // 1s
   strategy_opts.exchange_params = {
     { "binance", binance_params },
     { "kraken", kraken_params }
@@ -102,8 +106,6 @@ int main(int argc, char* argv[]) {
     {SymbolId::EOS, 2.5},
     {SymbolId::XLM, 20},
   };
-  strategy_opts.max_ticker_age_us = 1000000; // 1s
-  strategy_opts.max_ticker_delay_us = 1000000; // 1s
   strategy_opts.min_trade_interval_us = 0;
   strategy_opts.arbitrage_match_profit_margin = 0;
   strategy_opts.time_provider_fcn = [](const Ticker& ticker) { return ticker.arrived_ts; };
