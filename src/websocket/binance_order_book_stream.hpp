@@ -110,6 +110,10 @@ private:
     OrderBookUpdate ob_update;
     ob_update.last_update_id = snapshot_json["lastUpdateId"].get<uint64_t>();
     ob_update.is_snapshot = true;
+    auto now = system_clock::now();
+    system_clock::duration tp = now.time_since_epoch();
+    microseconds us = duration_cast<microseconds>(tp);
+    ob_update.arrived_ts = us.count();
     for (const json& bid : snapshot_json["bids"]) {
       OrderBookUpdate::Level lvl;
       lvl.price = bid[0].get<std::string>();
@@ -127,8 +131,15 @@ private:
 
   OrderBookUpdate DeserializeOrderBookUpdate(const json& update_json) { 
     OrderBookUpdate ob_update;
+    // TODO: do we need to set it here?
+    // ob_update.symbol = SymbolPair::FromBinanceString(update_json["s"].get<std::string>());
+    // ob_update.exchange = NAME;
     ob_update.last_update_id = update_json["u"].get<uint64_t>();
     ob_update.is_snapshot = false;
+    auto now = system_clock::now();
+    system_clock::duration tp = now.time_since_epoch();
+    microseconds us = duration_cast<microseconds>(tp);
+    ob_update.arrived_ts = us.count();
     for (const json& bid : update_json["b"]) {
       OrderBookUpdate::Level lvl;
       lvl.price = bid[0].get<std::string>();

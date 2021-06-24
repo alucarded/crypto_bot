@@ -1,5 +1,7 @@
 #pragma once
 
+#include "symbol.h"
+
 #include <optional>
 #include <string>
 #include <vector>
@@ -16,4 +18,8 @@ struct OrderBookUpdate {
   bool is_snapshot;
   std::vector<Level> bids;
   std::vector<Level> asks;
+  // TODO: always set
+  uint64_t arrived_ts;
+  std::string exchange;
+  SymbolPairId symbol;
 };

@@ -67,6 +67,10 @@ binance_order_book_main:
 market_making_main:
 	g++ -pipe $(COMMON_SRC) src/market_making_main.cc -o market_making_main $(CFLAGS) $(LDFLAGS)
 
+.PHONY: indicators_generator_main
+indicators_generator_main:
+	g++ -pipe $(COMMON_SRC) src/strategy/indicator/order_book_imbalance.cc src/indicators_generator_main.cc -o indicators_generator_main $(CFLAGS) $(LDFLAGS)
+
 clean:
 	if [ -f collector ]; then rm collector; fi; \
 	if [ -f arbitrage_backtest ]; then rm arbitrage_backtest; fi; \

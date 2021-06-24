@@ -61,9 +61,14 @@ private:
         return;
       }
       TradeTicker ticker;
+      auto now = system_clock::now();
+      system_clock::duration tp = now.time_since_epoch();
+      microseconds us = duration_cast<microseconds>(tp);
+      ticker.arrived_ts = us.count();
       ticker.event_time = msg_json["E"].get<uint64_t>();
       ticker.trade_time = msg_json["T"].get<uint64_t>();
       ticker.symbol = SymbolPair::FromBinanceString(msg_json["s"].get<std::string>());
+      ticker.exchange = NAME;
       ticker.trade_id = std::to_string(msg_json["t"].get<uint64_t>());
       ticker.price = std::stod(msg_json["p"].get<std::string>());
       ticker.qty = std::stod(msg_json["q"].get<std::string>());

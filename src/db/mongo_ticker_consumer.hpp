@@ -62,13 +62,8 @@ public:
         auto coll = db[m_coll_name];
 
         using namespace std::chrono;
-        // Make sure system clock is adjusted in controlled manner
-        // on the machine where this runs.
-        // TODO: FIXME: set it when receiving message in TickerClient
-        auto now = system_clock::now();
-        system_clock::duration tp = now.time_since_epoch();
-        minutes mins = duration_cast<minutes>(tp);
-        microseconds us = duration_cast<microseconds>(tp);
+        microseconds us = microseconds(ticker.arrived_ts);
+        minutes mins = duration_cast<minutes>(us);
         // Save in bucket related to arrival minute (now)
         // Then during backtesting check what was the delay
         // and its impact on order execution.
@@ -90,7 +85,7 @@ public:
                 << "ask" << ticker.ask
                 << "ask_vol" << (ticker.ask_vol.has_value() ? ticker.ask_vol.value() : 0.0)
                 // Arrived timestamp in microseconds
-                << "a_us" << us.count()
+                << "a_us" << static_cast<int64_t>(ticker.arrived_ts)
                 // Source timestamp in microseconds
                 << "s_us" << (ticker.source_ts.has_value() ? ticker.source_ts.value() : 0.0)
                 << bsoncxx::builder::stream::close_document
@@ -112,13 +107,8 @@ public:
         auto coll = db[m_coll_name];
 
         using namespace std::chrono;
-        // Make sure system clock is adjusted in controlled manner
-        // on the machine where this runs.
-        // TODO: FIXME: set it when receiving message in TickerClient
-        auto now = system_clock::now();
-        system_clock::duration tp = now.time_since_epoch();
-        minutes mins = duration_cast<minutes>(tp);
-        microseconds us = duration_cast<microseconds>(tp);
+        microseconds us = microseconds(ob_update.arrived_ts);
+        minutes mins = duration_cast<minutes>(us);
         // Save in bucket related to arrival minute (now)
         // Then during backtesting check what was the delay
         // and its impact on order execution.
@@ -129,8 +119,8 @@ public:
         using bsoncxx::builder::basic::sub_array;
         using bsoncxx::builder::basic::sub_document;
         using bsoncxx::builder::basic::kvp;
-        push_doc.append(kvp("$push", [&ob_update, &us](sub_document subdoc) {
-            subdoc.append(kvp("updates", [&ob_update, &us](sub_document subdoc2) {
+        push_doc.append(kvp("$push", [&ob_update](sub_document subdoc) {
+            subdoc.append(kvp("updates", [&ob_update](sub_document subdoc2) {
                 subdoc2.append(
                     kvp("bids", [&ob_update](sub_array subarr) {
                         for (const auto& bid : ob_update.bids) {
@@ -155,7 +145,7 @@ public:
                             });
                         }
                 }));
-                    subdoc2.append(kvp("a_us", bsoncxx::types::b_int64{us.count()}));
+                    subdoc2.append(kvp("a_us", bsoncxx::types::b_int64{ob_update.arrived_ts}));
                     subdoc2.append(kvp("is_snapshot", bsoncxx::types::b_bool{ob_update.is_snapshot}));
                     subdoc2.append(kvp("last_update_id", bsoncxx::types::b_int64{static_cast<int64_t>(ob_update.last_update_id)}));
             }));
@@ -180,13 +170,8 @@ public:
         auto coll = db[m_coll_name];
 
         using namespace std::chrono;
-        // Make sure system clock is adjusted in controlled manner
-        // on the machine where this runs.
-        // TODO: FIXME: set it when receiving message in TickerClient
-        auto now = system_clock::now();
-        system_clock::duration tp = now.time_since_epoch();
-        minutes mins = duration_cast<minutes>(tp);
-        microseconds us = duration_cast<microseconds>(tp);
+        microseconds us = microseconds(ticker.arrived_ts);
+        minutes mins = duration_cast<minutes>(us);
         // Save in bucket related to arrival minute (now)
         // Then during backtesting check what was the delay
         // and its impact on order execution.
@@ -210,7 +195,7 @@ public:
                 << "qty" << ticker.qty
                 << "is_market_maker" << ticker.is_market_maker
                 // Arrived timestamp in microseconds
-                << "a_us" << us.count()
+                << "a_us" << static_cast<int64_t>(ticker.arrived_ts)
                 // Source timestamp in microseconds
                 << "s_us" << int64_t(ticker.trade_time)
                 << bsoncxx::builder::stream::close_document
