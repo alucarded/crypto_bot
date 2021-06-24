@@ -51,9 +51,9 @@ int main(int argc, char* argv[]) {
   ExchangeParams kraken_params;
   kraken_params.exchange_name = "kraken";
   kraken_params.slippage = 0;
-  kraken_params.fee = 0.0020;
+  kraken_params.fee = 0.0022;
   kraken_params.daily_volume = 3.404118345; // 3.404118345;
-  kraken_params.max_ticker_age_us = 10000000; // 30s
+  kraken_params.max_ticker_age_us = 30000000; // 3s
   kraken_params.max_ticker_delay_us = 1000000; // 1s
   strategy_opts.exchange_params = {
     { "binance", binance_params },
@@ -78,7 +78,7 @@ int main(int argc, char* argv[]) {
   };
   strategy_opts.min_trade_interval_us = 0;
   // The margin is applied to both sides
-  strategy_opts.arbitrage_match_profit_margin = 0.0001;
+  strategy_opts.arbitrage_match_profit_margin = 0.00015;
 
   BinanceClient binance_client;
   AccountManagerImpl binance_account_manager(&binance_client);
