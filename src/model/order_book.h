@@ -15,6 +15,8 @@
 
 #include "json/json.hpp"
 
+#include <boost/log/trivial.hpp>
+
 using json = nlohmann::json;
 
 using quantity_t = double;
@@ -196,6 +198,7 @@ public:
       double qty = std::stod(raw_lvl.volume);
       if (qty == 0) {
         DeleteBid(price_lvl);
+        continue;
       }
       PriceLevel level(price_lvl, qty, raw_lvl.timestamp.has_value() ? raw_lvl.timestamp.value() : 0);
       UpsertBid(level);
@@ -205,6 +208,7 @@ public:
       double qty = std::stod(raw_lvl.volume);
       if (qty == 0) {
         DeleteAsk(price_lvl);
+        continue;
       }
       PriceLevel level(price_lvl, qty, raw_lvl.timestamp.has_value() ? raw_lvl.timestamp.value() : 0);
       UpsertAsk(level);

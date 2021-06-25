@@ -227,12 +227,14 @@ private:
 
   void PushOrderBookUpdates(const bsoncxx::document::view& doc, EventsVector& events_vec) {
     bsoncxx::document::element exchange_elem = doc["exchange"];
-    std::string exchange = exchange_elem.get_value().get_utf8().value.to_string();
+    const auto& exchange = exchange_elem.get_value().get_utf8().value.to_string();
     SymbolPairId symbol = GetSymbol(doc);
     bsoncxx::types::b_array updates_arr = doc["updates"].get_array();
 
     for (bsoncxx::array::element update_doc : updates_arr.value) {
       OrderBookUpdate ob_update;
+      ob_update.exchange = exchange;
+      ob_update.symbol = symbol;
       bsoncxx::array::view bids_arr = update_doc["bids"].get_array();
       for (bsoncxx::array::element bid_doc : bids_arr) {
         bsoncxx::array::view bid_arr = bid_doc.get_array();
@@ -257,7 +259,7 @@ private:
       }
       ob_update.last_update_id = static_cast<uint64_t>(update_doc["last_update_id"].get_int64().value);
       ob_update.is_snapshot = update_doc["is_snapshot"].get_bool();
-      ob_update.arrived_ts = static_cast<uint64_t>(update_doc["arrived_ts"].get_int64().value);
+      ob_update.arrived_ts = static_cast<uint64_t>(update_doc["a_us"].get_int64().value);
       events_vec.push_back(ob_update);
     }
   }
@@ -282,7 +284,8 @@ private:
       }
     }
 
-    m_order_books.emplace_back(update.exchange, update.symbol, PrecisionSettings(cryptobot::precision_from_string(update.bids[0].price), cryptobot::precision_from_string(update.bids[0].volume), 3));
+    // TODO: configurable depth
+    m_order_books.emplace_back(update.exchange, update.symbol, 1000, PrecisionSettings(cryptobot::precision_from_string(update.bids[0].price), cryptobot::precision_from_string(update.bids[0].volume), 3));
     return m_order_books[m_order_books.size() - 1];
   }
 

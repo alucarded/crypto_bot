@@ -22,13 +22,13 @@ public:
   }
 
   virtual void OnBookTicker(const Ticker& ticker) override {
-    BOOST_LOG_TRIVIAL(debug) << "MarketMakingStrategy::OnBookTicker, ticker=" << ticker;
+    BOOST_LOG_TRIVIAL(trace) << "MarketMakingStrategy::OnBookTicker, ticker=" << ticker;
     assert(ticker.arrived_ts >= m_last_ts);
     m_last_ts = ticker.arrived_ts;
   }
 
   virtual void OnTradeTicker(const TradeTicker& ticker) override {
-    BOOST_LOG_TRIVIAL(debug) << "MarketMakingStrategy::OnTradeTicker, ticker=" << ticker;
+    BOOST_LOG_TRIVIAL(trace) << "MarketMakingStrategy::OnTradeTicker, ticker=" << ticker;
     assert(ticker.arrived_ts >= m_last_ts);
     m_last_ts = ticker.arrived_ts;
   }
