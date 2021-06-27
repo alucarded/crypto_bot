@@ -53,7 +53,7 @@ int main(int argc, char* argv[]) {
   kraken_params.slippage = 0;
   kraken_params.fee = 0.0022;
   kraken_params.daily_volume = 3.404118345; // 3.404118345;
-  kraken_params.max_ticker_age_us = 3000000; // 1s
+  kraken_params.max_ticker_age_us = 1000000; // 1s
   kraken_params.max_ticker_delay_us = 1000000; // 1s
   strategy_opts.exchange_params = {
     { "binance", binance_params },
