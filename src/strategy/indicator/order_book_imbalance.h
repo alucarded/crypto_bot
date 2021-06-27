@@ -2,9 +2,8 @@
 
 class OrderBookImbalance {
 public:
-  OrderBookImbalance(size_t limit);
+  OrderBookImbalance();
 
-  double Calculate(const OrderBook& ob) const;
-private:
-  size_t m_limit;
+  double Calculate(const OrderBook& ob, size_t limit) const;
+  double Calculate(const OrderBook& ob, double depth_coeff) const;
 };

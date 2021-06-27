@@ -5,6 +5,10 @@
 class MarketMakingStrategy : public ExchangeListener {
 public:
 
+  MarketMakingStrategy() : m_order_book_imbalance() {
+
+  }
+
   virtual ~MarketMakingStrategy() {
 
   }
