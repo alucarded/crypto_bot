@@ -74,8 +74,7 @@ private:
       ticker.qty = std::stod(msg_json["q"].get<std::string>());
       ticker.is_market_maker = msg_json["m"].get<bool>();
 
-      // TODO: reconnect/resubscribe all websocket clients when they are inactive for too long
-      // m_tickers_watcher.Set(SymbolPair(ticker.symbol), ticker.arrived_ts, ticker.arrived_ts);
+      m_tickers_watcher.Set(SymbolPair(ticker.symbol), ticker.arrived_ts, ticker.arrived_ts);
       m_exchange_listener->OnTradeTicker(ticker);
   }
 

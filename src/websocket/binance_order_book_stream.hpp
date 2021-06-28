@@ -24,10 +24,10 @@ public:
 
   BinanceOrderBookStream(const SymbolPairSettings& symbol_settings, BinanceClient* binance_client, ExchangeListener* exchange_listener)
       : WebsocketClient("wss://stream.binance.com:9443/ws/" + symbol_settings.GetLowerCaseSymbol() + "@depth", EXCHANGE_NAME), m_binance_client(binance_client), m_exchange_listener(exchange_listener),
-          m_tickers_watcher(30000, EXCHANGE_NAME, this),
+          m_tickers_watcher(30000, "binance_order_book", this),
           m_symbol_pair(SymbolPair::FromBinanceString(symbol_settings.symbol)),
           m_order_book(EXCHANGE_NAME, m_symbol_pair, 1000, PrecisionSettings(symbol_settings.price_precision, symbol_settings.order_precision, 3)) {
-        //m_tickers_watcher.Start();
+        m_tickers_watcher.Start();
   }
 
 private:
@@ -100,7 +100,8 @@ private:
         return;
       }
       m_previous_update_id = msg_json["u"].get<uint64_t>();
-      //m_tickers_watcher.Set(SymbolPair(ticker.symbol), 0, 0);
+      OrderBookUpdate update = DeserializeOrderBookUpdate(msg_json);
+      m_tickers_watcher.Set(SymbolPair(update.symbol), update.arrived_ts, update.arrived_ts);
       m_order_book.Update(DeserializeOrderBookUpdate(msg_json));
       m_exchange_listener->OnOrderBookUpdate(m_order_book);
   }
@@ -131,9 +132,8 @@ private:
 
   OrderBookUpdate DeserializeOrderBookUpdate(const json& update_json) { 
     OrderBookUpdate ob_update;
-    // TODO: do we need to set it here?
-    // ob_update.symbol = SymbolPair::FromBinanceString(update_json["s"].get<std::string>());
-    // ob_update.exchange = NAME;
+    ob_update.symbol = SymbolPair::FromBinanceString(update_json["s"].get<std::string>());
+    ob_update.exchange = EXCHANGE_NAME;
     ob_update.last_update_id = update_json["u"].get<uint64_t>();
     ob_update.is_snapshot = false;
     auto now = system_clock::now();
