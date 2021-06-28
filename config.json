@@ -4,5 +4,5 @@
   "port": "28888",
   "authSource": "findata",
   "db": "findata",
-  "collection": "ADAUSDT_Binance_Tickers_26_06_2021"
+  "collection": "ADAUSDT_Binance_Tickers_27_06_2021"
 }
