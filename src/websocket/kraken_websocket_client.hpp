@@ -33,7 +33,7 @@ public:
   static const std::unordered_map<SymbolPairId, PrecisionSettings> SENT_PRECISIONS;
 
   KrakenWebsocketClient(ExchangeListener* exchange_listener, bool validate = true)
-      : WebsocketClient("wss://ws.kraken.com", NAME), m_exchange_listener(exchange_listener), m_tickers_watcher(90000, NAME, this), m_order_book_handler(validate) {
+      : WebsocketClient("wss://ws.kraken.com", NAME), m_exchange_listener(exchange_listener), m_tickers_watcher(30000, NAME, this), m_order_book_handler(validate) {
     m_tickers_watcher.Start();
   }
 
@@ -49,6 +49,15 @@ public:
     SymbolPair sp = SymbolPair::FromKrakenString(symbol);
     SymbolPairId spid = SymbolPairId(sp);
     m_order_books.emplace(spid, OrderBook(NAME, spid, static_cast<size_t>(requested_depth), SENT_PRECISIONS.at(spid)));
+    WebsocketClient::send(message);
+  }
+
+  void SubscribeBookTicker(const std::string& symbol) {
+    std::string message = OrderBookSubscribeMsg(symbol, KrakenOrderBookDepth::DEPTH_10);
+    m_subscription_msg.push_back(message);
+    SymbolPair sp = SymbolPair::FromKrakenString(symbol);
+    SymbolPairId spid = SymbolPairId(sp);
+    m_order_books.emplace(spid, OrderBook(NAME, spid, 1, SENT_PRECISIONS.at(spid)));
     WebsocketClient::send(message);
   }
 

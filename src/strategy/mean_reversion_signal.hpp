@@ -1,7 +1,7 @@
 #include "indicator/average_true_range.hpp"
 #include "indicator/simple_moving_average.hpp"
 #include "model/candle.h"
-#include "trading_signal.hpp"
+#include "model/prediction.h"
 
 #include <boost/log/trivial.hpp>
 
@@ -19,7 +19,7 @@ struct MeanReversionSignalSettings {
   size_t atr_period;
 };
 
-class MeanReversionSignal : public TradingSignal {
+class MeanReversionSignal {
 public:
 
   MeanReversionSignal()
@@ -38,7 +38,7 @@ public:
 
   }
 
-  virtual Prediction Predict(double best_bid, double best_ask) const override {
+  Prediction Predict(double best_bid, double best_ask) const {
     // TODO: test that, clean that, backtest that...
     auto short_sma_opt = m_sma_short.Get();
     auto mid_sma_opt = m_sma_mid.Get();

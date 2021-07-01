@@ -27,6 +27,9 @@ ARBITRAGE_BACKTEST_SRC=src/backtest/backtest_results_processor.cc \
 			 src/db/mongo_ticker_producer.hpp \
        src/arbitrage_strategy_backtest.cc
 # ARBITRAGE_FLAGS=-DWITH_MEAN_REVERSION_SIGNAL
+MARKET_MAKING_SRC=src/strategy/market_making/market_making_strategy.cc \
+       src/strategy/market_making/market_making_signal.cc \
+			 src/strategy/indicator/order_book_imbalance.cc
 
 # TODO: One configurable collector (via file specifying exchanges, assets and data to collect)
 .PHONY: arbitrage_collector
@@ -65,7 +68,7 @@ binance_order_book_main:
 
 .PHONY: market_making_main
 market_making_main:
-	g++ -pipe $(COMMON_SRC) src/market_making_main.cc -o market_making_main $(CFLAGS) $(LDFLAGS)
+	g++ -pipe $(COMMON_SRC) $(MARKET_MAKING_SRC) src/market_making_main.cc -o market_making_main $(CFLAGS) $(LDFLAGS)
 
 .PHONY: indicators_generator_main
 indicators_generator_main:

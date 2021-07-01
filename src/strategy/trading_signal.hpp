@@ -1,16 +1,9 @@
-enum PriceOutlook : int {
-  BEARISH = -1,
-  NEUTRAL = 0,
-  BULLISH = 1
-};
+#pragma once
 
-struct Prediction {
-  PriceOutlook price_outlook;
-  double target_price;
-};
+#include "model/prediction.h"
 
+template <typename Input>
 class TradingSignal {
 public:
-// TODO: it is arbitrage-specific now..
-  virtual Prediction Predict(double best_bid, double best_ask) const = 0;
+  virtual RangePrediction Predict(const Input& input) const = 0;
 };
