@@ -1,11 +1,12 @@
 #include "exchange/exchange_listener.h"
 #include "market_making_signal.h"
+#include "market_making_risk_manager.h"
 #include "strategy/indicator/order_book_imbalance.h"
 
 class MarketMakingStrategy : public ExchangeListener {
 public:
 
-  MarketMakingStrategy();
+  MarketMakingStrategy(MarketMakingRiskManager& risk_manager);
 
   virtual ~MarketMakingStrategy();
 
@@ -20,6 +21,7 @@ public:
   virtual void OnOrderBookUpdate(const OrderBook& order_book) override;
 
 private:
+  MarketMakingRiskManager& m_risk_manager;
   OrderBookImbalance m_ob_imbalance;
   MarketMakingSignal m_signal;
 };

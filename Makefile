@@ -22,12 +22,12 @@ COMMON_SRC=src/model/order.cc \
 			 src/utils/string.cc
 ARBITRAGE_SRC=src/strategy/arbitrage/arbitrage_order_calculator.cc \
 			 src/strategy/arbitrage/arbitrage_strategy_matcher.cc
-ARBITRAGE_BACKTEST_SRC=src/backtest/backtest_results_processor.cc \
+BACKTEST_SRC=src/backtest/backtest_results_processor.cc \
 			 src/db/mongo_client.hpp \
-			 src/db/mongo_ticker_producer.hpp \
-       src/arbitrage_strategy_backtest.cc
+			 src/db/mongo_ticker_producer.hpp
 # ARBITRAGE_FLAGS=-DWITH_MEAN_REVERSION_SIGNAL
 MARKET_MAKING_SRC=src/strategy/market_making/market_making_strategy.cc \
+			 src/strategy/market_making/market_making_risk_manager.cc \
        src/strategy/market_making/market_making_signal.cc \
 			 src/strategy/indicator/order_book_imbalance.cc
 
@@ -42,7 +42,7 @@ market_making_collector:
 
 .PHONY: arbitrage_backtest
 arbitrage_backtest:
-	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_SRC) $(ARBITRAGE_BACKTEST_SRC) -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
+	g++ -pipe $(COMMON_SRC) $(ARBITRAGE_SRC) $(BACKTEST_SRC) src/arbitrage_strategy_backtest.cc -o arbitrage_backtest $(CFLAGS) $(LDFLAGS)
 
 .PHONY: unit_tests
 unit_tests:
@@ -73,6 +73,11 @@ market_making_main:
 .PHONY: indicators_generator_main
 indicators_generator_main:
 	g++ -pipe $(COMMON_SRC) src/strategy/indicator/order_book_imbalance.cc src/indicators_generator_main.cc -o indicators_generator_main $(CFLAGS) $(LDFLAGS)
+
+.PHONY: market_making_backtest
+market_making_backtest:
+	g++ -pipe $(COMMON_SRC) $(MARKET_MAKING_SRC) $(BACKTEST_SRC) src/market_making_backtest.cc -o market_making_backtest $(CFLAGS) $(LDFLAGS)
+
 
 clean:
 	if [ -f collector ]; then rm collector; fi; \

@@ -46,6 +46,7 @@ private:
   }
 
   virtual bool OnPing(websocketpp::connection_hdl conn, std::string payload) override {
+    return false;
   }
 
   virtual void OnMessage(websocketpp::connection_hdl, client::message_ptr msg) override {

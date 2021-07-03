@@ -31,7 +31,7 @@ public:
   }
 
 private:
-  virtual void OnOpen(websocketpp::connection_hdl conn) override {
+  virtual void OnOpen(websocketpp::connection_hdl) override {
     BOOST_LOG_TRIVIAL(trace) << "BinanceOrderBookStream::OnOpen begin";
     m_book_snapshot_future = std::async(std::launch::async, &BinanceOrderBookStream::GetOrderBookSnapshotInitial, this);
     BOOST_LOG_TRIVIAL(trace) << "Getting snapshot";
@@ -39,7 +39,7 @@ private:
     BOOST_LOG_TRIVIAL(trace) << "BinanceOrderBookStream::OnOpen end";
   }
 
-  virtual void OnClose(websocketpp::connection_hdl conn) override {
+  virtual void OnClose(websocketpp::connection_hdl) override {
     m_exchange_listener->OnConnectionClose(EXCHANGE_NAME);
   }
 

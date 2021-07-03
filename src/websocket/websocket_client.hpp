@@ -134,7 +134,7 @@ protected:
         reconnect(conn);
     }
 
-    void reconnect(websocketpp::connection_hdl conn) {
+    void reconnect(websocketpp::connection_hdl) {
         // Reconnect
         if (m_do_reconnect) {
             m_endpoint->stop();
@@ -166,7 +166,9 @@ protected:
     virtual void OnOpen(websocketpp::connection_hdl conn) = 0;
     virtual void OnClose(websocketpp::connection_hdl conn) = 0;
     virtual void OnMessage(websocketpp::connection_hdl conn, client::message_ptr msg) = 0;
-    virtual bool OnPing(websocketpp::connection_hdl conn, std::string payload) {}
+    virtual bool OnPing(websocketpp::connection_hdl, std::string) {
+        return false;
+    }
 
 protected:
     std::string m_uri;

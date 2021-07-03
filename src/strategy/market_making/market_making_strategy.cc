@@ -1,6 +1,6 @@
 #include "market_making_strategy.h"
 
-MarketMakingStrategy::MarketMakingStrategy() : m_ob_imbalance() {
+MarketMakingStrategy::MarketMakingStrategy(MarketMakingRiskManager& risk_manager) : m_risk_manager(risk_manager), m_ob_imbalance() {
 
 }
 

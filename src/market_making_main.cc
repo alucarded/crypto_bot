@@ -1,6 +1,10 @@
+#include "http/binance_client.hpp"
 #include "model/symbol.h"
 #include "strategy/market_making/market_making_strategy.h"
+#include "websocket/binance_book_ticker_stream.hpp"
+#include "websocket/binance_order_book_stream.hpp"
 #include "websocket/binance_trade_ticker_stream.hpp"
+#include "websocket/binance_user_data_stream.hpp"
 
 #include <boost/log/core.hpp>
 #include <boost/log/trivial.hpp>
@@ -33,15 +37,44 @@ int main(int argc, char* argv[]) {
   InitLogging();
   BOOST_LOG_TRIVIAL(info) << "Boost logging configured";
 
-  MarketMakingStrategy market_making_strategy;
+  // Risk manager, manages orders
+  MarketMakingRiskMangerOptions risk_manager_options;
+  BinanceClient binance_orders_client;
+  MarketMakingRiskManager risk_manager(risk_manager_options, &binance_orders_client);
+
+  // User data stream
+  BinanceUserDataStream binance_stream = BinanceUserDataStream::Create(risk_manager);
+  std::promise<void> binance_stream_promise;
+  std::future<void> binance_user_future = binance_stream_promise.get_future();
+  binance_stream.start(std::move(binance_stream_promise));
+  binance_user_future.wait();
+
+  MarketMakingStrategy market_making_strategy(risk_manager);
+
+  // Market data streams
+  BinanceBookTickerStream binance_book_ticker_stream(&market_making_strategy);
+  std::promise<void> binance_book_ticker_promise;
+  std::future<void> binance_book_ticker_future = binance_book_ticker_promise.get_future();
+  binance_book_ticker_stream.start(std::move(binance_book_ticker_promise));
+  binance_book_ticker_future.wait();
+
+  binance_book_ticker_stream.SubscribeTicker("adausdt");
 
   BinanceTradeTickerStream trade_ticker_stream(&market_making_strategy);
-  std::promise<void> binance_promise;
-  std::future<void> binance_future = binance_promise.get_future();
-  trade_ticker_stream.start(std::move(binance_promise));
-  binance_future.wait();
+  std::promise<void> binance_trade_ticker_promise;
+  std::future<void> binance_trade_ticker_future = binance_trade_ticker_promise.get_future();
+  trade_ticker_stream.start(std::move(binance_trade_ticker_promise));
+  binance_trade_ticker_future.wait();
 
   trade_ticker_stream.SubscribeTicker("adausdt");
 
+  BinanceClient binance_client;
+  BinanceSettings binance_settings = binance_client.GetBinanceSettings();
+  // TODO: specify pair from config
+  BinanceOrderBookStream binance_order_book_stream(binance_settings.GetPairSettings(SymbolPairId::ADA_USDT), &binance_client, &market_making_strategy);
+  std::promise<void> binance_order_book_promise;
+  std::future<void> binance_order_book_future = binance_order_book_promise.get_future();
+  binance_order_book_stream.start(std::move(binance_order_book_promise));
+  
   std::this_thread::sleep_until(std::chrono::time_point<std::chrono::system_clock>::max());
 };
