@@ -168,6 +168,33 @@ public:
     return Result<Order>(res.response, Order(std::move(std::to_string(order_id)), std::move(client_order_id), symbol, side, OrderType::LIMIT, qty, price, Order::GetStatus(status)));
   }
 
+  virtual Result<Order> SendOrder(const Order& order) override {
+    HttpClient::Result res;
+    if (order.GetType() == OrderType::MARKET) {
+      //res = SendMarketOrder(order);
+      throw std::runtime_error("BinanceClient::SendOrder: Market order not implemented");
+    } else if (order.GetType() == OrderType::LIMIT) {
+      res = SendLimitOrder(order);
+    } else {
+      throw std::runtime_error("BinanceClient::SendOrder: Unsupported order type");
+    }
+    if (!res) {
+      BOOST_LOG_TRIVIAL(error) << "Error making limit order request for " << GetExchange() << ": " << res.errmsg;
+      return Result<Order>(res.response, res.errmsg);
+    }
+    json res_json = json::parse(res.response);
+    if (!res_json.contains("orderId")) {
+      const auto& errmsg = res_json["msg"].get<std::string>();
+      BOOST_LOG_TRIVIAL(error) << "Error response making limit order request for "
+          << GetExchange() << ": " << errmsg;
+      return Result<Order>(res.response, errmsg);
+    }
+    auto order_id = res_json["orderId"].get<int64_t>();
+    auto client_order_id = res_json["clientOrderId"].get<std::string>();
+    const auto& status = res_json["status"].get<std::string>();
+    return Result<Order>(res.response, Order(std::move(std::to_string(order_id)), std::move(client_order_id), order.GetSymbolId(), order.GetSide(), order.GetType(), order.GetQuantity(), order.GetPrice(), Order::GetStatus(status)));
+  }
+
   virtual void CancelAllOrders() override {
 
   }
@@ -288,6 +315,32 @@ public:
     return Result<json>(res.response, response_json);
   }
 private:
+
+  HttpClient::Result SendMarketOrder(const Order& order) {
+
+  }
+
+  HttpClient::Result SendLimitOrder(const Order& order) {
+    const auto& new_client_id = order.GetClientId();
+    SymbolPairId symbol = order.GetSymbolId();
+    Side side = order.GetSide();
+    double qty = order.GetQuantity();
+    double price = order.GetPrice();
+    const std::string& symbol_str = GetSymbolString(symbol);
+    auto pair_settings = m_binance_settings.GetPairSettings(symbol);
+    return m_http_client.post(HOST, PORT, ADD_ORDER_PATH)
+      .Header("X-MBX-APIKEY", g_api_key)
+      .QueryParam("symbol", symbol_str)
+      .QueryParam("side", (side == Side::BUY ? "BUY" : "SELL"))
+      .QueryParam("type", "LIMIT")
+      .QueryParam("quantity", cryptobot::to_string(qty, pair_settings.order_precision))
+      .QueryParam("price", cryptobot::to_string(price, pair_settings.price_precision))
+      .QueryParam("newClientOrderId", new_client_id)
+      // TODO: for now always GTC
+      .QueryParam("timeInForce", "GTC")
+      .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
+      .send();
+  }
 
   const std::string& GetSymbolString(SymbolPairId symbol) const {
     if (BINANCE_SYMBOL_TO_STRING_MAP.count(symbol) == 0) {

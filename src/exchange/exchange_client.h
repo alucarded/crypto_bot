@@ -54,6 +54,7 @@ public:
   //virtual Result<bool> Ping() = 0;
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) = 0;
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) = 0;
+  virtual Result<Order> SendOrder(const Order& order) = 0;
   virtual Result<AccountBalance> GetAccountBalance() = 0;
   virtual Result<std::vector<Order>> GetOpenOrders() = 0;
   virtual void CancelAllOrders() = 0;

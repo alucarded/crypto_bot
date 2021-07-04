@@ -180,6 +180,11 @@ public:
       return Result<Order>(res.response, Order(order_id, order_id, symbol, side, OrderType::LIMIT, qty));
   }
 
+  virtual Result<Order> SendOrder(const Order& order) override {
+    // TODO:
+    return Result<Order>("", order);
+  }
+
   virtual void CancelAllOrders() override {
 
   }

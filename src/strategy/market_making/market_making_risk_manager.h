@@ -2,8 +2,12 @@
 #include "exchange/user_data_listener.hpp"
 #include "model/prediction.h"
 
-struct MarketMakingRiskMangerOptions {
+#include <mutex>
 
+struct MarketMakingRiskMangerOptions {
+  double default_order_qty;
+  double exchange_fee;
+  double our_fee;
 };
 
 class MarketMakingRiskManager : public UserDataListener {
@@ -20,12 +24,19 @@ public:
 
   virtual void OnOrderUpdate(const Order&) override;
 
-  void OnPrediction(const RangePrediction&);
+  void OnPricePrediction(const MarketMakingPrediction&);
+
+private:
+  std::vector<Order> CalculateOrders(const MarketMakingPrediction&);
 
 private:
   MarketMakingRiskMangerOptions m_options;
   ExchangeClient* m_exchange_client;
-  std::vector<Order> m_ask_orders;
-  std::vector<Order> m_bid_orders;
+  std::vector<Order> m_orders;
   AccountBalance m_account_balance;
+  // Amount of asset traded by the program.
+  // Positive value means long position, negative value means short position.
+  double m_trading_balance;
+  uint64_t m_last_order_id;
+  std::mutex m_order_mutex;
 };

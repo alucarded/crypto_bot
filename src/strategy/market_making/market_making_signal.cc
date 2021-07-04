@@ -4,8 +4,8 @@ MarketMakingSignal::~MarketMakingSignal() {
 
 }
 
-RangePrediction MarketMakingSignal::Predict(const MarketMakingPredictionData& data) const {
-  RangePrediction res;
+MarketMakingPrediction MarketMakingSignal::Predict(const MarketMakingPredictionData& data) const {
+  MarketMakingPrediction res;
   // TODO
   return res;
 }

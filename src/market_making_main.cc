@@ -26,7 +26,7 @@ void InitLogging() {
   //logging::add_file_log(keywords::file_name = "cryptobot.log", boost::log::keywords::target = "/mnt/e/logs");
   //logging::add_console_log(std::cout, boost::log::keywords::format = ">> %Message%");
   logging::core::get()->set_filter(
-      logging::trivial::severity >= logging::trivial::trace);
+      logging::trivial::severity >= logging::trivial::info);
   logging::add_common_attributes();
 }
 
@@ -39,6 +39,9 @@ int main(int argc, char* argv[]) {
 
   // Risk manager, manages orders
   MarketMakingRiskMangerOptions risk_manager_options;
+  risk_manager_options.default_order_qty = 100;
+  risk_manager_options.exchange_fee = 0.00075;
+  risk_manager_options.our_fee = 0.00025;
   BinanceClient binance_orders_client;
   MarketMakingRiskManager risk_manager(risk_manager_options, &binance_orders_client);
 

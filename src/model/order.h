@@ -210,6 +210,18 @@ public:
     return *this;
   }
 
+  bool operator==(const Order& o) {
+    const auto& other_id = o.GetId();
+    if (!this->m_id.empty() && !other_id.empty()) {
+      return this->m_id == other_id;
+    }
+    const auto& other_client_id = o.GetClientId();
+    if (!this->m_client_id.empty() && !other_client_id.empty()) {
+      return this->m_client_id == other_client_id;
+    }
+    return false;
+  }
+
   // Getters
   inline const std::string& GetId() const { return m_id; }
   inline const std::string& GetClientId() const { return m_client_id; }

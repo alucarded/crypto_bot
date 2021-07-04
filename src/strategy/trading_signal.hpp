@@ -2,8 +2,8 @@
 
 #include "model/prediction.h"
 
-template <typename Input>
+template <typename Input, typename Output>
 class TradingSignal {
 public:
-  virtual RangePrediction Predict(const Input& input) const = 0;
+  virtual Output Predict(const Input& input) const = 0;
 };

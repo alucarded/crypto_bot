@@ -10,8 +10,8 @@ struct MarketMakingPredictionData {
   std::vector<double> trade_prices;
 };
 
-class MarketMakingSignal : public TradingSignal<MarketMakingPredictionData> {
+class MarketMakingSignal : public TradingSignal<MarketMakingPredictionData, MarketMakingPrediction> {
 public:
   virtual ~MarketMakingSignal();
-  virtual RangePrediction Predict(const MarketMakingPredictionData& data) const override;
+  virtual MarketMakingPrediction Predict(const MarketMakingPredictionData& data) const override;
 };

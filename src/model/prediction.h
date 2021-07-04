@@ -1,5 +1,7 @@
 #pragma once
 
+#include "symbol.h"
+
 #include <cstdint>
 
 enum PriceOutlook : int {
@@ -9,14 +11,21 @@ enum PriceOutlook : int {
 };
 
 struct Prediction {
+  SymbolPairId symbol;
   PriceOutlook price_outlook;
+  // Mid price prediction
   double target_price;
+  // Base price
+  double base_price;
+  double confidence;
+  uint64_t timeframe_ms;
 };
 
-struct RangePrediction {
-  // By how much will the reference price drop within timeframe_ms time frame
-  double min_change;
-  // By how much will the reference price rise within timeframe_ms time frame
-  double max_change;
+struct MarketMakingPrediction {
+  SymbolPairId symbol;
+  double base_price;
+  // From -1.0 to 1.0; -1.0 means extremely bearish, 1.0 means extremely bullish
+  double signal;
+  double confidence;
   uint64_t timeframe_ms;
 };
