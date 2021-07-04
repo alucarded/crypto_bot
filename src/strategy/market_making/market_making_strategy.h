@@ -24,4 +24,5 @@ private:
   MarketMakingRiskManager& m_risk_manager;
   OrderBookImbalance m_ob_imbalance;
   MarketMakingSignal m_signal;
+  Ticker m_book_ticker;
 };
