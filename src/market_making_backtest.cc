@@ -55,6 +55,9 @@ int main(int argc, char* argv[]) {
 
   // Risk manager, manages orders
   MarketMakingRiskMangerOptions risk_manager_options;
+  risk_manager_options.default_order_qty = 100;
+  risk_manager_options.exchange_fee = 0.00075;
+  risk_manager_options.our_fee = 0.00025;
   MarketMakingRiskManager risk_manager(risk_manager_options, &binance_backtest_client);
 
   MarketMakingStrategy market_making_strategy(risk_manager);

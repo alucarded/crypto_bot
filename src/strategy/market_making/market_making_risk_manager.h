@@ -37,6 +37,5 @@ private:
   // Amount of asset traded by the program.
   // Positive value means long position, negative value means short position.
   double m_trading_balance;
-  uint64_t m_last_order_id;
   std::mutex m_order_mutex;
 };
