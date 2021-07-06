@@ -51,6 +51,7 @@ int main(int argc, char* argv[]) {
     {SymbolId::ADA, 10000.0},
     {SymbolId::USDT, 24000}
   };
+
   BacktestExchangeClient binance_backtest_client(binance_backtest_settings, backtest_results_processor);
 
   // Risk manager, manages orders
@@ -60,12 +61,14 @@ int main(int argc, char* argv[]) {
   risk_manager_options.our_fee = 0.00025;
   MarketMakingRiskManager risk_manager(risk_manager_options, &binance_backtest_client);
 
+  // Report back about order and account balance changes
+  binance_backtest_client.RegisterUserDataListener(&risk_manager);
+
   MarketMakingStrategy market_making_strategy(risk_manager);
 
   MongoTickerProducer mongo_producer(mongo_client, config_json["db"].get<std::string>(), config_json["collection"].get<std::string>());
   // First register clients, so that execution price is same as seen price
-  // mongo_producer.Register(&binance_backtest_client);
-  // mongo_producer.Register(&kraken_backtest_client);
+  mongo_producer.Register(&binance_backtest_client);
   mongo_producer.Register(&market_making_strategy);
 
   int64_t count = mongo_producer.Produce();

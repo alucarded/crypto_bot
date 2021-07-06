@@ -3,6 +3,7 @@
 #include "exchange/account_balance_listener.h"
 #include "exchange/account_manager.h"
 #include "exchange/exchange_listener.h"
+#include "exchange/user_data_listener.hpp"
 
 #include <chrono>
 #include <iostream>
@@ -34,10 +35,15 @@ struct OrderRequest {
 class BacktestExchangeClient : public AccountManager, public ExchangeListener {
 public:
   BacktestExchangeClient(const BacktestSettings& settings, AccountBalanceListener& balance_listener) : m_settings(settings),
-  m_account_balance(settings.initial_balances, settings.exchange), m_update_timestamp_us(0), m_balance_listener(balance_listener), m_last_order_id(0) {
+  m_account_balance(settings.initial_balances, settings.exchange), m_update_timestamp_us(0), m_balance_listener(balance_listener),
+  m_user_data_listener(nullptr), m_last_order_id(0) {
   }
 
   virtual ~BacktestExchangeClient() {
+  }
+
+  void RegisterUserDataListener(UserDataListener* listener) {
+    m_user_data_listener = listener;
   }
 
   // ExchangeClient
@@ -71,7 +77,23 @@ public:
   }
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
-    return AddLimitOrder(symbol, side, qty, price);
+    uint64_t order_id = ++m_last_order_id;
+    std::string order_id_str = std::to_string(order_id);
+    return AddLimitOrder(order_id_str, symbol, side, qty, price);
+  }
+
+  virtual Result<Order> SendOrder(const Order& order) override {
+    SymbolPairId symbol = order.GetSymbolId();
+    Side side = order.GetSide();
+    double qty = order.GetQuantity();
+    switch (order.GetType()) {
+      case OrderType::LIMIT:
+        return AddLimitOrder(order.GetClientId(), symbol, side, qty, order.GetPrice());
+      case OrderType::MARKET:
+        return MarketOrder(symbol, side, qty);
+      default:
+        throw std::runtime_error("BacktestExchangeClient::SendOrder: Unsupported order type");
+    }
   }
 
   virtual Result<AccountBalance> GetAccountBalance() override {
@@ -153,13 +175,11 @@ private:
 
   // TODO: move the private methods to a separate class ? (Backtest)OrderExecutionEngine?
 
-  Result<Order> AddLimitOrder(SymbolPairId symbol, Side side, double qty, double price) {
+  Result<Order> AddLimitOrder(const std::string& client_id, SymbolPairId symbol, Side side, double qty, double price) {
     BOOST_LOG_TRIVIAL(trace) << "AddLimitOrder begin";
-    uint64_t order_id = ++m_last_order_id;
-    std::string order_id_str = std::to_string(order_id);
     Order::Builder order_builder = Order::CreateBuilder();
-    Order order = order_builder.Id(order_id_str)
-        .ClientId(order_id_str)
+    Order order = order_builder.Id("")
+        .ClientId(client_id)
         .Symbol(symbol)
         .Side_(side)
         .OrderType_(OrderType::LIMIT)
@@ -177,7 +197,7 @@ private:
 
   void HandlePendingMarketOrders(const Ticker& ticker) {
     for (size_t i = 0; i < m_pending_market_orders.size(); ++i) {
-      const auto& order_request = m_pending_market_orders[i];
+      auto& order_request = m_pending_market_orders[i];
       if (order_request.order.GetSymbolId() != ticker.symbol) {
         continue;
       }
@@ -196,7 +216,7 @@ private:
     }
   }
 
-  void ExecuteMarketOrder(const Order& order, const Ticker& ticker) {
+  void ExecuteMarketOrder(Order& order, const Ticker& ticker) {
     const SymbolPair& sp = ticker.symbol;
     SymbolId base_asset_id = sp.GetBaseAsset();
     SymbolId quote_asset_id = sp.GetQuoteAsset();
@@ -226,14 +246,21 @@ private:
       m_account_balance.AddBalance(base_asset_id, total_qty);
       BOOST_LOG_TRIVIAL(info) << "Bought " << total_qty << " for " << cost;
     }
+    if (m_user_data_listener) {
+      order.SetPrice(price);
+      order.SetTotalCost(cost);
+      order.SetExecutedQuantity(total_qty);
+      order.SetStatus(OrderStatus::FILLED);
+      m_user_data_listener->OnOrderUpdate(order);
+    }
     m_balance_listener.OnAccountBalanceUpdate(m_account_balance);
   }
 
   void HandlePendingLimitOrders(const Ticker& ticker) {
     BOOST_LOG_TRIVIAL(trace) << "HandlePendingLimitOrders begin";
     for (size_t i = 0; i < m_pending_limit_orders.size(); ++i) {
-      const auto& order_request = m_pending_limit_orders[i];
-      const auto& order = order_request.order;
+      auto& order_request = m_pending_limit_orders[i];
+      auto& order = order_request.order;
       if (order.GetSymbolId() != SymbolPairId(ticker.symbol)) {
         continue;
       }
@@ -267,6 +294,8 @@ private:
             m_limit_orders.push_back(order);
           }
         }
+        m_pending_limit_orders.erase(m_pending_limit_orders.begin() + i);
+        --i;
       }
     }
     BOOST_LOG_TRIVIAL(trace) << "HandlePendingLimitOrders end";
@@ -278,7 +307,7 @@ private:
     SymbolId base_asset_id = ticker.symbol.GetBaseAsset();
     SymbolId quote_asset_id = ticker.symbol.GetQuoteAsset();
     for (size_t i = 0; i < m_limit_orders.size(); ++i) {
-      const auto& order = m_limit_orders[i];
+      auto& order = m_limit_orders[i];
       if (order.GetSymbolId() != SymbolPairId(ticker.symbol)) {
         continue;
       }
@@ -291,6 +320,12 @@ private:
           double cost = ticker.bid * order.GetQuantity() * (1.0 - m_settings.fee);
           m_account_balance.AddBalance(quote_asset_id, cost);
           m_account_balance.AddBalance(base_asset_id, -order.GetQuantity());
+          if (m_user_data_listener) {
+            order.SetTotalCost(cost);
+            order.SetExecutedQuantity(order.GetQuantity());
+            order.SetStatus(OrderStatus::FILLED);
+            m_user_data_listener->OnOrderUpdate(order);
+          }
           m_limit_orders.erase(m_limit_orders.begin() + i);
           m_balance_listener.OnAccountBalanceUpdate(m_account_balance);
           continue;
@@ -303,6 +338,12 @@ private:
           double cost = ticker.ask * order.GetQuantity() * (1.0 + m_settings.fee);
           m_account_balance.AddBalance(quote_asset_id, -cost);
           m_account_balance.AddBalance(base_asset_id, order.GetQuantity());
+          if (m_user_data_listener) {
+            order.SetTotalCost(cost);
+            order.SetExecutedQuantity(order.GetQuantity());
+            order.SetStatus(OrderStatus::FILLED);
+            m_user_data_listener->OnOrderUpdate(order);
+          }
           m_limit_orders.erase(m_limit_orders.begin() + i);
           m_balance_listener.OnAccountBalanceUpdate(m_account_balance);
           continue;
@@ -320,5 +361,6 @@ private:
   std::unordered_map<SymbolPairId, Ticker> m_tickers;
   // std::unordered_map<SymbolPairId, Ticker> m_previous_tickers;
   AccountBalanceListener& m_balance_listener;
+  UserDataListener* m_user_data_listener;
   uint64_t m_last_order_id;
 };
