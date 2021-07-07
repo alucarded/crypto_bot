@@ -7,6 +7,8 @@ GTESTS=src/backtest/backtest_exchange_client_unittest.cc \
        src/exchange/account_manager_unittest.cc \
        src/strategy/arbitrage/arbitrage_strategy_matcher_unittest.cc \
        src/strategy/arbitrage/arbitrage_order_calculator_unittest.cc \
+			 src/strategy/indicator/relative_strength_index.cc \
+			 src/strategy/indicator/relative_strength_index_unittest.cc \
        src/strategy/indicator/simple_moving_average_unittest.cc \
 			 src/utils/string_unittest.cc
 
@@ -29,7 +31,8 @@ BACKTEST_SRC=src/backtest/backtest_results_processor.cc \
 MARKET_MAKING_SRC=src/strategy/market_making/market_making_strategy.cc \
 			 src/strategy/market_making/market_making_risk_manager.cc \
        src/strategy/market_making/market_making_signal.cc \
-			 src/strategy/indicator/order_book_imbalance.cc
+			 src/strategy/indicator/order_book_imbalance.cc \
+			 src/strategy/indicator/relative_strength_index.cc
 
 # TODO: One configurable collector (via file specifying exchanges, assets and data to collect)
 .PHONY: arbitrage_collector

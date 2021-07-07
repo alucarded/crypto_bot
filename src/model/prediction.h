@@ -26,6 +26,5 @@ struct MarketMakingPrediction {
   double base_price;
   // From -1.0 to 1.0; -1.0 means extremely bearish, 1.0 means extremely bullish
   double signal;
-  double confidence;
   uint64_t timeframe_ms;
 };

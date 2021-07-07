@@ -110,6 +110,10 @@ Result<Order> AccountManagerImpl::LimitOrder(SymbolPairId symbol, Side side, dou
   return res;
 }
 
+Result<Order> AccountManagerImpl::SendOrder(const Order&ls) {
+  throw std::runtime_error("AccountManagerImpl::SendOrder is not implemented");
+}
+
 // This will return the cached balance
 Result<AccountBalance> AccountManagerImpl::GetAccountBalance() {
   return Result<AccountBalance>("", m_account_balance);

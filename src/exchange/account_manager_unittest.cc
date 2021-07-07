@@ -10,6 +10,7 @@ public:
   MOCK_METHOD(std::string, GetExchange, (), (override));
   MOCK_METHOD(Result<Order>, MarketOrder, (SymbolPairId symbol, Side side, double qty), (override));
   MOCK_METHOD(Result<Order>, LimitOrder, (SymbolPairId symbol, Side side, double qty, double price), (override));
+  MOCK_METHOD(Result<Order>, SendOrder, (const Order& order), (override));
   MOCK_METHOD(Result<AccountBalance>, GetAccountBalance, (), (override));
   MOCK_METHOD(Result<std::vector<Order>>, GetOpenOrders, (), (override));
   MOCK_METHOD(void, CancelAllOrders, (), (override));

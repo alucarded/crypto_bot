@@ -60,6 +60,9 @@ std::vector<Order> MarketMakingRiskManager::CalculateOrders(const MarketMakingPr
     return {};
   }
   double sell_price = prediction.base_price/(1.0d - m_options.exchange_fee - m_options.our_fee);
+  sell_price += prediction.signal*(sell_price - prediction.base_price);
+  double buy_price = prediction.base_price/(1.0d + m_options.exchange_fee + m_options.our_fee);
+  buy_price += prediction.signal*(prediction.base_price - buy_price);
   //boost::uuids::uuid sell_order_id(boost::uuids::random_generator()());
   std::string sell_order_id = boost::uuids::to_string(boost::uuids::random_generator()());
   Order sell_order = Order::CreateBuilder()
@@ -72,7 +75,6 @@ std::vector<Order> MarketMakingRiskManager::CalculateOrders(const MarketMakingPr
     .Price(sell_price)
     .Build();
   res.push_back(sell_order);
-  double buy_price = prediction.base_price/(1.0d + m_options.exchange_fee + m_options.our_fee);
   std::string buy_order_id = boost::uuids::to_string(boost::uuids::random_generator()());
   Order buy_order = Order::CreateBuilder()
     .Id("")

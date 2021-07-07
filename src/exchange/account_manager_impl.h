@@ -49,6 +49,8 @@ public:
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override;
 
+  virtual Result<Order> SendOrder(const Order& order) override;
+
   // UserDataListener
 
   virtual void OnConnectionOpen(const std::string& name) override;
