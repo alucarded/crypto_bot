@@ -172,14 +172,14 @@ public:
 
   Order(const Order& o)
       : m_id(o.m_id), m_client_id(o.m_client_id), m_symbol_id(o.m_symbol_id), m_side(o.m_side), m_order_type(o.m_order_type),
-      m_quantity(o.m_quantity), m_price(o.m_price), m_status(o.m_status),
+      m_quantity(o.m_quantity), m_price(o.m_price), m_status(o.m_status),  m_creation_time_us(o.m_creation_time_us),
       m_executed_quantity(o.m_executed_quantity), m_total_cost(o.m_total_cost) {
 
   }
 
   Order(Order&& o)
       : m_id(std::move(o.m_id)), m_client_id(std::move(o.m_client_id)), m_symbol_id(o.m_symbol_id), m_side(o.m_side), m_order_type(o.m_order_type),
-      m_quantity(o.m_quantity), m_price(o.m_price), m_status(o.m_status),
+      m_quantity(o.m_quantity), m_price(o.m_price), m_status(o.m_status),  m_creation_time_us(o.m_creation_time_us),
       m_executed_quantity(o.m_executed_quantity), m_total_cost(o.m_total_cost) {
 
   }

@@ -46,6 +46,10 @@ void MarketMakingRiskManager::OnOrderUpdate(const Order& order) {
 
 void MarketMakingRiskManager::OnPricePrediction(const MarketMakingPrediction& prediction) {
   std::scoped_lock<std::mutex> order_lock{m_order_mutex};
+  // Check existing orders
+  for (const auto& order : m_orders) {
+  }
+  // Add new orders
   std::vector<Order> orders = CalculateOrders(prediction);
   for (const auto& order : orders) {
     m_orders.push_back(order);
@@ -65,6 +69,7 @@ std::vector<Order> MarketMakingRiskManager::CalculateOrders(const MarketMakingPr
   buy_price += prediction.signal*(prediction.base_price - buy_price);
   //boost::uuids::uuid sell_order_id(boost::uuids::random_generator()());
   std::string sell_order_id = boost::uuids::to_string(boost::uuids::random_generator()());
+  BOOST_LOG_TRIVIAL(trace) << "Prediction time: " << prediction.timestamp_us;
   Order sell_order = Order::CreateBuilder()
     .Id("")
     .ClientId(sell_order_id)

@@ -79,7 +79,16 @@ public:
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
     uint64_t order_id = ++m_last_order_id;
     std::string order_id_str = std::to_string(order_id);
-    return AddLimitOrder(order_id_str, symbol, side, qty, price);
+    Order order = Order::CreateBuilder()
+      .Id(order_id_str)
+      .ClientId(order_id_str)
+      .Symbol(symbol)
+      .Side_(side)
+      .OrderType_(OrderType::LIMIT)
+      .Quantity(qty)
+      .Price(price)
+      .Build();
+    return AddLimitOrder(order);
   }
 
   virtual Result<Order> SendOrder(const Order& order) override {
@@ -88,7 +97,7 @@ public:
     double qty = order.GetQuantity();
     switch (order.GetType()) {
       case OrderType::LIMIT:
-        return AddLimitOrder(order.GetClientId(), symbol, side, qty, order.GetPrice());
+        return AddLimitOrder(order);
       case OrderType::MARKET:
         return MarketOrder(symbol, side, qty);
       default:
@@ -174,20 +183,10 @@ public:
 private:
 
   // TODO: move the private methods to a separate class ? (Backtest)OrderExecutionEngine?
-
-  Result<Order> AddLimitOrder(const std::string& client_id, SymbolPairId symbol, Side side, double qty, double price) {
+  Result<Order> AddLimitOrder(Order order) {
     BOOST_LOG_TRIVIAL(trace) << "AddLimitOrder begin";
-    Order::Builder order_builder = Order::CreateBuilder();
-    Order order = order_builder.Id("")
-        .ClientId(client_id)
-        .Symbol(symbol)
-        .Side_(side)
-        .OrderType_(OrderType::LIMIT)
-        .Quantity(qty)
-        .Price(price)
-        .OrderStatus_(OrderStatus::NEW)
-        .Build();
     OrderRequest order_req;
+    order.SetStatus(OrderStatus::NEW);
     order_req.order = std::move(order);
     order_req.creation_timestamp_us = m_update_timestamp_us;
     m_pending_limit_orders.push_back(order_req);
