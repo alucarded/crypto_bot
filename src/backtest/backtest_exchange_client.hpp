@@ -53,6 +53,7 @@ public:
   }
 
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override {
+    // TODO: check balance
     uint64_t order_id = ++m_last_order_id;
     std::string order_id_str = std::to_string(order_id);
     Order::Builder order_builder = Order::CreateBuilder();
@@ -193,9 +194,29 @@ public:
 
 private:
 
+  bool CanExecuteOrder(const Order& order) const {
+    SymbolPair symbol_pair(order.GetSymbolId());
+    if (order.GetSide() == Side::SELL) {
+      SymbolId base_asset = symbol_pair.GetBaseAsset();
+      if (m_account_balance.GetFreeBalance(base_asset) < order.GetQuantity()) {
+        return false;
+      }
+    } else {
+      SymbolId quote_asset = symbol_pair.GetQuoteAsset();
+      if (m_account_balance.GetFreeBalance(quote_asset) < order.GetQuantity()*order.GetPrice()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   // TODO: move the private methods to a separate class ? (Backtest)OrderExecutionEngine?
   Result<Order> AddLimitOrder(Order order) {
     BOOST_LOG_TRIVIAL(trace) << "AddLimitOrder begin";
+    if (!CanExecuteOrder(order)) {
+      return Result<Order>("", "Insufficient funds");
+    }
+
     OrderRequest order_req;
     order.SetStatus(OrderStatus::NEW);
     order_req.order = std::move(order);

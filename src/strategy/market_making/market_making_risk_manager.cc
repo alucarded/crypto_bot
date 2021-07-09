@@ -47,24 +47,15 @@ void MarketMakingRiskManager::OnOrderUpdate(const Order& order) {
 void MarketMakingRiskManager::OnPricePrediction(const MarketMakingPrediction& prediction) {
   std::scoped_lock<std::mutex> order_lock{m_order_mutex};
   // Expire orders
-  for (size_t i = 0; i < m_orders.size(); ++i) {
-    const auto& order = m_orders[i];
-    if (prediction.timestamp_us - order.GetCreationTime() > m_options.order_expiration_us) {
-      BOOST_LOG_TRIVIAL(info) << "Order expired: " << order;
-      if (m_exchange_client->CancelOrder(order)) {
-      Order rebalance_order = Order::CreateBuilder()
-        .Id("")
-        .ClientId(order.GetClientId())
-        .Symbol(order.GetSymbolId())
-        .Side_(order.GetSide())
-        .OrderType_(OrderType::MARKET)
-        .Quantity(order.GetQuantity())
-        .CreationTime(prediction.timestamp_us)
-        .Build();
-        m_exchange_client->SendOrder(rebalance_order);
-      }
-    }
-  }
+  // for (size_t i = 0; i < m_orders.size(); ++i) {
+  //   const auto& order = m_orders[i];
+  //   if (prediction.timestamp_us - order.GetCreationTime() > m_options.order_expiration_us) {
+  //     BOOST_LOG_TRIVIAL(info) << "Order expired: " << order;
+  //     m_exchange_client->CancelOrder(order);
+  //     m_orders.erase(m_orders.begin() + i);
+  //     --i;
+  //   }
+  // }
   // Add new orders
   std::vector<Order> orders = CalculateOrders(prediction);
   for (const auto& order : orders) {
@@ -83,6 +74,14 @@ std::vector<Order> MarketMakingRiskManager::CalculateOrders(const MarketMakingPr
   sell_price += prediction.signal*(sell_price - prediction.base_price);
   double buy_price = prediction.base_price/(1.0d + m_options.exchange_fee + m_options.our_fee);
   buy_price += prediction.signal*(prediction.base_price - buy_price);
+  double sell_quantity = m_options.default_order_qty;
+  // if (m_trading_balance > 0) {
+  //   sell_quantity += m_trading_balance;
+  // }
+  double buy_quantity = m_options.default_order_qty;
+  // if (m_trading_balance < 0) {
+  //   buy_quantity -= m_trading_balance;
+  // }
   //boost::uuids::uuid sell_order_id(boost::uuids::random_generator()());
   std::string sell_order_id = boost::uuids::to_string(boost::uuids::random_generator()());
   BOOST_LOG_TRIVIAL(trace) << "Prediction time: " << prediction.timestamp_us;
@@ -92,7 +91,7 @@ std::vector<Order> MarketMakingRiskManager::CalculateOrders(const MarketMakingPr
     .Symbol(prediction.symbol)
     .Side_(Side::SELL)
     .OrderType_(OrderType::LIMIT)
-    .Quantity(m_options.default_order_qty)
+    .Quantity(sell_quantity)
     .Price(sell_price)
     .CreationTime(prediction.timestamp_us)
     .Build();
@@ -104,7 +103,7 @@ std::vector<Order> MarketMakingRiskManager::CalculateOrders(const MarketMakingPr
     .Symbol(prediction.symbol)
     .Side_(Side::BUY)
     .OrderType_(OrderType::LIMIT)
-    .Quantity(m_options.default_order_qty)
+    .Quantity(buy_quantity)
     .Price(buy_price)
     .CreationTime(prediction.timestamp_us)
     .Build();
