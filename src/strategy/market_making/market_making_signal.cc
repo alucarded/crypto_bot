@@ -29,6 +29,7 @@ MarketMakingPrediction MarketMakingSignal::Predict(const MarketMakingPredictionD
   res.base_price = (m_book_ticker.ask + m_book_ticker.bid)/2.0d;
   res.signal = 0;
   res.timeframe_ms = 1000000;
+  res.timestamp_us = data.timestamp_us;
   if (rsi_opt.has_value()) {
     double val = rsi_opt.value();
     if (val > 70.0d || val < 30.0d) {

@@ -32,6 +32,7 @@ std::ostream &operator<<(std::ostream &os, const Order &res) {
     << "\", \"quantity\": \"" << std::to_string(res.m_quantity)
     << "\", \"price\": \"" << std::to_string(res.m_price)
     << "\", \"status\": \"" << res.m_status
+    << "\", \"creation_time_us\": \"" << res.m_creation_time_us
     << "\"}";
   return os;
 }

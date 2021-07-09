@@ -6,6 +6,7 @@
 #include <vector>
 
 struct MarketMakingPredictionData {
+  uint64_t timestamp_us;
   // uint64_t interval_ms;
   // std::vector<double> book_imbalances;
   // std::vector<double> trade_volumes;

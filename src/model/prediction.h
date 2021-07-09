@@ -27,4 +27,5 @@ struct MarketMakingPrediction {
   // From -1.0 to 1.0; -1.0 means extremely bearish, 1.0 means extremely bullish
   double signal;
   uint64_t timeframe_ms;
+  uint64_t timestamp_us;
 };

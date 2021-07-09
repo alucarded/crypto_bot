@@ -73,6 +73,7 @@ std::vector<Order> MarketMakingRiskManager::CalculateOrders(const MarketMakingPr
     .OrderType_(OrderType::LIMIT)
     .Quantity(m_options.default_order_qty)
     .Price(sell_price)
+    .CreationTime(prediction.timestamp_us)
     .Build();
   res.push_back(sell_order);
   std::string buy_order_id = boost::uuids::to_string(boost::uuids::random_generator()());
@@ -84,6 +85,7 @@ std::vector<Order> MarketMakingRiskManager::CalculateOrders(const MarketMakingPr
     .OrderType_(OrderType::LIMIT)
     .Quantity(m_options.default_order_qty)
     .Price(buy_price)
+    .CreationTime(prediction.timestamp_us)
     .Build();
   res.push_back(buy_order);
   return res;

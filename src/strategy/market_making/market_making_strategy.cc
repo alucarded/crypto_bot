@@ -36,6 +36,7 @@ void MarketMakingStrategy::OnOrderBookUpdate(const OrderBook& order_book) {
   m_signal.OnOrderBookUpdate(order_book);
 
   MarketMakingPredictionData data;
+  data.timestamp_us = order_book.GetLastUpdate().arrived_ts;
   MarketMakingPrediction prediction = m_signal.Predict(data);
   m_risk_manager.OnPricePrediction(prediction);
 }

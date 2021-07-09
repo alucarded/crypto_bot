@@ -130,8 +130,13 @@ public:
       return *this;
     }
 
+    Builder& CreationTime(uint64_t creation_time_us) {
+      m_creation_time_us = creation_time_us;
+      return *this;
+    }
+  
     Order Build() {
-      return Order(std::move(m_id), std::move(m_client_id), m_symbol_id, m_side, m_order_type, m_quantity, m_price, m_status);
+      return Order(std::move(m_id), std::move(m_client_id), m_symbol_id, m_side, m_order_type, m_quantity, m_price, m_status, m_creation_time_us);
     }
   private:
     std::string m_id;
@@ -142,6 +147,7 @@ public:
     double m_quantity;
     double m_price;
     OrderStatus m_status;
+    uint64_t m_creation_time_us;
   };
 
   static Builder CreateBuilder() {
@@ -158,9 +164,9 @@ public:
   }
 
   Order(std::string&& id, std::string&& client_id, SymbolPairId symbol_id, Side side,
-      OrderType order_type, double quantity, double price, OrderStatus order_status)
+      OrderType order_type, double quantity, double price, OrderStatus order_status, uint64_t creation_time_us)
     : m_id(std::move(id)), m_client_id(std::move(client_id)), m_symbol_id(symbol_id), m_side(side), m_order_type(order_type),
-      m_quantity(quantity), m_price(price), m_status(order_status),
+      m_quantity(quantity), m_price(price), m_status(order_status), m_creation_time_us(creation_time_us),
       m_executed_quantity(0), m_total_cost(0) {
   }
 
@@ -193,6 +199,7 @@ public:
     m_status = o.m_status;
     m_executed_quantity = o.m_executed_quantity;
     m_total_cost = o.m_total_cost;
+    m_creation_time_us = o.m_creation_time_us;
     return *this;
   }
 
@@ -207,6 +214,7 @@ public:
     m_status = o.m_status;
     m_executed_quantity = o.m_executed_quantity;
     m_total_cost = o.m_total_cost;
+    m_creation_time_us = o.m_creation_time_us;
     return *this;
   }
 
@@ -233,6 +241,7 @@ public:
   inline OrderStatus GetStatus() const { return m_status; }
   inline double GetExecutedQuantity() const { return m_executed_quantity; }
   inline double GetTotalCost() const { return m_total_cost; }
+  inline uint64_t GetCreationTime() const { return m_creation_time_us; }
 
   // Setters
   inline void SetPrice(double price) {
@@ -259,6 +268,7 @@ private:
   double m_quantity;
   double m_price;
   OrderStatus m_status;
+  uint64_t m_creation_time_us;
   // Total executed quantity (base currency)
   double m_executed_quantity;
   // Total executed cost (in quote currency)

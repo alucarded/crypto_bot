@@ -110,7 +110,7 @@ Result<Order> AccountManagerImpl::LimitOrder(SymbolPairId symbol, Side side, dou
   return res;
 }
 
-Result<Order> AccountManagerImpl::SendOrder(const Order&ls) {
+Result<Order> AccountManagerImpl::SendOrder(const Order&) {
   throw std::runtime_error("AccountManagerImpl::SendOrder is not implemented");
 }
 
