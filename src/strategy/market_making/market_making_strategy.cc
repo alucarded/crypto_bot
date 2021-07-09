@@ -17,23 +17,25 @@ void MarketMakingStrategy::OnConnectionClose(const std::string&) {
 }
 
 void MarketMakingStrategy::OnBookTicker(const Ticker& ticker) {
+  std::scoped_lock<std::mutex> lock{m_mutex};
   BOOST_LOG_TRIVIAL(debug) << "MarketMakingStrategy::OnBookTicker, ticker=" << ticker;
   m_book_ticker = ticker;
+  m_signal.OnBookTicker(ticker);
 }
 
 void MarketMakingStrategy::OnTradeTicker(const TradeTicker& ticker) {
+  std::scoped_lock<std::mutex> lock{m_mutex};
   BOOST_LOG_TRIVIAL(debug) << "MarketMakingStrategy::OnTradeTicker, ticker=" << ticker;
+  m_signal.OnTradeTicker(ticker);
 }
 
 void MarketMakingStrategy::OnOrderBookUpdate(const OrderBook& order_book) {
+  std::scoped_lock<std::mutex> lock{m_mutex};
   BOOST_LOG_TRIVIAL(debug) << "MarketMakingStrategy::OnOrderBookUpdate, order_book=" << order_book;
   //m_ob_imbalance.Calculate(order_book, 0.01);
-  // TODO: add some signal etc
-  MarketMakingPrediction prediction;
-  prediction.symbol = order_book.GetSymbolPairId();
-  prediction.base_price = (m_book_ticker.ask + m_book_ticker.bid)/2.0d;
-  prediction.signal = 0;
-  prediction.confidence = 1;
-  prediction.timeframe_ms = 1000000;
+  m_signal.OnOrderBookUpdate(order_book);
+
+  MarketMakingPredictionData data;
+  MarketMakingPrediction prediction = m_signal.Predict(data);
   m_risk_manager.OnPricePrediction(prediction);
 }
