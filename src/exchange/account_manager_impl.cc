@@ -120,6 +120,10 @@ Result<AccountBalance> AccountManagerImpl::GetAccountBalance() {
   //return m_client->GetAccountBalance();
 }
 
+Result<bool> AccountManagerImpl::CancelOrder(const Order& order) {
+  return m_client->CancelOrder(order);
+}
+
 void AccountManagerImpl::CancelAllOrders() {
   m_client->CancelAllOrders();
   // We should receive status update for all orders with calls to OnOrderUpdate()

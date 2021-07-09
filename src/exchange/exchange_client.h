@@ -57,5 +57,6 @@ public:
   virtual Result<Order> SendOrder(const Order& order) = 0;
   virtual Result<AccountBalance> GetAccountBalance() = 0;
   virtual Result<std::vector<Order>> GetOpenOrders() = 0;
+  virtual Result<bool> CancelOrder(const Order& order) = 0;
   virtual void CancelAllOrders() = 0;
 };

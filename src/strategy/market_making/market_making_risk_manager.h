@@ -8,6 +8,8 @@ struct MarketMakingRiskMangerOptions {
   double default_order_qty;
   double exchange_fee;
   double our_fee;
+  // TODO: calculate expiration time based on volatility
+  double order_expiration_us;
 };
 
 class MarketMakingRiskManager : public UserDataListener {

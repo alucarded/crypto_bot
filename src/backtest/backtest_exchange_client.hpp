@@ -113,6 +113,17 @@ public:
     return Result<std::vector<Order>>("", m_limit_orders);
   }
 
+  virtual Result<bool> CancelOrder(const Order& order) override {
+    for (size_t i = 0; m_limit_orders.size(); ++i) {
+      if (order == m_limit_orders.at(i)) {
+        m_limit_orders.erase(m_limit_orders.begin() + i);
+        --i;
+        return Result<bool>("Success canceling order", true);
+      }
+    }
+    return Result<bool>("Failed canceling order", "No such order");
+  }
+
   virtual void CancelAllOrders() override {
 
   }
@@ -206,6 +217,8 @@ private:
         auto it = m_tickers.find(ticker.symbol);
         if (it != m_tickers.end()) {
           ExecuteMarketOrder(order_request.order, it->second);
+          m_pending_market_orders.erase(m_pending_market_orders.begin() + i);
+          --i;
         } else {
           BOOST_LOG_TRIVIAL(error) << "No previous ticker";
           // TODO: is it even possible to end up here?

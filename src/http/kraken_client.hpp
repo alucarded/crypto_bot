@@ -185,6 +185,11 @@ public:
     return Result<Order>("", order);
   }
 
+  virtual Result<bool> CancelOrder(const Order& order) override {
+    // TODO:
+    return Result<bool>("", "");
+  }
+
   virtual void CancelAllOrders() override {
 
   }

@@ -46,8 +46,24 @@ void MarketMakingRiskManager::OnOrderUpdate(const Order& order) {
 
 void MarketMakingRiskManager::OnPricePrediction(const MarketMakingPrediction& prediction) {
   std::scoped_lock<std::mutex> order_lock{m_order_mutex};
-  // Check existing orders
-  for (const auto& order : m_orders) {
+  // Expire orders
+  for (size_t i = 0; i < m_orders.size(); ++i) {
+    const auto& order = m_orders[i];
+    if (prediction.timestamp_us - order.GetCreationTime() > m_options.order_expiration_us) {
+      BOOST_LOG_TRIVIAL(info) << "Order expired: " << order;
+      if (m_exchange_client->CancelOrder(order)) {
+      Order rebalance_order = Order::CreateBuilder()
+        .Id("")
+        .ClientId(order.GetClientId())
+        .Symbol(order.GetSymbolId())
+        .Side_(order.GetSide())
+        .OrderType_(OrderType::MARKET)
+        .Quantity(order.GetQuantity())
+        .CreationTime(prediction.timestamp_us)
+        .Build();
+        m_exchange_client->SendOrder(rebalance_order);
+      }
+    }
   }
   // Add new orders
   std::vector<Order> orders = CalculateOrders(prediction);

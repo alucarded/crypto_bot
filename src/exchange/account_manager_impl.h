@@ -43,6 +43,8 @@ public:
 
   virtual void CancelAllOrders() override;
 
+  virtual Result<bool> CancelOrder(const Order& order) override;
+
   virtual Result<std::vector<Order>> GetOpenOrders() override;
 
   virtual Result<Order> MarketOrder(SymbolPairId symbol, Side side, double qty) override;

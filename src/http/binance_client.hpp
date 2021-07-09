@@ -89,6 +89,7 @@ public:
   inline static const std::string GET_OPEN_ORDERS_PATH = "/api/v3/openOrders";
   inline static const std::string LISTEN_KEY_PATH = "/api/v3/userDataStream";
   inline static const std::string DEPTH_PATH = "/api/v3/depth";
+  inline static const std::string CANCEL_ORDER_PATH = "/api/v3/order";
 
   BinanceClient()
       : m_last_order_id(0),
@@ -193,6 +194,32 @@ public:
     auto client_order_id = res_json["clientOrderId"].get<std::string>();
     const auto& status = res_json["status"].get<std::string>();
     return Result<Order>(res.response, Order(std::move(std::to_string(order_id)), std::move(client_order_id), order.GetSymbolId(), order.GetSide(), order.GetType(), order.GetQuantity(), order.GetPrice(), Order::GetStatus(status)));
+  }
+
+  virtual Result<bool> CancelOrder(const Order& order) override {
+    const std::string& symbol_str = GetSymbolString(order.GetSymbolId());
+    HttpClient::Result res = m_http_client.post(HOST, PORT, CANCEL_ORDER_PATH)
+      .Header("X-MBX-APIKEY", g_api_key)
+      .QueryParam("origClientOrderId", order.GetClientId())
+      .WithQueryParamSigning(std::bind(&BinanceClient::SignData, this, _1, _2))
+      .send();
+    if (res) {
+      json res_json = json::parse(res.response);
+      if (res_json.contains("status")) {
+        OrderStatus status = Order::GetStatus(res_json["status"].get<std::string>());
+        if (status == OrderStatus::CANCELED || status == OrderStatus::PENDING_CANCEL) {
+          return Result<bool>(res.response, true);
+        } else {
+          BOOST_LOG_TRIVIAL(error) << "Unexpected status " << status << ", when canceling order " << order;
+          return Result<bool>(res.response, false);
+        }
+      }
+      const auto& errmsg = res_json["msg"].get<std::string>();
+      BOOST_LOG_TRIVIAL(warning) << "Error response: " << errmsg << ", when canceling order " << order;
+      return Result<bool>(res.response, errmsg);
+    }
+    BOOST_LOG_TRIVIAL(warning) << "Error: " << res.errmsg << ", when making cancel request for order: " << order;
+    return Result<bool>(res.response, res.errmsg);
   }
 
   virtual void CancelAllOrders() override {

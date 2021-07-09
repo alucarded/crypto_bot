@@ -218,7 +218,7 @@ public:
     return *this;
   }
 
-  bool operator==(const Order& o) {
+  bool operator==(const Order& o) const {
     const auto& other_id = o.GetId();
     if (!this->m_id.empty() && !other_id.empty()) {
       return this->m_id == other_id;
