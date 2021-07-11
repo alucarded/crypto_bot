@@ -1,6 +1,6 @@
 #include "market_making_strategy.h"
 
-MarketMakingStrategy::MarketMakingStrategy(MarketMakingRiskManager& risk_manager) : m_risk_manager(risk_manager), m_ob_imbalance() {
+MarketMakingStrategy::MarketMakingStrategy(MarketMakingRiskManager& risk_manager) : m_risk_manager(risk_manager) {
 
 }
 
@@ -32,11 +32,11 @@ void MarketMakingStrategy::OnTradeTicker(const TradeTicker& ticker) {
 void MarketMakingStrategy::OnOrderBookUpdate(const OrderBook& order_book) {
   std::scoped_lock<std::mutex> lock{m_mutex};
   BOOST_LOG_TRIVIAL(debug) << "MarketMakingStrategy::OnOrderBookUpdate, order_book=" << order_book;
-  //m_ob_imbalance.Calculate(order_book, 0.01);
   m_signal.OnOrderBookUpdate(order_book);
 
-  MarketMakingPredictionData data;
-  data.timestamp_us = order_book.GetLastUpdate().arrived_ts;
+  MarketMakingPredictionData data(order_book.GetLastUpdate().arrived_ts, order_book);
+  // data.timestamp_us = order_book.GetLastUpdate().arrived_ts;
+  // data.ob = order_book;
   BOOST_LOG_TRIVIAL(trace) << "Order book update timestamp: " << data.timestamp_us;
   MarketMakingPrediction prediction = m_signal.Predict(data);
   m_risk_manager.OnPricePrediction(prediction);

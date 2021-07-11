@@ -40,6 +40,20 @@ public:
   }
 
   virtual ~BacktestExchangeClient() {
+    size_t sell_orders_count = 0, buy_orders_count = 0;
+    double left_orders_balance = 0;
+    for (const auto& order : m_limit_orders) {
+      if (order.GetSide() == Side::SELL) {
+        sell_orders_count++;
+        left_orders_balance -= order.GetQuantity();
+      } else {
+        buy_orders_count++;
+        left_orders_balance += order.GetQuantity();
+      }
+    }
+    BOOST_LOG_TRIVIAL(info) << "Left sell orders: " << sell_orders_count;
+    BOOST_LOG_TRIVIAL(info) << "Left buy orders: " << buy_orders_count;
+    BOOST_LOG_TRIVIAL(info) << "Left orders balance: " << left_orders_balance;
   }
 
   void RegisterUserDataListener(UserDataListener* listener) {

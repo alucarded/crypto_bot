@@ -14,6 +14,7 @@ public:
   MOCK_METHOD(Result<AccountBalance>, GetAccountBalance, (), (override));
   MOCK_METHOD(Result<std::vector<Order>>, GetOpenOrders, (), (override));
   MOCK_METHOD(void, CancelAllOrders, (), (override));
+  MOCK_METHOD(Result<bool>, CancelOrder, (const Order& order), (override));
 };
 
 TEST(AccountManagerTest, OnOrderUpdateTest) { 

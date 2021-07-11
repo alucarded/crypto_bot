@@ -60,6 +60,9 @@ int main(int argc, char* argv[]) {
   risk_manager_options.exchange_fee = 0.00075;
   risk_manager_options.our_fee = 0.00025;
   risk_manager_options.order_expiration_us = 900000000; // 15 minutes
+  risk_manager_options.max_orders_count = 10;
+  risk_manager_options.order_placing_probability = 0.02;
+  risk_manager_options.exp_rate_limit_coeff = 10.0d;
   MarketMakingRiskManager risk_manager(risk_manager_options, &binance_backtest_client);
 
   // Report back about order and account balance changes

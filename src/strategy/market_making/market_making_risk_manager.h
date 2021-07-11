@@ -10,6 +10,9 @@ struct MarketMakingRiskMangerOptions {
   double our_fee;
   // TODO: calculate expiration time based on volatility
   double order_expiration_us;
+  size_t max_orders_count;
+  double order_placing_probability;
+  double exp_rate_limit_coeff;
 };
 
 class MarketMakingRiskManager : public UserDataListener {
@@ -40,4 +43,5 @@ private:
   // Positive value means long position, negative value means short position.
   double m_trading_balance;
   std::mutex m_order_mutex;
+  uint64_t m_last_order_timestamp_us;
 };

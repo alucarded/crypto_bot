@@ -1,7 +1,6 @@
 #include "exchange/exchange_listener.h"
 #include "market_making_signal.h"
 #include "market_making_risk_manager.h"
-#include "strategy/indicator/order_book_imbalance.h"
 
 #include <mutex>
 
@@ -24,7 +23,6 @@ public:
 
 private:
   MarketMakingRiskManager& m_risk_manager;
-  OrderBookImbalance m_ob_imbalance;
   MarketMakingSignal m_signal;
   Ticker m_book_ticker;
   std::vector<double> m_mid_closes;

@@ -4,9 +4,11 @@
 #include <boost/uuid/uuid_io.hpp>
 
 #include <algorithm>
+#include <cmath>
+#include <random>
 
 MarketMakingRiskManager::MarketMakingRiskManager(const MarketMakingRiskMangerOptions& opts, ExchangeClient* exchange_client)
-    : m_options(opts), m_exchange_client(exchange_client), m_trading_balance(0) {
+    : m_options(opts), m_exchange_client(exchange_client), m_trading_balance(0), m_last_order_timestamp_us(0) {
 
 }
 
@@ -44,6 +46,15 @@ void MarketMakingRiskManager::OnOrderUpdate(const Order& order) {
   }
 }
 
+namespace {
+// TODO: temporarily here
+
+double ExponentialRateLimit(double x, double rate_limit_coeff) {
+  return std::exp(-x/rate_limit_coeff);
+}
+
+}
+
 void MarketMakingRiskManager::OnPricePrediction(const MarketMakingPrediction& prediction) {
   std::scoped_lock<std::mutex> order_lock{m_order_mutex};
   // Expire orders
@@ -56,6 +67,16 @@ void MarketMakingRiskManager::OnPricePrediction(const MarketMakingPrediction& pr
   //     --i;
   //   }
   // }
+  // if (m_orders.size() > m_options.max_orders_count) {
+  //   BOOST_LOG_TRIVIAL(debug) << "Too many open orders, so not sending new ones";
+  //   return;
+  // }
+  std::random_device dev;
+  std::mt19937 rng(dev());
+  std::uniform_int_distribution<std::mt19937::result_type> dist1000(1,1000);
+  if (dist1000(rng)/1000.0d > prediction.confidence - ExponentialRateLimit((prediction.timestamp_us - m_last_order_timestamp_us)/1000000.0d, m_options.exp_rate_limit_coeff)) {
+    return;
+  }
   // Add new orders
   std::vector<Order> orders = CalculateOrders(prediction);
   for (const auto& order : orders) {
@@ -66,10 +87,6 @@ void MarketMakingRiskManager::OnPricePrediction(const MarketMakingPrediction& pr
 
 std::vector<Order> MarketMakingRiskManager::CalculateOrders(const MarketMakingPrediction& prediction) {
   std::vector<Order> res;
-  if (!m_orders.empty()) {
-    BOOST_LOG_TRIVIAL(debug) << "Has open orders, so not sending new ones";
-    return {};
-  }
   double sell_price = prediction.base_price/(1.0d - m_options.exchange_fee - m_options.our_fee);
   sell_price += prediction.signal*(sell_price - prediction.base_price);
   double buy_price = prediction.base_price/(1.0d + m_options.exchange_fee + m_options.our_fee);
@@ -108,5 +125,6 @@ std::vector<Order> MarketMakingRiskManager::CalculateOrders(const MarketMakingPr
     .CreationTime(prediction.timestamp_us)
     .Build();
   res.push_back(buy_order);
+  m_last_order_timestamp_us = prediction.timestamp_us;
   return res;
 }
