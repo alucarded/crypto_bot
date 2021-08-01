@@ -58,6 +58,9 @@ int main(int argc, char* argv[]) {
     binance_trade_ticker_future.wait();
 
     binance_trade_ticker_stream.SubscribeTicker("adausdt");
+    binance_trade_ticker_stream.SubscribeTicker("btcusdt");
+    binance_trade_ticker_stream.SubscribeTicker("ethusdt");
+    binance_trade_ticker_stream.SubscribeTicker("bnbusdt");
 
     BinanceClient binance_client;
     BinanceSettings binance_settings = binance_client.GetBinanceSettings();
