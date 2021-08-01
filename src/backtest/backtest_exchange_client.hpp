@@ -301,6 +301,7 @@ private:
       m_user_data_listener->OnOrderUpdate(order);
     }
     m_balance_listener.OnAccountBalanceUpdate(m_account_balance);
+    BOOST_LOG_TRIVIAL(info) << "Account value: " << GetAccountValue(SymbolId::USDT);
   }
 
   void HandlePendingLimitOrders(const Ticker& ticker) {
@@ -375,7 +376,7 @@ private:
           }
           m_limit_orders.erase(m_limit_orders.begin() + i);
           m_balance_listener.OnAccountBalanceUpdate(m_account_balance);
-          continue;
+          BOOST_LOG_TRIVIAL(info) << "Account value: " << GetAccountValue(SymbolId::USDT);
         }
       } else { // BUY
         if (ticker.ask <= order_price) {
@@ -393,11 +394,29 @@ private:
           }
           m_limit_orders.erase(m_limit_orders.begin() + i);
           m_balance_listener.OnAccountBalanceUpdate(m_account_balance);
-          continue;
+          BOOST_LOG_TRIVIAL(info) << "Account value: " << GetAccountValue(SymbolId::USDT);
         }
       }
     }
   }
+
+  double GetAccountValue(SymbolId quote_symbol_id) const {
+    double res = 0;
+    for (const auto& p : m_account_balance.GetBalanceMap()) {
+      SymbolId asset_symbol_id = p.first;
+      double qty = p.second;
+      if (asset_symbol_id == quote_symbol_id) {
+        res += qty;
+        continue;
+      }
+      // Below will throw if quote_symbol_id is not supported as quote symbol
+      SymbolPair symbol_pair(asset_symbol_id, quote_symbol_id);
+      const Ticker& ticker = m_tickers.at(SymbolPairId(symbol_pair));
+      res += ticker.bid*qty;
+    }
+    return res;
+  }
+
 private:
   BacktestSettings m_settings;
   AccountBalance m_account_balance;

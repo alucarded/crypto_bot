@@ -16,7 +16,7 @@ inline int32_t GetMinute(uint64_t arrived_ts_us) {
 
 }
 
-MarketMakingSignal::MarketMakingSignal() : m_rsi(14), m_sma_short(8), m_sma_mid(21), m_sma_long(55), m_minute(0) {
+MarketMakingSignal::MarketMakingSignal() : m_rsi(55), m_sma_short(8), m_sma_mid(21), m_sma_long(55), m_minute(0) {
 
 }
 
@@ -55,23 +55,23 @@ MarketMakingPrediction MarketMakingSignal::Predict(const MarketMakingPredictionD
   auto mid_sma_slope = mid_sma_slope_opt.value();
   auto long_sma_slope = long_sma_slope_opt.value();
 
-  if (short_sma_slope > 0 && mid_sma_slope > 0 && long_sma_slope > 0
+  if (short_sma_slope < 0 && mid_sma_slope > 0 && long_sma_slope > 0
       && short_sma > mid_sma && mid_sma > long_sma) {
-    res.signal = 1.0;
-    res.confidence = 0.1;
+    res.signal = 0;
+    res.confidence = 0.04;
   }
 
-  if (short_sma_slope < 0 && mid_sma_slope < 0 && long_sma_slope < 0
+  if (short_sma_slope > 0 && mid_sma_slope < 0 && long_sma_slope < 0
       && short_sma < mid_sma && mid_sma < long_sma) {
-    res.signal = -1.0;
-    res.confidence = 0.1;
+    res.signal = 0;
+    res.confidence = 0.04;
   }
 
   std::optional<double> rsi_opt = m_rsi.Calculate(m_mid_closes);
   if (rsi_opt.has_value()) {
     double val = rsi_opt.value();
     BOOST_LOG_TRIVIAL(debug) << "RSI: " << val;
-    if (val > 70.0d || val < 30.0d) {
+    if (val > 60.0d || val < 40.0d) {
       //res.signal = (50.0d - val)*2.0d/100.0d;
       // Block sending orders
       res.confidence = 0;

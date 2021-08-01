@@ -74,7 +74,8 @@ void MarketMakingRiskManager::OnPricePrediction(const MarketMakingPrediction& pr
   std::random_device dev;
   std::mt19937 rng(dev());
   std::uniform_int_distribution<std::mt19937::result_type> dist1000(1,1000);
-  if (dist1000(rng)/1000.0d > prediction.confidence - ExponentialRateLimit((prediction.timestamp_us - m_last_order_timestamp_us)/1000000.0d, m_options.exp_rate_limit_coeff)) {
+  // - ExponentialRateLimit((prediction.timestamp_us - m_last_order_timestamp_us)/1000000.0d, m_options.exp_rate_limit_coeff)
+  if (dist1000(rng)/1000.0d > prediction.confidence) {
     return;
   }
   // Add new orders

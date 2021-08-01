@@ -131,11 +131,12 @@ public:
     auto order_id = res_json["orderId"].get<int64_t>();
     auto client_order_id = res_json["clientOrderId"].get<std::string>();
     double cummulative_quote_qty = std::stod(res_json["cummulativeQuoteQty"].get<std::string>());
+    auto transact_time = res_json["transactTime"].get<int64_t>();
     // Price is required to calculate locked balance
     // TODO: maybe pass quote quantity directly to avoid dividing and then multiplying again
     double price = cummulative_quote_qty / qty;
     const auto& status = res_json["status"].get<std::string>();
-    return Result<Order>(res.response, Order(std::move(std::to_string(order_id)), std::move(client_order_id), symbol, side, OrderType::MARKET, qty, price, Order::GetStatus(status)));
+    return Result<Order>(res.response, Order(std::move(std::to_string(order_id)), std::move(client_order_id), symbol, side, OrderType::MARKET, qty, price, Order::GetStatus(status), transact_time));
   }
 
   virtual Result<Order> LimitOrder(SymbolPairId symbol, Side side, double qty, double price) override {
@@ -166,7 +167,8 @@ public:
     auto order_id = res_json["orderId"].get<int64_t>();
     auto client_order_id = res_json["clientOrderId"].get<std::string>();
     const auto& status = res_json["status"].get<std::string>();
-    return Result<Order>(res.response, Order(std::move(std::to_string(order_id)), std::move(client_order_id), symbol, side, OrderType::LIMIT, qty, price, Order::GetStatus(status)));
+    auto transact_time = res_json["transactTime"].get<int64_t>();
+    return Result<Order>(res.response, Order(std::move(std::to_string(order_id)), std::move(client_order_id), symbol, side, OrderType::LIMIT, qty, price, Order::GetStatus(status), transact_time));
   }
 
   virtual Result<Order> SendOrder(const Order& order) override {
@@ -193,7 +195,8 @@ public:
     auto order_id = res_json["orderId"].get<int64_t>();
     auto client_order_id = res_json["clientOrderId"].get<std::string>();
     const auto& status = res_json["status"].get<std::string>();
-    return Result<Order>(res.response, Order(std::move(std::to_string(order_id)), std::move(client_order_id), order.GetSymbolId(), order.GetSide(), order.GetType(), order.GetQuantity(), order.GetPrice(), Order::GetStatus(status)));
+    auto transact_time = res_json["transactTime"].get<int64_t>();
+    return Result<Order>(res.response, Order(std::move(std::to_string(order_id)), std::move(client_order_id), order.GetSymbolId(), order.GetSide(), order.GetType(), order.GetQuantity(), order.GetPrice(), Order::GetStatus(status), transact_time));
   }
 
   virtual Result<bool> CancelOrder(const Order& order) override {
@@ -278,6 +281,7 @@ public:
       const auto& orig_qty_str = order["origQty"].get<std::string>();
       const auto& price = order["price"].get<std::string>();
       const auto& status = order["status"].get<std::string>();
+      auto time = order["time"].get<std::int64_t>();
       SymbolPairId symbol_id = SymbolPair::FromBinanceString(symbol_str);
       orders.push_back(Order(std::move(id_str), std::move(client_id_str),
         symbol_id,
@@ -286,7 +290,8 @@ public:
         (order_type_str == "MARKET" ? OrderType::MARKET : OrderType::LIMIT),
         std::stod(orig_qty_str),
         std::stod(price),
-        Order::GetStatus(status)));
+        Order::GetStatus(status),
+        time));
     }
     return Result<std::vector<Order>>(res.response, orders);
   }
