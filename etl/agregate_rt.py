@@ -94,6 +94,7 @@ def handle_order_book_update(ob, doc):
 def main():
   parser = argparse.ArgumentParser(description='Aggregate real-time crypto data into fixed periods')
   parser.add_argument('--config', help='Path to configuration file')
+  parser.add_argument('--drop', help='Drop output collection before writing', action='store_true')
   args = parser.parse_args()
 
   f = open(args.config)
@@ -107,6 +108,10 @@ def main():
   book_ticker_minute_collection = db["BookTickerMinutes"]
   trade_ticker_minute_collection = db["TradeTickerMinutes"]
   ob_minute_collection = db["OrderBookMinutes"]
+  if args.drop:
+    book_ticker_minute_collection.drop()
+    trade_ticker_minute_collection.drop()
+    ob_minute_collection.drop()
 
   ob = OrderBook(1000)
   cursor = rt_collection.find()
