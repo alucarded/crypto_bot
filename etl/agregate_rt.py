@@ -68,7 +68,7 @@ def handle_book_ticker(doc):
 
 
 def handle_order_book_update(ob, doc):
-  print(doc)
+  #print(doc)
   for update in doc["updates"]:
     for bid in update["bids"]:
       price = float(bid[0])
@@ -88,7 +88,7 @@ def handle_order_book_update(ob, doc):
   bids, asks = ob.group_levels(0.01)
   doc["asks"] = asks
   doc["bids"] = bids
-  print(doc)
+  #print(doc)
   return doc
 
 def main():
