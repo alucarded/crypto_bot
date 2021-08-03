@@ -43,6 +43,10 @@ public:
             BOOST_LOG_TRIVIAL(error) << "Exception when closing websocketpp endpoint: " << e.what();
         }
     }
+
+    void set_do_reconnect(bool do_reconnect) {
+        m_do_reconnect = do_reconnect;
+    }
 protected:
     WebsocketClient(const std::string& uri, const std::string& name) :  m_uri(uri), m_name(name), m_endpoint(new client()),
             m_do_reconnect(true), m_reconnect_delay(3000ms) {
@@ -144,6 +148,9 @@ protected:
             // TODO: do we need to delay here ?
             std::this_thread::sleep_for(m_reconnect_delay);
             start(std::move(std::promise<void>()));
+        } else {
+            // Exit
+            std::exit(1);
         }
     }
 

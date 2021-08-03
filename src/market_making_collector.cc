@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
     BinanceBookTickerStream binance_book_ticker_stream(&mongo_consumer);
     std::promise<void> binance_book_ticker_promise;
     std::future<void> binance_book_ticker_future = binance_book_ticker_promise.get_future();
+    binance_book_ticker_stream.set_do_reconnect(false);
     binance_book_ticker_stream.start(std::move(binance_book_ticker_promise));
     binance_book_ticker_future.wait();
 
@@ -54,6 +55,7 @@ int main(int argc, char* argv[]) {
     BinanceTradeTickerStream binance_trade_ticker_stream(&mongo_consumer);
     std::promise<void> binance_trade_ticker_promise;
     std::future<void> binance_trade_ticker_future = binance_trade_ticker_promise.get_future();
+    binance_trade_ticker_stream.set_do_reconnect(false);
     binance_trade_ticker_stream.start(std::move(binance_trade_ticker_promise));
     binance_trade_ticker_future.wait();
 
@@ -68,6 +70,7 @@ int main(int argc, char* argv[]) {
     BinanceOrderBookStream binance_order_book_stream(binance_settings.GetPairSettings(SymbolPairId::ADA_USDT), &binance_client, &mongo_consumer);
     std::promise<void> binance_order_book_promise;
     std::future<void> binance_order_book_future = binance_order_book_promise.get_future();
+    binance_order_book_stream.set_do_reconnect(false);
     binance_order_book_stream.start(std::move(binance_order_book_promise));
 
     // Just sleep
