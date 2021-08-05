@@ -10,7 +10,18 @@ def handle_trade_ticker(doc):
   market_buy_vol = 0
   trade_weighted_sell_price = 0
   trade_weighted_buy_price = 0
+  o = None
+  h = None
+  l = None
+  c = None
   for ticker in doc["tickers"]:
+    if not o:
+      o = ticker["price"]
+      h = o
+      l = o
+    c = ticker["price"]
+    h = max(h, c)
+    l = min(l, c)
     if ticker["is_market_maker"]:
       market_sell_vol += ticker["qty"]
       trade_weighted_sell_price += ticker["qty"]*ticker["price"]
@@ -24,6 +35,10 @@ def handle_trade_ticker(doc):
   doc["market_buy_vol"] = market_buy_vol
   doc["weighted_sell_price"] = trade_weighted_sell_price
   doc["weighted_buy_price"] = trade_weighted_buy_price
+  doc["o"] = o
+  doc["h"] = h
+  doc["l"] = l
+  doc["c"] = c
   return doc
 
 
@@ -37,6 +52,10 @@ def handle_book_ticker(doc):
   ha = None
   la = None
   ca = None
+  om = None
+  hm = None
+  lm = None
+  cm = None
   for ticker in doc["tickers"]:
     if not ob:
       ob = ticker["bid"]
@@ -46,12 +65,19 @@ def handle_book_ticker(doc):
       oa = ticker["ask"]
       ha = ticker["ask"]
       la = ticker["ask"]
+    if not om:
+      om = (ticker["bid"] + ticker["ask"])/2
+      hm = om
+      lm = om
     cb = ticker["bid"]
     ca = ticker["ask"]
-    hb = max(hb, ticker["bid"])
-    ha = max(ha, ticker["ask"])
-    lb = min(lb, ticker["bid"])
-    la = min(la, ticker["ask"])
+    cm = (cb + ca)/2
+    hb = max(hb, cb)
+    ha = max(ha, ca)
+    hm = max(hm, cm)
+    lb = min(lb, cb)
+    la = min(la, ca)
+    lm = min(lm, cm)
   del doc["tickers"]
   doc["ask"] = {}
   doc["ask"]["o"] = oa
@@ -63,6 +89,11 @@ def handle_book_ticker(doc):
   doc["bid"]["h"] = hb
   doc["bid"]["l"] = lb
   doc["bid"]["c"] = cb
+  doc["mid"] = {}
+  doc["mid"]["o"] = om
+  doc["mid"]["h"] = hm
+  doc["mid"]["l"] = lm
+  doc["mid"]["c"] = cm
   return doc
 
 
@@ -113,6 +144,7 @@ def main():
     trade_ticker_minute_collection.drop()
     ob_minute_collection.drop()
 
+  # TODO: full data preparation pipeline (omit writing to Mongo) ? i.e. add data selection, create dataframe, write CSV
   ob = OrderBook(1000)
   cursor = rt_collection.find()
   for doc in cursor:
@@ -120,9 +152,11 @@ def main():
     if doc["type"] == "BOOK_TICKER":
       agg_doc = handle_book_ticker(doc)
       book_ticker_minute_collection.insert_one(agg_doc)
+      #print(agg_doc)
     elif doc["type"] == "TRADE_TICKER":
       agg_doc = handle_trade_ticker(doc)
       trade_ticker_minute_collection.insert_one(agg_doc)
+      #print(agg_doc)
     elif doc["type"] == "ORDER_BOOK":
       agg_doc = handle_order_book_update(ob, doc)
       ob_minute_collection.insert_one(agg_doc)
