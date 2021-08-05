@@ -147,6 +147,7 @@ def main():
   # TODO: full data preparation pipeline (omit writing to Mongo) ? i.e. add data selection, create dataframe, write CSV
   ob = OrderBook(1000)
   cursor = rt_collection.find()
+  count = 0
   for doc in cursor:
     #print(doc)
     if doc["type"] == "BOOK_TICKER":
@@ -161,6 +162,8 @@ def main():
       agg_doc = handle_order_book_update(ob, doc)
       ob_minute_collection.insert_one(agg_doc)
       #print(agg_doc)
+    count += 1
+    print("Processed " + count + " documents")
 
 if __name__ == "__main__":
   main()
