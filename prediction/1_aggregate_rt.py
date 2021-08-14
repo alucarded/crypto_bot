@@ -28,8 +28,10 @@ def handle_trade_ticker(doc):
     else:
       market_buy_vol += ticker["qty"]
       trade_weighted_buy_price += ticker["qty"]*ticker["price"]
-  trade_weighted_sell_price /= market_sell_vol
-  trade_weighted_buy_price /= market_buy_vol
+  if market_sell_vol != 0:
+    trade_weighted_sell_price /= market_sell_vol
+  if market_buy_vol != 0:
+    trade_weighted_buy_price /= market_buy_vol
   del doc["tickers"]
   doc["market_sell_vol"] = market_sell_vol
   doc["market_buy_vol"] = market_buy_vol
@@ -135,10 +137,11 @@ def main():
           + "@" + config["host"] + ":" + config["port"]
           + "/?authSource=" + config["authSource"])
   db = client[config["db"]]
+  collection_name = config["collection"]
   rt_collection = db[config["collection"]]
-  book_ticker_minute_collection = db["BookTickerMinutes"]
-  trade_ticker_minute_collection = db["TradeTickerMinutes"]
-  ob_minute_collection = db["OrderBookMinutes"]
+  book_ticker_minute_collection = db[collection_name + "_BookTickerMinutes"]
+  trade_ticker_minute_collection = db[collection_name + "_TradeTickerMinutes"]
+  ob_minute_collection = db[collection_name + "_OrderBookMinutes"]
   if args.drop:
     book_ticker_minute_collection.drop()
     trade_ticker_minute_collection.drop()
@@ -163,7 +166,7 @@ def main():
       ob_minute_collection.insert_one(agg_doc)
       #print(agg_doc)
     count += 1
-    print("Processed " + count + " documents")
+    print("Processed", count, "documents")
 
 if __name__ == "__main__":
   main()
