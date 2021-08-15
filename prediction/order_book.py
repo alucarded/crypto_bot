@@ -19,6 +19,9 @@ class OrderBook:
       self.bids.insert(i, (price, vol))
     if len(self.bids) > self.depth:
       self.bids.pop(0)
+    # Adjust asks
+    while self.asks and self.asks[-1][0] <= price:
+      self.asks.pop()
 
 
   def upsert_ask(self, price, vol):
@@ -36,6 +39,9 @@ class OrderBook:
       self.asks.insert(i, (price, vol))
     if len(self.asks) > self.depth:
       self.asks.pop(0)
+    # Adjust bids
+    while self.bids and self.bids[-1][0] >= price:
+      self.bids.pop()
 
   def delete_bid(self, price):
     self._delete(self.bids, price)

@@ -118,6 +118,7 @@ def handle_order_book_update(ob, doc):
       else:
         ob.upsert_ask(price, vol)
   del doc["updates"]
+  assert ob.get_bids()[-1][0] < ob.get_asks()[-1][0]
   bids, asks = ob.group_levels(0.01)
   doc["asks"] = asks
   doc["bids"] = bids
