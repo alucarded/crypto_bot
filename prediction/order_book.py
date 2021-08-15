@@ -45,7 +45,7 @@ class OrderBook:
 
   def _delete(self, price_levels, price):
     for i in range(len(price_levels)):
-      if price_levels[i] == price:
+      if price_levels[i][0] == price:
         price_levels.pop(i)
         break
 
