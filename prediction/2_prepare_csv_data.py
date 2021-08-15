@@ -6,6 +6,7 @@ import json
 def main():
   parser = argparse.ArgumentParser(description='Pull ticker data from Mongo, clean and prepare for training statistical model, write as csv')
   parser.add_argument('--config', help='Path to configuration file')
+  parser.add_argument('--prefix', help='Mongo collections prefix')
   parser.add_argument('--output', help='Output file name')
   args = parser.parse_args()
 
@@ -16,9 +17,9 @@ def main():
           + "@" + config["host"] + ":" + config["port"]
           + "/?authSource=" + config["authSource"])
   db = client[config["db"]]
-  book_ticker_minute_collection = db["BookTickerMinutes"]
-  trade_ticker_minute_collection = db["TradeTickerMinutes"]
-  ob_minute_collection = db["OrderBookMinutes"]
+  book_ticker_minute_collection = db[args.prefix + "_BookTickerMinutes"]
+  trade_ticker_minute_collection = db[args.prefix + "_TradeTickerMinutes"]
+  ob_minute_collection = db[args.prefix + "_OrderBookMinutes"]
 
   min_minute = 10000000000000
   max_minute = 0
@@ -63,7 +64,7 @@ def main():
 
   # Initialize dataframe
   index = [i for i in range(min_minute, max_minute + 1)]
-  columns = [ "BookOpenMid", "BookHighMid", "BookLowMid", "BookCloseMid", "TradeOpen", "TradeHigh", "TradeLow", "TradeClose", "SellVolume", "BuyVolume", "PriceWeightedSellVolume", "PriceWeightedBuyVolume", "BookAskVolume1Pctg", "BookBidVolume1Pctg", "BookAskVolume5Pctg", "BookBidVolume5Pctg" ]
+  columns = [ "BookOpenMid", "BookHighMid", "BookLowMid", "BookCloseMid", "TradeOpen", "TradeHigh", "TradeLow", "TradeClose", "SellVolume", "BuyVolume", "VolumeWeightedSellPrice", "VolumeWeightedBuyPrice", "BookAskVolume1Pctg", "BookBidVolume1Pctg", "BookAskVolume5Pctg", "BookBidVolume5Pctg" ]
   data = []
   for i in index:
     row = []
